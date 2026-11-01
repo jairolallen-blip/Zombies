@@ -1,7 +1,9 @@
 -- MatchService: the game loop. Owns who is in the run, spawning characters, waves, and results.
 --
---   Lobby  --(countdown; shortened when everyone is Ready)-->  run starts, players go to the arena
+--   Lobby  --(countdown; shortened when everyone is Ready)-->  run starts
+--   Deploy (helicopter cutscene, players parachute onto the arena spawns; see _deploy)
 --   loop:  Break (countdown, dead teammates respawn) -> Wave (spawn N zombies, wait until cleared)
+-- The commander comments on each step over Remotes.Radio (lines in Shared/Config/Radio).
 --   ends when every participant is dead or gone -> Results (Gems awarded, saved) -> Lobby
 --
 -- Writes GameState attributes (Phase, Wave, Timer, ZombiesLeft, PlayerCount, ReadyCount)
@@ -20,6 +22,7 @@ local GameConfig = require(Shared.Config.GameConfig)
 local Zombies = require(Shared.Config.Zombies)
 local Remotes = require(Shared.Remotes)
 local GameState = require(Shared.GameState)
+local Radio = require(Shared.Config.Radio)
 
 local MatchService = {}
 local Services
@@ -140,6 +143,115 @@ function MatchService:SpawnInArena(player, cframe)
 	end)
 end
 
+-- Commander line to every run participant
+function MatchService:_radio(event, vars)
+	local text = Radio.Pick(event, vars)
+	if not text then
+		return
+	end
+	for player in inRun do
+		if player.Parent then
+			Remotes.Radio:FireClient(player, text, event)
+		end
+	end
+end
+
+-- Slow parachute descent: a world-space LinearVelocity on the root + a canopy, removed on landing.
+function MatchService:_parachute(player)
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return
+	end
+	local attachment = Instance.new("Attachment")
+	attachment.Name = "ParachuteAttachment"
+	attachment.Parent = root
+	local drag = Instance.new("LinearVelocity")
+	drag.Name = "Parachute"
+	drag.Attachment0 = attachment
+	drag.RelativeTo = Enum.ActuatorRelativeTo.World
+	drag.VelocityConstraintMode = Enum.VelocityConstraintMode.Line
+	drag.LineDirection = Vector3.yAxis
+	drag.LineVelocity = -GameConfig.Deploy.FallSpeed
+	drag.MaxForce = 1e7
+	drag.Parent = root
+	local canopy = Instance.new("Part")
+	canopy.Name = "ParachuteCanopy"
+	canopy.Shape = Enum.PartType.Ball
+	canopy.Size = Vector3.new(10, 3, 10)
+	canopy.Color = Color3.fromRGB(96, 108, 70)
+	canopy.Material = Enum.Material.Fabric
+	canopy.CanCollide = false
+	canopy.CanQuery = false
+	canopy.CanTouch = false
+	canopy.Massless = true
+	canopy.CFrame = root.CFrame * CFrame.new(0, 8, 0)
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = root
+	weld.Part1 = canopy
+	weld.Parent = canopy
+	canopy.Parent = character
+	root.Anchored = false
+
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { character }
+	local deadline = os.clock() + GameConfig.Deploy.DropHeight / GameConfig.Deploy.FallSpeed + 4
+	while root.Parent and os.clock() < deadline do
+		if workspace:Raycast(root.Position, Vector3.new(0, -4.5, 0), params) then
+			break
+		end
+		task.wait(0.05)
+	end
+	drag:Destroy()
+	attachment:Destroy()
+	canopy:Destroy()
+end
+
+-- Run start: helicopter cutscene (client CutsceneController reads the Deploy* GameState attributes),
+-- players wait anchored above their spawn pads, then parachute down together.
+function MatchService:_deploy(participants)
+	local cfg = GameConfig.Deploy
+	if not cfg.Enabled then
+		for i, player in participants do
+			task.spawn(self.SpawnInArena, self, player, Services.MapService:GetArenaSpawnCFrame(i))
+		end
+		return
+	end
+	local from, to = Services.MapService:GetDeployPoints()
+	GameState:SetAttribute("DeployFrom", from)
+	GameState:SetAttribute("DeployTo", to)
+	GameState:SetAttribute("DeployDuration", cfg.FlightTime)
+	GameState:SetAttribute("DeployStart", workspace:GetServerTimeNow())
+	GameState:SetAttribute("Phase", "Deploy")
+	for i, player in participants do
+		player:SetAttribute("Deploying", true)
+		task.spawn(function()
+			local cframe = Services.MapService:GetArenaSpawnCFrame(i) + Vector3.new(0, cfg.DropHeight, 0)
+			self:SpawnInArena(player, cframe)
+			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			if root then
+				root.Anchored = true
+				root.CFrame = cframe
+			end
+		end)
+	end
+	self:_radio("Deploy")
+	task.wait(cfg.FlightTime - 1.5)
+	self:_radio("Drop")
+	task.wait(1.5)
+	for _, player in participants do
+		if player.Parent then
+			task.spawn(self._parachute, self, player)
+		end
+	end
+	task.wait(cfg.DropHeight / cfg.FallSpeed + 0.6)
+	for _, player in participants do
+		player:SetAttribute("Deploying", false)
+	end
+	self:_radio("Landed")
+end
+
 function MatchService:ReviveDead(cframe)
 	for player in inRun do
 		if dead[player] and player.Parent then
@@ -253,8 +365,8 @@ function MatchService:_runMatch()
 		player:SetAttribute("Ready", false)
 		player:SetAttribute("InRun", true)
 		Services.EconomyService:ResetRun(player)
-		task.spawn(self.SpawnInArena, self, player, Services.MapService:GetArenaSpawnCFrame(i))
 	end
+	self:_deploy(participants)
 
 	local cfg = GameConfig.Waves
 	local wave, wavesCleared, bossAppearances = 0, 0, 0
@@ -266,7 +378,15 @@ function MatchService:_runMatch()
 		wave += 1
 		GameState:SetAttribute("Wave", wave)
 		GameState:SetAttribute("ZombiesLeft", 0)
-		self:_countdown("Break", if wave == 1 then cfg.FirstBreakTime else cfg.BreakTime)
+		local breakTime = if wave == 1 then cfg.FirstBreakTime else cfg.BreakTime
+		if wave == 1 and breakTime > 4 then
+			task.delay(breakTime - 3.5, function()
+				if next(inRun) ~= nil then
+					self:_radio("Incoming")
+				end
+			end)
+		end
+		self:_countdown("Break", breakTime)
 		if next(inRun) == nil then
 			break
 		end
@@ -283,16 +403,19 @@ function MatchService:_runMatch()
 			bossAppearances += 1
 		end
 		GameState:SetAttribute("Phase", "Wave")
+		self:_radio(if wave == 1 then "FirstWave" else "WaveStart", { wave = wave })
 		if not self:_playWave(wave, if isBoss then bossAppearances else nil) then
 			break
 		end
 		wavesCleared = wave
 		Services.EconomyService:OnWaveCleared(wave)
+		self:_radio("WaveCleared", { wave = wave })
 	end
 	self:_endRun(wave, wavesCleared)
 end
 
 function MatchService:_endRun(wave, wavesCleared)
+	self:_radio("Overrun")
 	GameState:SetAttribute("Phase", "Results")
 	Services.ZombieService:ClearAll()
 	Services.AbilityService:Cleanup()

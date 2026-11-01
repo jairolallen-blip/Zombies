@@ -71,7 +71,8 @@ end
 function CameraController:Init()
 	RunService:BindToRenderStep("SAMZ_Camera", Enum.RenderPriority.Camera.Value + 1, function()
 		local humanoid, root = getHumanoid()
-		local shouldBeActive = player:GetAttribute("InRun") == true and humanoid ~= nil and root ~= nil and humanoid.Health > 0
+		-- CutsceneController owns the camera while Deploying (helicopter + parachute)
+		local shouldBeActive = player:GetAttribute("InRun") == true and player:GetAttribute("Deploying") ~= true and humanoid ~= nil and root ~= nil and humanoid.Health > 0
 		if shouldBeActive and not active then
 			enter(humanoid)
 		elseif not shouldBeActive and active then

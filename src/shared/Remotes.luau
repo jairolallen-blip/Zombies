@@ -16,6 +16,7 @@
 --   HitConfirm(hits: {{Position, Damage, Headshot, Killed}})   shooter-only hit feedback
 --   Effect(kind: string, data: table)                          visual effect; see EffectsController.Handlers
 --   RunResults({Wave, WavesCleared, Kills, Gems, NewBest})     end-of-run summary
+--   Radio(text: string, event: string)                         commander line (Config/Radio)
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -33,6 +34,7 @@ local NAMES = {
 	"HitConfirm",
 	"Effect",
 	"RunResults",
+	"Radio",
 }
 
 local Remotes = {}

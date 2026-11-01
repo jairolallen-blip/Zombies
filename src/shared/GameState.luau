@@ -3,7 +3,8 @@
 -- require() returns the Instance itself:  GameState:GetAttribute("Wave")
 --
 -- Attributes:
---   Phase          "Lobby" | "Break" | "Wave" | "Results"
+--   Phase          "Lobby" | "Deploy" | "Break" | "Wave" | "Results"
+--   DeployFrom, DeployTo (Vector3), DeployStart (server time), DeployDuration   drop-in cutscene
 --   Wave           current wave number (0 in lobby)
 --   Timer          seconds left in Lobby countdown or Break
 --   ZombiesLeft    zombies still to spawn + alive this wave

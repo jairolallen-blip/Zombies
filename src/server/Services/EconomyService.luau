@@ -80,7 +80,7 @@ function EconomyService:OnWaveCleared(wave)
 	for _, player in Services.MatchService:GetRunPlayers() do
 		if Services.MatchService:IsAliveInRun(player) then
 			self:AddCash(player, amount)
-			notify(player, "Wave " .. wave .. " cleared: +$" .. Util.FormatNumber(amount), "Good")
+			Remotes.Notify:FireClient(player, "Wave " .. wave .. " cleared: +$" .. Util.FormatNumber(amount), "Good")
 		end
 	end
 end

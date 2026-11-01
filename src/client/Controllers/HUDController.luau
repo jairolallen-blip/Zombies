@@ -206,8 +206,8 @@ end
 
 function HUDController:_update(dt)
 	local inRun = player:GetAttribute("InRun") == true
-	ui.Root.Visible = inRun
-	if not inRun then
+	ui.Root.Visible = inRun and player:GetAttribute("Deploying") ~= true -- hidden during the drop-in
+	if not ui.Root.Visible then
 		return
 	end
 	local now = workspace:GetServerTimeNow()
@@ -227,7 +227,9 @@ function HUDController:_update(dt)
 	-- Wave info
 	local phase = GameState:GetAttribute("Phase")
 	ui.Wave.Text = "WAVE " .. (GameState:GetAttribute("Wave") or 0)
-	if phase == "Break" then
+	if phase == "Break" and (GameState:GetAttribute("Wave") or 0) <= 1 then
+		ui.SubInfo.Text = "Zombies inbound in " .. (GameState:GetAttribute("Timer") or 0) .. "s  —  find cover!"
+	elseif phase == "Break" then
 		ui.SubInfo.Text = "Next wave in " .. (GameState:GetAttribute("Timer") or 0) .. "s  —  spend your Cash!"
 	elseif phase == "Wave" then
 		ui.SubInfo.Text = (GameState:GetAttribute("ZombiesLeft") or 0) .. " zombies left"

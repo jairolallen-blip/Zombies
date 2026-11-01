@@ -15,8 +15,18 @@ GameConfig.Match = {
 	RespawnDeadOnWaveStart = true, -- dead teammates come back at the start of each wave
 }
 
+-- Drop-in at the start of a run (vault: Match Start.md): helicopter cutscene from the lobby helipad
+-- to above the arena spawn, then players parachute down. Enabled = false -> teleport straight in.
+GameConfig.Deploy = {
+	Enabled = true,
+	FlightTime = 8, -- seconds of helicopter cutscene before the drop
+	DropHeight = 75, -- studs above the spawn pads where players jump
+	FallSpeed = 30, -- parachute descent, studs/s
+	CruiseHeight = 95, -- helicopter altitude over the rooftops
+}
+
 GameConfig.Waves = {
-	FirstBreakTime = 5, -- countdown before wave 1
+	FirstBreakTime = 12, -- intermission after the drop, before wave 1
 	BreakTime = 8, -- countdown between waves
 	BaseCount = 10, -- zombies in wave 1 (solo)
 	CountPerWave = 5, -- +zombies each wave

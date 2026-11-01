@@ -889,6 +889,24 @@ function MapService:GetZombiePads()
 	return zombiePads
 end
 
+-- Drop-in cutscene endpoints (ground level): our lobby's helipad -> centre of the arena spawns.
+function MapService:GetDeployPoints()
+	local pad = ourParts("Lobby", "Pad")
+	local from = if pad then pad[1].Position else M.LobbyCenter + Vector3.new(0, self.GroundY, 0)
+	local spawns = ourParts("Arena", "PlayerSpawn")
+	local to
+	if spawns then
+		local sum = Vector3.zero
+		for _, p in spawns do
+			sum += p.Position
+		end
+		to = sum / #spawns
+	else
+		to = M.ArenaCenter
+	end
+	return Vector3.new(from.X, self.GroundY, from.Z), Vector3.new(to.X, self.GroundY, to.Z)
+end
+
 function MapService:GetNavBounds()
 	if ourParts("Arena", "ZombieSpawn") then
 		local c, half = GameConfig.OurMap.ArenaCenter, GameConfig.OurMap.ArenaHalfSize
