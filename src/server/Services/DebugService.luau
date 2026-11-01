@@ -88,13 +88,13 @@ end
 -- NavCheck() — verifies every ZombieSpawn has a flow-field route to the arena centre
 Commands.NavCheck = function()
 	local NavGrid = require(script.Parent.Parent:WaitForChild("Map"):WaitForChild("NavGrid"))
-	local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
-	local centre = GameConfig.Map.ArenaCenter + Vector3.new(14, Services.MapService.GroundY, 14)
+	local spawnPos = Services.MapService:GetArenaSpawnCFrame(1).Position
+	local centre = Vector3.new(spawnPos.X, Services.MapService.GroundY, spawnPos.Z) -- a player spawn in the active arena
 	local lines = { NavGrid.Stats() }
-	for _, d in workspace.Map:GetDescendants() do
-		if d:IsA("BasePart") and d.Name == "ZombieSpawn" then
+	for _, padPos in Services.MapService:GetZombiePads() do
+		do
 			-- walk the field from the pad to the centre (max 200 steps of ~3 studs)
-			local pos = Vector3.new(d.Position.X, Services.MapService.GroundY, d.Position.Z)
+			local pos = Vector3.new(padPos.X, Services.MapService.GroundY, padPos.Z)
 			local steps, ok = 0, false
 			while steps < 200 do
 				if (pos - centre).Magnitude < 6 then
@@ -108,7 +108,7 @@ Commands.NavCheck = function()
 				pos += dir * 3
 				steps += 1
 			end
-			table.insert(lines, string.format("pad (%d,%d): %s in %d steps", d.Position.X, d.Position.Z, if ok then "ROUTE OK" else "NO ROUTE", steps))
+			table.insert(lines, string.format("pad (%d,%d): %s in %d steps", padPos.X, padPos.Z, if ok then "ROUTE OK" else "NO ROUTE", steps))
 		end
 	end
 	return table.concat(lines, "\n")

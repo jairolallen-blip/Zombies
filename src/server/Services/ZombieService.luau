@@ -66,11 +66,11 @@ function ZombieService:Start()
 end
 
 function ZombieService:BuildNavGrid()
-	local M = GameConfig.Map
-	local cells, blocked = NavGrid.Build(M.ArenaCenter, M.ArenaSize / 2, M.CellSize, Services.MapService.GroundY, {
+	local center, halfSize, lattice = Services.MapService:GetNavBounds()
+	local cells, blocked = NavGrid.Build(center, halfSize, GameConfig.Map.CellSize, Services.MapService.GroundY, {
 		folder,
 		Services.CombatService.EffectsFolder,
-	}, Services.MapService:GetArenaCellOrigin())
+	}, lattice)
 	print(string.format("[ZombieService] NavGrid built: %d cells, %d blocked", cells, blocked))
 end
 

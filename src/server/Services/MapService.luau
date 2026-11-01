@@ -21,7 +21,8 @@
 --
 -- Public:
 --   MapService.GroundY, MapService:Build(), MapService:GetLobbySpawnCFrame(),
---   MapService:GetArenaSpawnCFrame(index?), MapService:GetZombieSpawnPosition()
+--   MapService:GetArenaSpawnCFrame(index?), MapService:GetZombieSpawnPosition(), :GetZombiePads(),
+--   MapService:GetNavBounds() -> center, halfSize, lattice   (area the zombie NavGrid scans)
 
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -834,6 +835,66 @@ function MapService:Init()
 	else
 		self:Build()
 	end
+	local ours = ourParts("Arena", "ZombieSpawn")
+	if ours then
+		table.clear(zombiePads)
+		for _, pad in ours do
+			table.insert(zombiePads, pad.Position)
+		end
+	end
+	if GameConfig.ActiveMap == "Ours" then
+		self:ApplyAtmosphere()
+	end
+end
+
+-- Our map's sunset haze (GameConfig.OurMap.Atmosphere). Runtime only; the place's saved Lighting
+-- (the original map's) is untouched in Edit mode.
+function MapService:ApplyAtmosphere()
+	local a = GameConfig.OurMap.Atmosphere
+	Lighting.ClockTime = a.ClockTime
+	Lighting.Brightness = a.Brightness
+	Lighting.Ambient = a.Ambient
+	Lighting.OutdoorAmbient = a.OutdoorAmbient
+	Lighting.FogEnd = 100000
+	for _, child in Lighting:GetChildren() do
+		if child:IsA("Atmosphere") or child:IsA("ColorCorrectionEffect") or child:IsA("Sky") or child:IsA("BloomEffect") or child:IsA("SunRaysEffect") then
+			child:Destroy()
+		end
+	end
+	local atmosphere = Instance.new("Atmosphere")
+	atmosphere.Density = a.Density
+	atmosphere.Offset = 0.1
+	atmosphere.Color = a.AtmosphereColor
+	atmosphere.Decay = a.HazeColor
+	atmosphere.Glare = 0.6
+	atmosphere.Haze = a.Haze
+	atmosphere.Parent = Lighting
+	local grade = Instance.new("ColorCorrectionEffect")
+	grade.TintColor = a.TintColor
+	grade.Saturation = a.Saturation
+	grade.Contrast = a.Contrast
+	grade.Parent = Lighting
+	local bloom = Instance.new("BloomEffect")
+	bloom.Intensity = 0.5
+	bloom.Size = 30
+	bloom.Threshold = 1.6
+	bloom.Parent = Lighting
+	local rays = Instance.new("SunRaysEffect")
+	rays.Intensity = 0.08
+	rays.Spread = 0.6
+	rays.Parent = Lighting
+end
+
+function MapService:GetZombiePads()
+	return zombiePads
+end
+
+function MapService:GetNavBounds()
+	if ourParts("Arena", "ZombieSpawn") then
+		local c, half = GameConfig.OurMap.ArenaCenter, GameConfig.OurMap.ArenaHalfSize
+		return c, half, Vector3.new(c.X - half, 0, c.Z - half)
+	end
+	return M.ArenaCenter, M.ArenaSize / 2, self:GetArenaCellOrigin()
 end
 
 -- Half-size of the arena's ground cell grid. Its lattice starts at ArenaCenter - extent; the
@@ -870,6 +931,11 @@ function MapService:GetLobbySpawnCFrame()
 end
 
 function MapService:GetArenaSpawnCFrame(index)
+	local pads = ourParts("Arena", "PlayerSpawn")
+	if pads then
+		local pad = pads[((index or math.random(1, #pads)) - 1) % #pads + 1]
+		return CFrame.new(pad.Position + Vector3.new(0, pad.Size.Y / 2 + 3, 0)) * pad.CFrame.Rotation
+	end
 	local c = M.ArenaCenter
 	local angle = (index or math.random(1, 12)) * (math.pi * 2 / 8)
 	local radius = M.WellRadius + 7

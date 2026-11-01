@@ -5,7 +5,7 @@ Our take on *Survive a Million Zombies*, built next to the friend's version. Eac
 | # | Phase | Note | Status |
 |---|---|---|---|
 | 1 | Lobby and loadout | [[Lobby]] | **Done** (2026-11-01) |
-| 2 | Main map: apocalyptic city | [[City Map]] | Not started |
+| 2 | Main map: apocalyptic city | [[City Map]] | **Done** (2026-11-01) |
 | 3 | Drop-in cutscene, intermission, commander notice | [[Match Start]] | Not started |
 | 4 | Gun functionality (4 levels) | [[Weapons]] | Not started |
 | 5 | Zombie models and AI | [[Zombies]] | Not started |

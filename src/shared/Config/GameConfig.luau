@@ -114,13 +114,28 @@ GameConfig.Map = {
 -- Which map set the game uses:
 --   "Original"  Workspace.Map (Graveside Isle, above)
 --   "Ours"      Workspace.OurMap, built 1000 studs east of the original (vault: Roadmap.md)
--- OurMap.Lobby needs parts named "LobbySpawn". Until OurMap has an Arena folder, runs use the
--- original arena.
+-- OurMap.Lobby needs parts named "LobbySpawn"; OurMap.Arena needs "PlayerSpawn" + "ZombieSpawn" parts
+-- (built by Server/Map/OurLobby and Server/Map/OurCity). Without an Arena, runs use the original.
 GameConfig.ActiveMap = "Ours"
 GameConfig.OurMap = {
 	Folder = "OurMap",
 	LobbyCenter = Vector3.new(1000, 0, 235),
 	ArenaCenter = Vector3.new(1000, 0, 0),
+	ArenaHalfSize = 138, -- OurCity: 23 tiles x 12 studs / 2 (zombie nav grid covers this square)
+	-- warm, hazy sunset applied at server start (MapService:ApplyAtmosphere)
+	Atmosphere = {
+		ClockTime = 17.4,
+		Brightness = 2.2,
+		Ambient = Color3.fromRGB(96, 80, 64),
+		OutdoorAmbient = Color3.fromRGB(150, 120, 92),
+		HazeColor = Color3.fromRGB(214, 160, 104),
+		AtmosphereColor = Color3.fromRGB(230, 190, 140),
+		Density = 0.42,
+		Haze = 2.4,
+		TintColor = Color3.fromRGB(255, 232, 200),
+		Saturation = -0.18,
+		Contrast = 0.08,
+	},
 }
 
 GameConfig.Data = {
