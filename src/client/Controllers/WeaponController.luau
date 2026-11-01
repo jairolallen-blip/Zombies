@@ -1,6 +1,8 @@
 -- WeaponController: shooting input, client-side prediction (ammo, tracers, muzzle flash), and
 -- sending FireWeapon to the server (which re-validates and applies damage — see CombatService).
 -- Stats come from Util.GetWeaponStats(WeaponId, WeaponTier) — same formula as the server.
+-- Feel (vault: Weapons.md): camera recoil kick (stats.Recoil), per-gun tracers/flash, ejected
+-- shells, and SpinUp guns (minigun) that ramp their fire rate while the barrel hub spins.
 --
 -- Public: WeaponController:GetState() -> { Stats, Ammo, Reloading }, :Reload()
 
@@ -23,6 +25,10 @@ local ammo = 0
 local reloading = false
 local firing = false
 local lastShot = 0
+local recoil = 0 -- current camera kick, radians (decays every frame)
+local recoilYaw = 0
+local spin = 0 -- 0..1 spin-up progress for SpinUp guns
+local spinAngle = 0
 
 function WeaponController:GetState()
 	return { Stats = stats, Ammo = ammo, Reloading = reloading }
@@ -79,7 +85,8 @@ function WeaponController:TryFire()
 		return
 	end
 	local now = os.clock()
-	if now - lastShot < 1 / stats.FireRate then
+	local rate = if stats.SpinUp then stats.FireRate * (0.3 + 0.7 * spin) else stats.FireRate
+	if now - lastShot < 1 / rate then
 		return
 	end
 	lastShot = now
@@ -107,9 +114,17 @@ function WeaponController:TryFire()
 	local Effects = Controllers.EffectsController
 	for _, dir in dirs do
 		local result = workspace:Raycast(origin, dir * stats.Range, params)
-		Effects:Tracer(from, if result then result.Position else origin + dir * stats.Range)
+		Effects:WeaponTracer(stats.Id, from, if result then result.Position else origin + dir * stats.Range)
 	end
-	Effects:MuzzleFlash(muzzle, from)
+	Effects:MuzzleFlash(muzzle, from, stats.Flash, stats.FlashColor)
+	local port = muzzle and muzzle.Parent:FindFirstChild("EjectPort")
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if port and root and not stats.NoShells then
+		Effects:Shell(port.WorldPosition, root.CFrame.RightVector)
+	end
+	local kick = math.rad(stats.Recoil or 1)
+	recoil = math.min(recoil + kick * (0.85 + math.random() * 0.3), math.rad(12))
+	recoilYaw += kick * (math.random() - 0.5) * 0.5
 	Controllers.HUDController:KickCrosshair()
 	if ammo <= 0 then
 		self:Reload()
@@ -151,9 +166,35 @@ function WeaponController:Init(controllers)
 			firing = false
 		end
 	end)
-	RunService.RenderStepped:Connect(function()
+	RunService.RenderStepped:Connect(function(dt)
+		-- minigun-style spin-up: ramps while the trigger is held, winds down when released
+		if stats and stats.SpinUp then
+			local holding = firing and not reloading and player:GetAttribute("InRun") == true
+			spin = math.clamp(spin + (if holding then dt / stats.SpinUp else -dt / 0.8), 0, 1)
+		else
+			spin = 0
+		end
+		local character = player.Character
+		local tool = character and character:FindFirstChildOfClass("Tool")
+		local hub = tool and tool:FindFirstChild("SpinHub")
+		local spinWeld = hub and hub:FindFirstChild("SpinWeld")
+		if spinWeld then
+			spinAngle += dt * spin * 45
+			spinWeld.C0 = hub:GetAttribute("BaseC0") * CFrame.Angles(0, 0, spinAngle)
+		end
 		if firing and stats and stats.Automatic then
 			self:TryFire()
+		end
+	end)
+	-- recoil: kick the camera after it updates; the default camera re-derives its CFrame every
+	-- frame, so the offset never accumulates and decays smoothly back to the aim
+	RunService:BindToRenderStep("SAMZ_Recoil", Enum.RenderPriority.Camera.Value + 3, function(dt)
+		local decay = math.exp(-14 * dt)
+		recoil *= decay
+		recoilYaw *= decay
+		if Controllers.CameraController:IsActive() and (recoil > 1e-4 or math.abs(recoilYaw) > 1e-4) then
+			local camera = workspace.CurrentCamera
+			camera.CFrame *= CFrame.Angles(recoil, recoilYaw, 0)
 		end
 	end)
 end
