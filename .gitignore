@@ -10,3 +10,6 @@ ServerPackages/
 vault/.obsidian/workspace*.json
 vault/.obsidian/cache
 vault/.trash/
+
+# Reference screenshots and videos stay local (for Claude, not GitHub)
+vault/*REFERENCES/
