@@ -1,1 +1,17 @@
-# Zombies
+# Survive a Million Zombies
+
+Source for the Roblox experience *Survive a Million Zombies* (placeId 110463048909417).
+
+## Layout
+
+| Folder | Studio location |
+|---|---|
+| `src/server` | `ServerScriptService.Server` |
+| `src/shared` | `ReplicatedStorage.Shared` |
+| `src/client` | `StarterPlayer.StarterPlayerScripts.Client` |
+| `src/character` | `StarterPlayer.StarterCharacterScripts` |
+
+File suffixes follow Rojo: `.server.luau` = Script, `.client.luau` = LocalScript, `.luau` = ModuleScript.
+`default.project.json` maps these folders back into Studio.
+
+Only scripts live here. The map, UI style sheets and other instances stay in the place file.
