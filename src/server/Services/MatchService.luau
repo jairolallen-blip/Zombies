@@ -287,6 +287,7 @@ function MatchService:_runMatch()
 			break
 		end
 		wavesCleared = wave
+		Services.EconomyService:OnWaveCleared(wave)
 	end
 	self:_endRun(wave, wavesCleared)
 end

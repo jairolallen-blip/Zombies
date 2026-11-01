@@ -7,8 +7,8 @@
 --
 -- Player attributes written here: WeaponId, Ammo, MagSize, Reloading
 -- Public:
---   CombatService:EquipLoadout(player)   give the equipped weapon at current WeaponTier, full ammo
---   CombatService:RefreshWeapon(player)  re-apply after a tier upgrade
+--   CombatService:EquipLoadout(player)   give the Loadout gun for the current WeaponTier (= Level), full ammo
+--   CombatService:RefreshWeapon(player)  re-apply after a Level upgrade
 --   CombatService:Reload(player)
 --   CombatService:DamagePlayer(player, amount)          applies class DamageTakenMult
 --   CombatService:Explode(position, radius, damage, attacker?, { PlayerDamage = n? })
@@ -102,8 +102,9 @@ end
 
 function CombatService:EquipLoadout(player)
 	local profile = Services.DataService:Get(player)
-	local weaponId = profile and profile.EquippedWeapon or Weapons.Default
-	local stats = Util.GetWeaponStats(weaponId, player:GetAttribute("WeaponTier") or 1)
+	local level = player:GetAttribute("WeaponTier") or 1
+	local weaponId = profile and profile.Loadout[level] or Weapons.DefaultFor(level)
+	local stats = Util.GetWeaponStats(weaponId, level)
 	weaponState[player] = { Stats = stats, Ammo = stats.MagSize, ReloadingUntil = 0, LastShot = 0 }
 	player:SetAttribute("WeaponId", stats.Id)
 	player:SetAttribute("MagSize", stats.MagSize)

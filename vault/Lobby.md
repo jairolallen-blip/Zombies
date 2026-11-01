@@ -1,0 +1,39 @@
+# Lobby (phase 1): done
+
+Part of the [[Roadmap]]. Built and playtested on 2026-11-01.
+
+## What players get
+1. **Pick a class** (left panel). There are 5 classes, unlocked with Gems.
+2. **Build a loadout** (right panel): **one gun per level**. The first gun in each level is free, and the others cost Gems.
+3. **Ready up.** The countdown starts the run, and pressing Ready together shortens it.
+4. **In a run** you start on your Level 1 gun. The **upgrade button on the right side** (or key `1`) swaps you to your next loadout gun, paid for with cash from kills plus a **wave-clear bonus** of $75 + $25 × wave.
+
+## Gun levels
+| Level | Free gun | Gem guns | Upgrade cost |
+|---|---|---|---|
+| 1 | Service Pistol | Hand Cannon (revolver, 300) | starter |
+| 2 | Scrap SMG | Pump Shotgun (400) | $500 |
+| 3 | Assault Rifle | Auto Shotgun (600), Marksman Rifle (sniper, 600) | $2,500 |
+| 4 | Minigun | Laser Rifle (pierces 12, 1200), Auto Sniper (1200) | $10,000 |
+
+The stats are **placeholders** until [[Weapons]] (phase 4). The procedural gun models are also placeholders.
+
+## Our lobby build
+A fortified safehouse inside a ruined city at **x = 1000** (the old map is at x = 0). Its layout:
+- **North:** ruined towers, and in front of them the **Deploy Zone helipad**, which will be the take-off point for the drop-in cutscene (see [[Match Start]]).
+- **Centre:** a concrete plaza with a flagpole and burning barrels. Players spawn in a ring around it, facing the helipad.
+- **West:** the armory tent (the loadout spot). **East:** a command post behind sandbags.
+- **Sides:** stacked shipping containers, with more ruins behind them. **South:** jersey barriers and a chain-link fence.
+
+## How it's wired (code)
+- `GameConfig.ActiveMap = "Ours"` and `GameConfig.OurMap` (centres at x = 1000). Set it to `"Original"` to use the friend's map again.
+- `Server/Map/OurLobby` builds `Workspace.OurMap.Lobby`. It's baked in Edit mode (rebuild instructions are in its header), so it can be hand-edited afterwards.
+- `MapService:GetLobbySpawnCFrame()` uses the parts named `LobbySpawn` in our lobby.
+- **The arena is still the original one** until our city exists, since `OurMap` has no `Arena` yet. That's phase 2.
+- Profile: `Loadout = { [level] = weaponId }` replaces `EquippedWeapon`. Old saves are migrated automatically, and every free gun is granted.
+- `WeaponTier` now means **gun level**. `GameConfig.WeaponTiers` multipliers are all 1, kept only for the level colours.
+
+## Notes for later
+- Lighting and sky are still the original map's bright daytime look. Give our map its own atmosphere (overcast, fog, dusk) in [[City Map]], switching on `ActiveMap`.
+- The helipad is decorative for now. In phase 3 it's where the drop-in cutscene starts.
+- **Shared code:** the loadout and upgrade changes also apply to the friend's version.

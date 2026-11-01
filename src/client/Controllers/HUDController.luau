@@ -17,6 +17,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Classes = require(Shared.Config.Classes)
+local Weapons = require(Shared.Config.Weapons)
 local Util = require(Shared.Util)
 local Remotes = require(Shared.Remotes)
 local GameState = require(Shared.GameState)
@@ -30,6 +31,13 @@ local Controllers
 local ui = {}
 local crosshairGap = 0
 local lastHealth = nil
+
+-- Weapon id the player picked for a Level in the lobby (LoadoutJson attribute)
+local function nextLoadoutGun(level)
+	local HttpService = game:GetService("HttpService")
+	local ok, loadout = pcall(HttpService.JSONDecode, HttpService, player:GetAttribute("LoadoutJson") or "[]")
+	return (ok and type(loadout) == "table" and loadout[level]) or Weapons.DefaultFor(level)
+end
 
 local function keyName(keyCode)
 	local names = { One = "1", Two = "2", Three = "3", Four = "4" }
@@ -108,16 +116,20 @@ function HUDController:Init(controllers)
 	ui.WeaponName = UIKit.Label({ Position = UDim2.fromOffset(14, 42), Size = UDim2.new(1, -28, 0, 24), TextSize = 18, TextXAlignment = Enum.TextXAlignment.Right, Parent = weaponPanel })
 	ui.Ammo = UIKit.Label({ Position = UDim2.fromOffset(14, 66), Size = UDim2.new(1, -28, 0, 36), TextSize = 32, TextXAlignment = Enum.TextXAlignment.Right, Parent = weaponPanel })
 
-	-- Right: upgrade prompts
-	local upgrades = UIKit.new("Frame", { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -20, 1, -140), Size = UDim2.fromOffset(260, 76), BackgroundTransparency = 1, Parent = root })
+	-- Right side: upgrade buttons (click, or press the hotkey shown on the button)
+	local upgrades = UIKit.new("Frame", { AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -20, 1, -140), Size = UDim2.fromOffset(300, 98), BackgroundTransparency = 1, Parent = root })
 	UIKit.new("UIListLayout", { Padding = UDim.new(0, 6), VerticalAlignment = Enum.VerticalAlignment.Bottom, Parent = upgrades })
-	local function upgradeRow()
-		local row = UIKit.Panel({ Size = UDim2.new(1, 0, 0, 34), Parent = upgrades })
-		local label = UIKit.Label({ Size = UDim2.new(1, -16, 1, 0), Position = UDim2.fromOffset(8, 0), TextSize = 17, TextXAlignment = Enum.TextXAlignment.Left, Parent = row })
+	local function upgradeRow(upgradeId, height)
+		local row = UIKit.Panel({ Size = UDim2.new(1, 0, 0, height), Parent = upgrades })
+		local label = UIKit.Label({ Size = UDim2.new(1, -16, 1, 0), Position = UDim2.fromOffset(8, 0), TextSize = 17, TextWrapped = true, TextXAlignment = Enum.TextXAlignment.Left, Parent = row })
+		local button = UIKit.new("TextButton", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Text = "", ZIndex = 3, Parent = row })
+		button.Activated:Connect(function()
+			Remotes.BuyUpgrade:FireServer(upgradeId)
+		end)
 		return { Frame = row, Label = label }
 	end
-	ui.UpgradeWeapon = upgradeRow()
-	ui.UpgradeVitality = upgradeRow()
+	ui.UpgradeWeapon = upgradeRow("Weapon", 52)
+	ui.UpgradeVitality = upgradeRow("Vitality", 34)
 
 	-- Toasts
 	ui.Toasts = UIKit.new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -20, 0, 20), Size = UDim2.fromOffset(360, 300), BackgroundTransparency = 1, Parent = gui })
@@ -261,7 +273,7 @@ function HUDController:_update(dt)
 	local cash = player:GetAttribute("Cash") or 0
 	ui.Cash.Text = "$" .. Util.FormatNumber(cash)
 	if weapon.Stats then
-		ui.WeaponName.Text = weapon.Stats.DisplayName .. "  ·  T" .. weapon.Stats.Tier
+		ui.WeaponName.Text = weapon.Stats.DisplayName .. "  ·  Lv " .. weapon.Stats.Tier
 		ui.WeaponName.TextColor3 = weapon.Stats.TierColor
 		if weapon.Reloading then
 			ui.Ammo.Text = "RELOADING"
@@ -286,7 +298,8 @@ function HUDController:_update(dt)
 	end
 	local tier = player:GetAttribute("WeaponTier") or 1
 	local vitality = player:GetAttribute("VitalityLevel") or 0
-	showUpgrade(ui.UpgradeWeapon, keyName(binds.UpgradeWeapon), "Weapon", tier, "Weapon → T" .. (tier + 1))
+	local nextGun = Weapons.List[nextLoadoutGun(tier + 1)]
+	showUpgrade(ui.UpgradeWeapon, keyName(binds.UpgradeWeapon), "Weapon", tier, "Lv " .. (tier + 1) .. ": " .. (if nextGun then nextGun.DisplayName else "?"))
 	showUpgrade(ui.UpgradeVitality, keyName(binds.UpgradeVitality), "Vitality", vitality, "Vitality +" .. GameConfig.Upgrades.Vitality.HealthPerLevel .. " HP")
 end
 

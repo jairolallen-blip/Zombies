@@ -1,4 +1,5 @@
--- LobbyService: lobby-only actions — equip class/weapon, unlock with Gems, Ready toggle.
+-- LobbyService: lobby-only actions — equip class, put a gun in its Loadout slot (one per Level),
+-- unlock with Gems, Ready toggle.
 -- All requests are rejected while the player is in a run.
 -- Player attribute: Ready (boolean) — read by MatchService for the countdown.
 
@@ -15,8 +16,16 @@ local Services
 -- kind -> where it lives in config and in the profile
 local KINDS = {
 	Class = { List = Classes.List, Owned = "OwnedClasses", Equipped = "EquippedClass" },
-	Weapon = { List = Weapons.List, Owned = "OwnedWeapons", Equipped = "EquippedWeapon" },
+	Weapon = { List = Weapons.List, Owned = "OwnedWeapons" }, -- equipped = profile.Loadout[def.Level]
 }
+
+local function setEquipped(profile, kind, id)
+	if kind == "Weapon" then
+		profile.Loadout[Weapons.List[id].Level] = id
+	else
+		profile[KINDS[kind].Equipped] = id
+	end
+end
 
 local function notify(player, text, kind)
 	Remotes.Notify:FireClient(player, text, kind or "Info")
@@ -63,7 +72,7 @@ function LobbyService:Equip(player, kind, id)
 	if not profile[info.Owned][id] then
 		return notify(player, "Unlock it first", "Danger")
 	end
-	profile[info.Equipped] = id
+	setEquipped(profile, kind, id)
 	Services.DataService:Replicate(player)
 end
 
@@ -81,7 +90,7 @@ function LobbyService:Unlock(player, kind, id)
 	end
 	profile.Gems -= def.GemCost
 	profile[info.Owned][id] = true
-	profile[info.Equipped] = id
+	setEquipped(profile, kind, id)
 	Services.DataService:Replicate(player)
 	task.spawn(Services.DataService.Save, Services.DataService, player)
 	notify(player, "Unlocked " .. def.DisplayName .. "!", "Good")

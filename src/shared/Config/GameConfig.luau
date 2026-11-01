@@ -35,22 +35,26 @@ GameConfig.Economy = {
 	TeamShare = 0.25, -- every other living teammate also gets 25% of a kill's Cash
 	GemsPerWaveCleared = 5, -- Gems awarded at end of run
 	GemsPerKill = 0.2,
+	-- cash every living run player gets when a wave is cleared: Base + PerWave * wave
+	WaveClearCash = { Base = 75, PerWave = 25 },
 }
 
 -- In-run Cash upgrades. Keys bound in GameConfig.Keybinds.
 GameConfig.Upgrades = {
-	-- Costs[n] = price to go from tier n to tier n+1. Max tier = #Costs + 1 (must match #WeaponTiers).
-	Weapon = { DisplayName = "Weapon Tier", Costs = { 250, 650, 1400 } },
+	-- Costs[n] = price to go from gun Level n to Level n+1 (swaps to the next Loadout gun).
+	-- Max level = #Costs + 1 (must match Weapons.Levels and #WeaponTiers).
+	Weapon = { DisplayName = "Weapon Level", Costs = { 500, 2500, 10000 } },
 	-- Each level adds HealthPerLevel max HP and fully heals. Cost = BaseCost * CostGrowth ^ level.
 	Vitality = { DisplayName = "Vitality", MaxLevel = 10, BaseCost = 150, CostGrowth = 1.35, HealthPerLevel = 20 },
 }
 
--- Multipliers applied to a weapon's base stats per tier (see Util.GetWeaponStats).
+-- Per-Level multipliers on a weapon's base stats (see Util.GetWeaponStats) and the Level colour
+-- (gun stripe + HUD). Each Level is its own gun now, so the multipliers stay at 1.
 GameConfig.WeaponTiers = {
-	{ Damage = 1.0, FireRate = 1.00, MagSize = 1.00, ReloadTime = 1.00, Color = Color3.fromRGB(150, 150, 155) },
-	{ Damage = 1.5, FireRate = 1.10, MagSize = 1.25, ReloadTime = 0.90, Color = Color3.fromRGB(80, 210, 100) },
-	{ Damage = 2.2, FireRate = 1.20, MagSize = 1.50, ReloadTime = 0.80, Color = Color3.fromRGB(70, 150, 255) },
-	{ Damage = 3.2, FireRate = 1.35, MagSize = 2.00, ReloadTime = 0.70, Color = Color3.fromRGB(255, 190, 40) },
+	{ Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(150, 150, 155) },
+	{ Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(80, 210, 100) },
+	{ Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(70, 150, 255) },
+	{ Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(255, 190, 40) },
 }
 
 GameConfig.Ultimate = {
@@ -105,6 +109,18 @@ GameConfig.Map = {
 	CoverCount = 16, -- interior props: trees, rocks, crate stacks, bushes, stalls, campfire (seeded)
 	CoverClearRadius = 28, -- keep the plaza open
 	Seed = 1337,
+}
+
+-- Which map set the game uses:
+--   "Original"  Workspace.Map (Graveside Isle, above)
+--   "Ours"      Workspace.OurMap, built 1000 studs east of the original (vault: Roadmap.md)
+-- OurMap.Lobby needs parts named "LobbySpawn". Until OurMap has an Arena folder, runs use the
+-- original arena.
+GameConfig.ActiveMap = "Ours"
+GameConfig.OurMap = {
+	Folder = "OurMap",
+	LobbyCenter = Vector3.new(1000, 0, 235),
+	ArenaCenter = Vector3.new(1000, 0, 0),
 }
 
 GameConfig.Data = {

@@ -16,6 +16,9 @@
 --   Zombies steer straight and slide along cover (no pathfinding): props stay chunky and convex,
 --   ~20 studs apart, and the playable floor is perfectly flat.
 --
+-- GameConfig.ActiveMap = "Ours" switches the lobby (and later the arena) to Workspace.OurMap; see
+-- ourPart() below. The original map stays untouched either way.
+--
 -- Public:
 --   MapService.GroundY, MapService:Build(), MapService:GetLobbySpawnCFrame(),
 --   MapService:GetArenaSpawnCFrame(index?), MapService:GetZombieSpawnPosition()
@@ -35,6 +38,26 @@ local MapService = {}
 MapService.GroundY = 1
 
 local zombiePads = {}
+
+-- Parts named `partName` inside Workspace.<OurMap.Folder>.<section>, or nil when ActiveMap is not
+-- "Ours" or that section has none (callers then fall back to the original map).
+local function ourParts(section, partName)
+	if GameConfig.ActiveMap ~= "Ours" then
+		return nil
+	end
+	local root = workspace:FindFirstChild(GameConfig.OurMap.Folder)
+	local folder = root and root:FindFirstChild(section)
+	if not folder then
+		return nil
+	end
+	local parts = {}
+	for _, d in folder:GetDescendants() do
+		if d:IsA("BasePart") and d.Name == partName then
+			table.insert(parts, d)
+		end
+	end
+	return if #parts > 0 then parts else nil
+end
 
 -- Ground cell types: colour + loose-tile colours scattered at their borders
 local CELL = {
@@ -825,6 +848,12 @@ function MapService:GetArenaCellOrigin()
 end
 
 function MapService:GetLobbySpawnCFrame()
+	local pads = ourParts("Lobby", "LobbySpawn")
+	if pads then
+		local pad = pads[math.random(1, #pads)]
+		local offset = Vector3.new(math.random(-3, 3), pad.Size.Y / 2 + 3, math.random(-3, 3))
+		return CFrame.new(pad.Position + offset) * pad.CFrame.Rotation
+	end
 	-- open lobby ground: outside the plateau tiers, inside the beach, away from the side stalls
 	local c = M.LobbyCenter
 	local pos

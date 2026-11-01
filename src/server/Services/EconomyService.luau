@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Classes = require(Shared.Config.Classes)
+local Weapons = require(Shared.Config.Weapons)
 local Util = require(Shared.Util)
 local Remotes = require(Shared.Remotes)
 
@@ -72,6 +73,18 @@ function EconomyService:OnZombieKilled(player, zombie)
 	end
 end
 
+-- Called by MatchService when a wave is cleared: every living participant gets the clear bonus.
+function EconomyService:OnWaveCleared(wave)
+	local cfg = GameConfig.Economy.WaveClearCash
+	local amount = cfg.Base + cfg.PerWave * wave
+	for _, player in Services.MatchService:GetRunPlayers() do
+		if Services.MatchService:IsAliveInRun(player) then
+			self:AddCash(player, amount)
+			notify(player, "Wave " .. wave .. " cleared: +$" .. Util.FormatNumber(amount), "Good")
+		end
+	end
+end
+
 function EconomyService:GetMaxHealth(player)
 	local class = Classes.List[player:GetAttribute("ClassId")] or Classes.List[Classes.Default]
 	local vitality = player:GetAttribute("VitalityLevel") or 0
@@ -119,7 +132,8 @@ function EconomyService:TryUpgrade(player, upgradeId)
 
 	if upgradeId == "Weapon" then
 		Services.CombatService:RefreshWeapon(player)
-		notify(player, "Weapon upgraded to Tier " .. (level + 1), "Good")
+		local def = Weapons.List[player:GetAttribute("WeaponId")]
+		notify(player, "Level " .. (level + 1) .. ": " .. (if def then def.DisplayName else "new gun") .. "!", "Good")
 	elseif upgradeId == "Vitality" then
 		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 		if humanoid then

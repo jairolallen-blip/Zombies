@@ -1,10 +1,11 @@
--- DataService: persistent player profiles (Gems, unlocks, equipped class/weapon, best wave).
+-- DataService: persistent player profiles (Gems, unlocks, equipped class, gun loadout, best wave).
 -- Saved with DataStoreService. If DataStores are unavailable (Studio without API access) it
 -- runs in memory-only mode and never overwrites real data.
 --
 -- Profile shape (DEFAULT_PROFILE). Add a field there and it is back-filled into old saves.
 -- Replicated to the owning client as player attributes:
---   Gems, BestWave, ClassId, EquippedWeapon, OwnedJson ('{"Classes":{...},"Weapons":{...}}')
+--   Gems, BestWave, ClassId, OwnedJson ('{"Classes":{...},"Weapons":{...}}'),
+--   LoadoutJson ('["Pistol","SMG",...]' — one weapon id per Level)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -18,13 +19,31 @@ local Classes = require(Shared.Config.Classes)
 local Weapons = require(Shared.Config.Weapons)
 local Util = require(Shared.Util)
 
+local function freeWeapons()
+	local owned = {}
+	for id, def in Weapons.List do
+		if def.GemCost == 0 then
+			owned[id] = true
+		end
+	end
+	return owned
+end
+
+local function defaultLoadout()
+	local loadout = {}
+	for level = 1, Weapons.Levels do
+		loadout[level] = Weapons.DefaultFor(level)
+	end
+	return loadout
+end
+
 local DEFAULT_PROFILE = {
 	Version = 1,
 	Gems = 0,
 	OwnedClasses = { [Classes.Default] = true },
-	OwnedWeapons = { [Weapons.Default] = true },
+	OwnedWeapons = freeWeapons(), -- reconcile() back-fills new free guns into old saves
 	EquippedClass = Classes.Default,
-	EquippedWeapon = Weapons.Default,
+	Loadout = defaultLoadout(), -- [level] = weapon id
 	BestWave = 0,
 	TotalKills = 0,
 	RunsPlayed = 0,
@@ -133,8 +152,12 @@ function DataService:Load(player)
 	if not Classes.List[data.EquippedClass] then
 		data.EquippedClass = Classes.Default
 	end
-	if not Weapons.List[data.EquippedWeapon] then
-		data.EquippedWeapon = Weapons.Default
+	for level = 1, Weapons.Levels do
+		local id = data.Loadout[level]
+		local def = Weapons.List[id]
+		if not def or def.Level ~= level or not data.OwnedWeapons[id] then
+			data.Loadout[level] = Weapons.DefaultFor(level)
+		end
 	end
 
 	profiles[player] = data
@@ -181,7 +204,7 @@ function DataService:Replicate(player)
 	player:SetAttribute("Gems", data.Gems)
 	player:SetAttribute("BestWave", data.BestWave)
 	player:SetAttribute("ClassId", data.EquippedClass)
-	player:SetAttribute("EquippedWeapon", data.EquippedWeapon)
+	player:SetAttribute("LoadoutJson", HttpService:JSONEncode(data.Loadout))
 	player:SetAttribute("OwnedJson", HttpService:JSONEncode({ Classes = data.OwnedClasses, Weapons = data.OwnedWeapons }))
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if leaderstats then
