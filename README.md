@@ -15,3 +15,7 @@ File suffixes follow Rojo: `.server.luau` = Script, `.client.luau` = LocalScript
 `default.project.json` maps these folders back into Studio.
 
 Only scripts live here. The map, UI style sheets and other instances stay in the place file.
+
+## Notes
+
+`vault/` is an Obsidian vault for design notes and references. Open it with **Open folder as vault**.

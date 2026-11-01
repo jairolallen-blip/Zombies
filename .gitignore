@@ -5,3 +5,8 @@
 sourcemap.json
 Packages/
 ServerPackages/
+
+# Obsidian per-device state
+vault/.obsidian/workspace*.json
+vault/.obsidian/cache
+vault/.trash/
