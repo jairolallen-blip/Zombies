@@ -159,10 +159,22 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
 From the vault notes:
 - a helicopter extraction cutscene on victory
 - endless mode after wave 10
-- **sounds** (none yet: guns, radio, rotor)
 - more city detail (fire escapes, traffic lights, an enterable shop)
-- reload animations
 - group-play balance testing
+- **First-time drop-in (decided 2026-11-02, parked until the game is published).**
+  - A player with no save goes straight into the ocean cutscene and a short solo run (about 3 waves) as the Survivor, before ever seeing the lobby.
+  - The radio commander teaches E, `1` and F as they come up.
+  - It ends with results and a gem bonus, then the lobby with the shops pointed out.
+  - It needs a `TutorialDone` profile flag. Existing saves count as done.
+  - It runs in a **private solo server via TeleportService**, which doesn't work in Studio.
+  - Same plan for the helipad later: on publish, each squad that takes off is teleported to its own private server.
+- Replayability ideas from 2026-11-02, best first:
+  1. pick 1 of 3 perks between waves
+  2. endless mode plus a best-wave leaderboard
+  3. daily challenge run with a modifier
+  4. class mastery cosmetics
+  5. mid-run events (supply drop, blackout, extraction)
+  6. badges
 
 ## 10. Changelog (newest first; one line per task)
 - 2026-11-02: **Engineer nerf.** Early Sentry cooldown is 42s through wave 4, sentry range drops from 65 to 30 (Nest from 75 to 35), and the Nest needs twice the ult charge. HUD ability bar uses the early cooldown (targeted edit on AnimatedSL's live HUDController).
