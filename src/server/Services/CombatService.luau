@@ -23,6 +23,7 @@ local Classes = require(Shared.Config.Classes)
 local Weapons = require(Shared.Config.Weapons)
 local Util = require(Shared.Util)
 local Remotes = require(Shared.Remotes)
+local GunModels = require(Shared.GunModels)
 
 local CombatService = {}
 local Services
@@ -44,60 +45,6 @@ function CombatService:Init(services)
 	Players.PlayerRemoving:Connect(function(player)
 		weaponState[player] = nil
 	end)
-end
-
-local function buildTool(stats)
-	local look = stats.Look
-	local tool = Instance.new("Tool")
-	tool.Name = stats.DisplayName
-	tool.CanBeDropped = false
-	tool.RequiresHandle = true
-	tool.ManualActivationOnly = true
-
-	local function gunPart(name, size, color, material)
-		local p = Instance.new("Part")
-		p.Name = name
-		p.Size = size
-		p.Color = color
-		p.Material = material or Enum.Material.SmoothPlastic
-		p.CanCollide = false
-		p.CanQuery = false
-		p.CanTouch = false
-		p.Massless = true
-		return p
-	end
-
-	-- Handle is the grip; the body extends forward along -Z.
-	local handle = gunPart("Handle", Vector3.new(0.35, 0.9, 0.45), look.Color)
-	handle.Parent = tool
-	local bodyLength = look.Length
-	local body = gunPart("Body", Vector3.new(0.4, 0.5, bodyLength), look.Color, Enum.Material.Metal)
-	local barrel = gunPart("Barrel", Vector3.new(0.2, 0.2, bodyLength * 0.5), Color3.fromRGB(30, 30, 32), Enum.Material.Metal)
-	local stripe = gunPart("TierStripe", Vector3.new(0.42, 0.12, bodyLength * 0.6), stats.TierColor, Enum.Material.Neon)
-	local bodyOffset = CFrame.new(0, 0.5, -bodyLength / 2 + 0.25)
-	local parts = {
-		{ body, bodyOffset },
-		{ barrel, bodyOffset * CFrame.new(0, 0.08, -bodyLength / 2 - bodyLength * 0.25) },
-		{ stripe, bodyOffset * CFrame.new(0, 0.2, 0) },
-	}
-	for _, entry in parts do
-		local p, offset = entry[1], entry[2]
-		p.CFrame = handle.CFrame * offset
-		local weld = Instance.new("Weld")
-		weld.Part0 = handle
-		weld.Part1 = p
-		weld.C0 = offset
-		weld.Parent = p
-		p.Parent = tool
-	end
-	local muzzle = Instance.new("Attachment")
-	muzzle.Name = "Muzzle"
-	muzzle.Position = (bodyOffset * CFrame.new(0, 0.08, -bodyLength / 2 - bodyLength * 0.5)).Position
-	muzzle.Parent = handle
-
-	-- Grip: hold the handle so the body points forward out of the hand
-	tool.Grip = CFrame.new(0, -0.1, 0)
-	return tool
 end
 
 function CombatService:EquipLoadout(player)
@@ -122,7 +69,7 @@ function CombatService:EquipLoadout(player)
 		end
 	end
 	player.Backpack:ClearAllChildren()
-	local tool = buildTool(stats)
+	local tool = GunModels.BuildTool(stats)
 	tool.Parent = player.Backpack
 	humanoid:EquipTool(tool)
 end
@@ -238,7 +185,7 @@ function CombatService:_onFire(player, origin, dirs)
 		local from = if muzzle then muzzle.WorldPosition else head.Position
 		for _, other in Players:GetPlayers() do
 			if other ~= player then
-				Remotes.Effect:FireClient(other, "Tracer", { From = from, To = firstEnd })
+				Remotes.Effect:FireClient(other, "Tracer", { From = from, To = firstEnd, WeaponId = stats.Id })
 			end
 		end
 	end

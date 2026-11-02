@@ -300,8 +300,8 @@ function HUDController:_update(dt)
 	end
 	local tier = player:GetAttribute("WeaponTier") or 1
 	local vitality = player:GetAttribute("VitalityLevel") or 0
-	local nextGun = Weapons.List[nextLoadoutGun(tier + 1)]
-	showUpgrade(ui.UpgradeWeapon, keyName(binds.UpgradeWeapon), "Weapon", tier, "Lv " .. (tier + 1) .. ": " .. (if nextGun then nextGun.DisplayName else "?"))
+	local nextGun = tier < Weapons.Levels and Weapons.List[nextLoadoutGun(tier + 1)]
+	showUpgrade(ui.UpgradeWeapon, keyName(binds.UpgradeWeapon), "Weapon", tier, if nextGun then "Lv " .. (tier + 1) .. ": " .. nextGun.DisplayName else "Weapon")
 	showUpgrade(ui.UpgradeVitality, keyName(binds.UpgradeVitality), "Vitality", vitality, "Vitality +" .. GameConfig.Upgrades.Vitality.HealthPerLevel .. " HP")
 end
 

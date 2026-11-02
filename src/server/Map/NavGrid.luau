@@ -12,7 +12,7 @@
 -- Public:
 --   NavGrid.Build(center, halfSize, cellSize, groundY, ignore, lattice?)
 --       ignore = instances to skip in the scan; lattice = a corner of the map's ground cell grid
---       (MapService:GetArenaCellOrigin()) so nav cells line up with terrace/graveyard cells
+--       (MapService:GetNavBounds()) so nav cells line up with terrace/graveyard cells
 --   NavGrid.GetDirection(fromPos, targetPos) -> unit Vector3 (flat) or nil (no grid / no route / arrived)
 --   NavGrid.IsWalkable(pos) -> boolean
 --   NavGrid.Stats() -> string

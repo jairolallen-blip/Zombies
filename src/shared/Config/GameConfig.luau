@@ -46,7 +46,8 @@ GameConfig.Economy = {
 	GemsPerWaveCleared = 5, -- Gems awarded at end of run
 	GemsPerKill = 0.2,
 	-- cash every living run player gets when a wave is cleared: Base + PerWave * wave
-	WaveClearCash = { Base = 75, PerWave = 25 },
+	-- (tuned so solo players reach gun Level 2 ~wave 2, Level 3 ~wave 5, Level 4 ~wave 9; vault: Weapons.md)
+	WaveClearCash = { Base = 100, PerWave = 150 },
 }
 
 -- In-run Cash upgrades. Keys bound in GameConfig.Keybinds.
@@ -98,40 +99,15 @@ GameConfig.Keybinds = {
 	UpgradeVitality = Enum.KeyCode.Two,
 }
 
--- "Graveside Isle": a stud-style village island in the ocean (docs/ART_STYLE.md). Flat grass arena
--- with jagged dirt paths, a well in the plaza, cottages/trees/rocks/fences crowding the edge, and
--- 8 graveyards (4 corners + 4 side midpoints) where zombies rise. Built by MapService:Build().
-GameConfig.Map = {
-	ArenaCenter = Vector3.new(0, 0, 0),
-	ArenaSize = 200, -- square play area, studs per side (invisible walls at the edge)
-	CellSize = 4, -- ground is built from CellSize x CellSize cells, merged into rectangles
-	EdgeDepth = 20, -- band along the arena edge filled with cottages, trees, rocks (behind a fence)
-	BeachWidth = 18, -- jagged sand ring between the arena and the ocean
-	WaterLevel = -1.5, -- ocean surface (Terrain water); ground top is at Y = 1
-	PlazaRadius = 18, -- dirt plaza around the centre well
-	WellRadius = 4, -- players spawn in a ring just outside the well
-	GraveyardRadius = 13, -- dirt patch + tombstones around each zombie spawn
-	LobbyCenter = Vector3.new(0, 0, 235),
-	LobbySize = 80, -- lobby island (grass core; beach added around it)
-	LobbyTier1 = 20, -- half-size of the lower walkable plateau (multiple of CellSize)
-	LobbyTier2 = 12, -- half-size of the upper plateau with the tower
-	ZombieSpawnCount = 8, -- graveyards: corners + side midpoints
-	CoverCount = 16, -- interior props: trees, rocks, crate stacks, bushes, stalls, campfire (seeded)
-	CoverClearRadius = 28, -- keep the plaza open
-	Seed = 1337,
-}
-
--- Which map set the game uses:
---   "Original"  Workspace.Map (Graveside Isle, above)
---   "Ours"      Workspace.OurMap, built 1000 studs east of the original (vault: Roadmap.md)
--- OurMap.Lobby needs parts named "LobbySpawn"; OurMap.Arena needs "PlayerSpawn" + "ZombieSpawn" parts
--- (built by Server/Map/OurLobby and Server/Map/OurCity). Without an Arena, runs use the original.
-GameConfig.ActiveMap = "Ours"
+-- The map: Workspace.OurMap (vault: Lobby.md, City Map.md), built and baked in Edit mode by
+-- Server/Map/OurLobby (Lobby: "LobbySpawn" parts, helipad "Pad") and Server/Map/OurCity
+-- (Arena: "PlayerSpawn" + "ZombieSpawn" parts). Read at runtime by MapService.
 GameConfig.OurMap = {
 	Folder = "OurMap",
 	LobbyCenter = Vector3.new(1000, 0, 235),
 	ArenaCenter = Vector3.new(1000, 0, 0),
 	ArenaHalfSize = 138, -- OurCity: 23 tiles x 12 studs / 2 (zombie nav grid covers this square)
+	NavCellSize = 4, -- zombie NavGrid cell (OurCity's 12-stud tiles are 3 x 3 cells)
 	-- warm, hazy sunset applied at server start (MapService:ApplyAtmosphere)
 	Atmosphere = {
 		ClockTime = 17.4,

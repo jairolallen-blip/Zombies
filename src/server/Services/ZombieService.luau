@@ -67,7 +67,7 @@ end
 
 function ZombieService:BuildNavGrid()
 	local center, halfSize, lattice = Services.MapService:GetNavBounds()
-	local cells, blocked = NavGrid.Build(center, halfSize, GameConfig.Map.CellSize, Services.MapService.GroundY, {
+	local cells, blocked = NavGrid.Build(center, halfSize, GameConfig.OurMap.NavCellSize, Services.MapService.GroundY, {
 		folder,
 		Services.CombatService.EffectsFolder,
 	}, lattice)

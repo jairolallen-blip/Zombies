@@ -7,7 +7,7 @@ Our take on *Survive a Million Zombies*, built next to the friend's version. Eac
 | 1 | Lobby and loadout | [[Lobby]] | **Done** (2026-11-01) |
 | 2 | Main map: apocalyptic city | [[City Map]] | **Done** (2026-11-01) |
 | 3 | Drop-in cutscene, intermission, commander notice | [[Match Start]] | **Done** (2026-11-01) |
-| 4 | Gun functionality (4 levels) | [[Weapons]] | Not started |
+| 4 | Gun functionality (4 levels) | [[Weapons]] | **Done** (2026-11-01) |
 | 5 | Zombie models and AI | [[Zombies]] | Not started |
 | 6 | Zombie spawns (random, red warning circle) | [[Spawning]] | Not started |
 | 7 | Waves (10 rounds) and final boss | [[Waves and Boss]] | Not started |
@@ -25,6 +25,9 @@ These come from the current Studio game and can be searched in Graphify.
 - `EconomyService`: cash per kill, team share, `Weapon` tier upgrade (multipliers in `GameConfig.WeaponTiers`).
 - `MatchService`: lobby countdown → break/wave loop → results.
 - `ZombieService`, `MapService` (procedural "Graveside Isle"), `CombatService`, `AbilityService`.
+
+## Project history
+- **2026-11-01:** during phase 4, the friend's script sync overwrote our edits in the shared Team Create place. We restored everything from GitHub. We looked at their additions (a stud-style city map, plus props: traffic lights, hydrants, signs, weeds) and **kept none of it**, because the studs style clashes with our hazy city and nothing in it was gameplay. Then we deleted their map, the original map generator and its `Props` and `Bricks` helpers. The place now holds only our lobby, our city and our code.
 
 ## Reference images
 - `MAP REFERENCES/`: zombie city shots for phase 2.

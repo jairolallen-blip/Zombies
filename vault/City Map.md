@@ -6,7 +6,7 @@ Part of the [[Roadmap]]. Our arena, centred at **x = 1000** (next to the [[Lobby
 - **Built** by `Server/Map/OurCity`, which reads the tile plan below and bakes it into `Workspace.OurMap.Arena`: about 3,600 parts and 36 lights. To change the layout, edit `LAYOUT` and rebuild (instructions are in the module header).
 - **Playtested:** `NavCheck` found a route from **all 12** zombie spawns to the square. In wave 1, all 10 zombies reached the player within about 9 seconds from across the city, with none stuck.
 - **Spawn clearance:** the builder skips any car, tree, stall or barrier within 13 studs of a zombie spawn, so pads never end up under props.
-- **Atmosphere:** a warm, hazy sunset (`GameConfig.OurMap.Atmosphere`) is applied at server start by `MapService:ApplyAtmosphere()` when `ActiveMap = "Ours"`. Edit mode keeps the original map's lighting.
+- **Atmosphere:** a warm, hazy sunset (`GameConfig.OurMap.Atmosphere`) is applied at server start by `MapService:ApplyAtmosphere()`. Edit mode keeps the original map's lighting.
 - **Zombie nav** now covers whichever arena is active (`MapService:GetNavBounds()`).
 
 ## Ideas for later passes

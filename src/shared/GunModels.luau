@@ -224,7 +224,7 @@ function GunModels.BuildTool(stats)
 	tool:SetAttribute("WeaponId", stats.Id)
 
 	local handle, handleCF
-	for _, def in spec do
+	for _, def in ipairs(spec) do -- ipairs: skip the Muzzle/Hub fields
 		if def[1] == "Handle" then
 			handle, handleCF = makePart(def, stats.TierColor)
 			handle.Massless = false
@@ -252,7 +252,7 @@ function GunModels.BuildTool(stats)
 		hub.Parent = tool
 	end
 
-	for _, def in spec do
+	for _, def in ipairs(spec) do
 		if def[1] ~= "Handle" then
 			local p, cf, onHub = makePart(def, stats.TierColor)
 			if onHub and hub then

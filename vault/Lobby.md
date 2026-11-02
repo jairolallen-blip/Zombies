@@ -26,7 +26,7 @@ A fortified safehouse inside a ruined city at **x = 1000** (the old map is at x 
 - **Sides:** stacked shipping containers, with more ruins behind them. **South:** jersey barriers and a chain-link fence.
 
 ## How it's wired (code)
-- `GameConfig.ActiveMap = "Ours"` and `GameConfig.OurMap` (centres at x = 1000). Set it to `"Original"` to use the friend's map again.
+- `GameConfig.OurMap` (centres at x = 1000) is **the only map**. On 2026-11-01 the original "Graveside Isle" generator, the friend's city map, `Props` and `Bricks` were deleted, and MapService now only reads our marker parts (see [[Roadmap#Project history]]).
 - `Server/Map/OurLobby` builds `Workspace.OurMap.Lobby`. It's baked in Edit mode (rebuild instructions are in its header), so it can be hand-edited afterwards.
 - `MapService:GetLobbySpawnCFrame()` uses the parts named `LobbySpawn` in our lobby.
 - **The arena is still the original one** until our city exists, since `OurMap` has no `Arena` yet. That's phase 2.

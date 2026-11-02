@@ -13,6 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Remotes = require(Shared.Remotes)
+local Weapons = require(Shared.Config.Weapons)
 local UIKit = require(script.Parent.Parent.UI.UIKit)
 
 local player = Players.LocalPlayer
@@ -57,36 +58,70 @@ local function ring(position, radius, color, time, startTransparency)
 	return p
 end
 
-function EffectsController:Tracer(from, to, color)
+-- width / fade: per-gun look (Weapons.List[id].Tracer); thick tracers (>= 0.25) also glow
+function EffectsController:Tracer(from, to, color, width, fade)
 	local length = (to - from).Magnitude
 	if length < 0.5 then
 		return
 	end
+	width = width or 0.12
+	fade = fade or 0.1
 	local p = fxPart({
-		Size = Vector3.new(0.12, 0.12, length),
+		Size = Vector3.new(width, width, length),
 		CFrame = CFrame.lookAt(from, to) * CFrame.new(0, 0, -length / 2),
 		Color = color or Color3.fromRGB(255, 230, 150),
 		Transparency = 0.2,
 	})
-	tween(p, 0.1, { Transparency = 1, Size = Vector3.new(0.04, 0.04, length) })
-	Debris:AddItem(p, 0.12)
+	if width >= 0.25 then
+		local glow = fxPart({ Size = Vector3.new(width * 2.4, width * 2.4, length), CFrame = p.CFrame, Color = p.Color, Transparency = 0.75 })
+		tween(glow, fade, { Transparency = 1 })
+		Debris:AddItem(glow, fade + 0.02)
+	end
+	tween(p, fade, { Transparency = 1, Size = Vector3.new(width * 0.3, width * 0.3, length) })
+	Debris:AddItem(p, fade + 0.02)
 end
 
-function EffectsController:MuzzleFlash(attachment, position)
+-- Tracer styled for a weapon id
+function EffectsController:WeaponTracer(weaponId, from, to)
+	local style = Weapons.List[weaponId] and Weapons.List[weaponId].Tracer
+	if style then
+		self:Tracer(from, to, style.Color, style.Width, style.Fade)
+	else
+		self:Tracer(from, to)
+	end
+end
+
+function EffectsController:MuzzleFlash(attachment, position, scale, color)
+	scale = scale or 1
 	local p = fxPart({
 		Shape = Enum.PartType.Ball,
-		Size = Vector3.new(0.9, 0.9, 0.9),
+		Size = Vector3.one * 0.9 * scale,
 		Position = position,
-		Color = Color3.fromRGB(255, 200, 90),
+		Color = color or Color3.fromRGB(255, 200, 90),
 		Transparency = 0.1,
 	})
 	local light = Instance.new("PointLight")
 	light.Color = p.Color
-	light.Range = 10
+	light.Range = 10 * scale
 	light.Brightness = 3
 	light.Parent = p
-	tween(p, 0.06, { Transparency = 1, Size = Vector3.new(0.2, 0.2, 0.2) })
+	tween(p, 0.06, { Transparency = 1, Size = Vector3.one * 0.2 * scale })
 	Debris:AddItem(p, 0.07)
+end
+
+-- A brass casing flicked out to the right of the gun
+function EffectsController:Shell(position, right)
+	local shell = fxPart({
+		Size = Vector3.new(0.08, 0.08, 0.2),
+		Position = position,
+		Color = Color3.fromRGB(200, 160, 60),
+		Material = Enum.Material.Metal,
+		Anchored = false,
+		CanCollide = true,
+	})
+	shell.AssemblyLinearVelocity = right * (8 + math.random() * 4) + Vector3.new(0, 10 + math.random() * 4, 0)
+	shell.AssemblyAngularVelocity = Vector3.new(math.random(-20, 20), math.random(-20, 20), math.random(-20, 20))
+	Debris:AddItem(shell, 1.2)
 end
 
 function EffectsController:DamageNumber(position, amount, headshot, killed)
@@ -111,7 +146,11 @@ function EffectsController:DamageNumber(position, amount, headshot, killed)
 end
 
 Handlers.Tracer = function(data)
-	EffectsController:Tracer(data.From, data.To)
+	if data.WeaponId then
+		EffectsController:WeaponTracer(data.WeaponId, data.From, data.To)
+	else
+		EffectsController:Tracer(data.From, data.To)
+	end
 end
 
 Handlers.Explosion = function(data)
