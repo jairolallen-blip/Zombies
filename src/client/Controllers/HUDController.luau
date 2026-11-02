@@ -271,7 +271,8 @@ function HUDController:_update(dt)
 	ui.Ability.Name.Text = class.Ability.Name
 	ui.Ability.Status.Text = if remaining > 0 then string.format("%.1fs", remaining) else "READY"
 	ui.Ability.Status.TextColor3 = if remaining > 0 then T.SubText else T.Cash
-	ui.Ability.Fill.Size = UDim2.fromScale(1 - math.clamp(remaining / class.Ability.Cooldown, 0, 1), 1)
+	local early = class.Ability.EarlyWaves and (GameState:GetAttribute("Wave") or 0) <= class.Ability.EarlyWaves
+	ui.Ability.Fill.Size = UDim2.fromScale(1 - math.clamp(remaining / (if early then class.Ability.EarlyCooldown else class.Ability.Cooldown), 0, 1), 1)
 	local charge = player:GetAttribute("UltCharge") or 0
 	local max = GameConfig.Ultimate.Max
 	ui.Ultimate.Name.Text = class.Ultimate.Name

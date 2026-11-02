@@ -44,6 +44,7 @@ If any are false, someone overwrote Studio. **Restore from GitHub with §6's imp
   - **The path** is built on the server by `MapService:GetDeployFlight`, which raycasts the roofs under the rotor span along a bezier with a slope-limited clearance floor, so the helicopter never clips a building. It's sent as JSON in GameState `DeployPath`. It's built server-side because StreamingEnabled is on and a client may not have every building loaded.
   - **Sound + effects:** cabin wind that swells at the door, sea wash and rotor-wash spray while low over the waves, faint radio chatter, an intercom squelch before the pilot speaks, wind streaks past the door, a whoosh, shake and FOV kick on the jump, then the chute opening and falling wind until landing. Ids are in the `Config/Sounds` deploy block, loops come from `SoundController:Loop`, and one-shot timings are the `CUES` table in CutsceneController.
 - **Classes** (`Config/Classes`): Survivor (free), Scout 350, Medic 500, Engineer 750, Bruiser 750 Gems. Each has an ability on `E` and an ultimate on `F`.
+  - **Engineer balance** (2026-11-02): the Sentry has a 42s cooldown through wave 4, then 22s. Sentries only fire at zombies within 30 studs (35 for the Nest). Sentry Nest charges at half speed (`Ultimate.ChargeMult = 0.5`), so it needs twice the kills. These optional class fields are `Ability.EarlyCooldown` and `EarlyWaves`, and `Ultimate.ChargeMult`.
 - **Guns** (`Config/Weapons`, models in `Shared/GunModels`): 4 levels, upgraded in-run for $500 / $2,500 / $10,000 (key `1` or the HUD button). The first gun of each level is free; the others cost Gems.
   - **Level 1:** Pistol, Revolver
   - **Level 2:** SMG, Pump Shotgun
@@ -164,6 +165,7 @@ From the vault notes:
 - group-play balance testing
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: **Engineer nerf.** Early Sentry cooldown is 42s through wave 4, sentry range drops from 65 to 30 (Nest from 75 to 35), and the Nest needs twice the ult charge. HUD ability bar uses the early cooldown (targeted edit on AnimatedSL's live HUDController).
 - 2026-11-02: **class figures + barracks upgrade.** `ClassFigures` now gives each class a face, vest, gloves, a pose and class kit. The barracks is a tent on a deck with string lights, class-coloured pedestal rings, nameplates and spotlights. It was rebuilt in place with the new `OurLobby.RebuildBarracks()`. Three debris chunks overlapping the deck were deleted from the baked lobby, and `buildDebris` now skips that area.
 - 2026-11-02: lobby info chip scaled to 0.75 and moved to (16, 68), below Roblox's top-bar buttons.
 - 2026-11-02: parachute follow-up. The full-length arms are back (they fill the screen edges, which the owner prefers). Landing ends the fall at once: the client ends the drop view when the canopy disappears, and `_parachute` clears that player's `Deploying` on touchdown. Before, the fall view lingered about 1s until the shared timer ran out.

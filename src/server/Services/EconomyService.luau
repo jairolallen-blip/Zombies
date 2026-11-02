@@ -45,6 +45,8 @@ end
 
 function EconomyService:AddUltCharge(player, amount)
 	local max = GameConfig.Ultimate.Max
+	local class = Classes.List[player:GetAttribute("ClassId")]
+	amount *= class and class.Ultimate and class.Ultimate.ChargeMult or 1
 	player:SetAttribute("UltCharge", math.min(max, (player:GetAttribute("UltCharge") or 0) + amount))
 end
 

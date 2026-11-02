@@ -13,6 +13,8 @@
 --
 -- Class fields: DisplayName, Description, GemCost (0 = default), Order, Color,
 --   HealthBonus (added max HP), SpeedBonus (added WalkSpeed), DamageTakenMult (1 = normal)
+-- Optional: Ability.EarlyCooldown + EarlyWaves (longer cooldown up to that wave),
+--   Ultimate.ChargeMult (ult charge gain multiplier; 0.5 = needs twice the kills)
 
 local Classes = {}
 
@@ -76,12 +78,15 @@ Classes.List = {
 			Name = "Sentry",
 			Type = "Turret",
 			Cooldown = 22,
-			Params = { Count = 1, Duration = 18, Damage = 14, FireRate = 6, Range = 65 },
+			EarlyCooldown = 42, -- waves 1-4: sentries out-shot the weak early zombies
+			EarlyWaves = 4,
+			Params = { Count = 1, Duration = 18, Damage = 14, FireRate = 6, Range = 30 }, -- Range = how close a zombie must be before it fires
 		},
 		Ultimate = {
 			Name = "Sentry Nest",
 			Type = "Turret",
-			Params = { Count = 4, Duration = 25, Damage = 18, FireRate = 7, Range = 75 },
+			ChargeMult = 0.5, -- twice the kills of other ultimates
+			Params = { Count = 4, Duration = 25, Damage = 18, FireRate = 7, Range = 35 },
 		},
 	},
 	Bruiser = {

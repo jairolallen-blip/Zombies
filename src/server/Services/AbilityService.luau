@@ -17,6 +17,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Classes = require(Shared.Config.Classes)
 local Remotes = require(Shared.Remotes)
+local GameState = require(Shared.GameState)
 
 local AbilityService = {}
 local Services
@@ -213,7 +214,8 @@ function AbilityService:Use(player, slot, aimPosition)
 		if serverNow() < (player:GetAttribute("AbilityReadyAt") or 0) then
 			return
 		end
-		player:SetAttribute("AbilityReadyAt", serverNow() + ability.Cooldown)
+		local early = ability.EarlyWaves and (GameState:GetAttribute("Wave") or 0) <= ability.EarlyWaves
+		player:SetAttribute("AbilityReadyAt", serverNow() + (if early then ability.EarlyCooldown else ability.Cooldown))
 	else
 		if (player:GetAttribute("UltCharge") or 0) < GameConfig.Ultimate.Max then
 			return
