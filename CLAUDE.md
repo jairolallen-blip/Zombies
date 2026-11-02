@@ -164,6 +164,7 @@ From the vault notes:
 - group-play balance testing
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: lobby info chip scaled to 0.75 and moved to (16, 68), below Roblox's top-bar buttons.
 - 2026-11-02: parachute follow-up. The full-length arms are back (they fill the screen edges, which the owner prefers). Landing ends the fall at once: the client ends the drop view when the canopy disappears, and `_parachute` clears that player's `Deploying` on touchdown. Before, the fall view lingered about 1s until the shared timer ran out.
 - 2026-11-02: **first-person parachute drop.** Freefall, then a ram-air canopy that opens with a jolt; you look up at it and sway down holding the toggles. Your body and gun are hidden locally during the fall. `DropHeight` 75→110 and `FallSpeed` 30→22, so the chute ride lasts about 4s. Only a targeted line edit went into AnimatedSL's live `GameConfig`.
 - 2026-11-02: **deploy cutscene sound + effects** (wind, sea, spray, radio chatter, door streaks, jump whoosh, chute, fall wind). Only two small inserts went into AnimatedSL's live `Sounds` and `SoundController`; their footstep, reload and impact work there is still Studio-only, so the repo copies are older plus the same inserts.

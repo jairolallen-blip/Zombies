@@ -53,7 +53,9 @@ function LobbyController:Init()
 	local gui = UIKit.Screen("Lobby")
 	ui.Root = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = gui })
 
-	local chip = UIKit.Panel({ Position = UDim2.fromOffset(20, 20), Size = UDim2.fromOffset(520, 150), Parent = ui.Root })
+	-- below Roblox's top-bar buttons (the screen ignores the inset), scaled down to stay out of the way
+	local chip = UIKit.Panel({ Position = UDim2.fromOffset(16, 68), Size = UDim2.fromOffset(520, 150), Parent = ui.Root })
+	UIKit.new("UIScale", { Scale = 0.75, Parent = chip })
 	UIKit.Padding(12).Parent = chip
 	UIKit.Label({ Text = "SURVIVE A MILLION ZOMBIES", Size = UDim2.new(1, 0, 0, 28), TextSize = 24, TextColor3 = Color3.fromRGB(150, 255, 90), TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
 	ui.Gems = UIKit.Label({ Position = UDim2.fromOffset(0, 30), Size = UDim2.new(0.55, 0, 0, 24), TextSize = 20, TextColor3 = T.Gem, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
