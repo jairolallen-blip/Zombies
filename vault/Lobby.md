@@ -34,11 +34,20 @@ Each class figure has its own pose and kit (`Shared/ClassFigures`, upgraded 2026
 
 The lobby screen keeps only a small chip (Gems, best wave, class, gun lineup, where the shops are) and the take-off status. Both scale with the screen height (`UIKit.AutoScale`, 2026-11-02). The chip sits at 0.75 on top of that, and the status bar is 560 wide so the prompt fits on one line.
 
-## Helipad ready zone (2026-11-02)
-There's no Ready button; **standing on the helipad is being ready.** That way nobody is rushed while shopping.
-- **The countdown only runs while someone is on the pad.** It runs 10s, or 4s when every lobby player is on it. Step off and it resets.
-- **Only players on the pad deploy.** Everyone else keeps shopping and joins the next run.
-- **Code:** `MapService:IsOnHelipad` (a radius check on the `Pad` cylinder) sets `Ready` each tick in `MatchService:_lobbyPhase`. The tunables are in `GameConfig.Lobby`.
+## Flight Line and squads (2026-11-02, replaces the single helipad)
+The lobby is for many players now, so no one waits for a pad and every squad gets its **own private server**.
+- **The Flight Line:** a fenced deck north of the courtyard, through a gate where the middle north ruin stood (a "FLIGHT LINE" sign over it). It has **4 helipads** in a 2 × 2 grid, joined by taxi lines, with floodlights at the corners. Pad 1 is the old courtyard helipad, moved; pads 2–4 are copies of it (same glow, edge lights and sign). Each pad model has the attribute `PadId`. Built by `Server/Map/FlightLine`, which `OurLobby.Build` calls last.
+- **One squad per pad:**
+  - The **first player to step on an empty pad is the host.** They pick the mission on the squad panel: squad size 1–4, difficulty (Normal; **Hard is locked, "SOON"**), and map (Dead City; a locked **???** slot for future maps). Choices live in `GameConfig.Lobby`.
+  - Others step on until the squad is full; later arrivals get "Pad n is full". If the host steps off, the next in line takes over. An empty pad goes back to the defaults.
+  - **The countdown** runs 15s while anyone is on the pad, or 4s once the squad is full. Step off to leave.
+  - The pad's sign shows `PAD n · OPEN` or `PAD n · 2/4`.
+- **Take-off:**
+  - **Live:** the squad is teleported together into a **new reserved server of this same place** (`TeleportOptions.ShouldReserveServer`), with the mission in the teleport data. It's one place file, so there's nothing to keep in sync between places. There, `MatchService` waits for the squad (up to 20s after the first arrives, behind a "waiting for your squad" screen), plays one run, shows results, then teleports everyone back to a lobby server together. Profiles are saved just before each teleport.
+  - **Studio** can't teleport, so a take-off plays the run in the lobby server like before, one run at a time (other pads show "RUN IN PROGRESS").
+- **First-time players** (profile `TutorialDone = false`; any save with a run counts as done) are teleported straight into a **solo tutorial run** on joining a live lobby. It's 3 waves, no boss, and the radio gives one tip per wave (shoot and reload; upgrades and ability; ultimate). It pays the normal Gems (victory bonus included, but it isn't counted as a win). It's marked done even on a loss. In Studio, test it with `SAMZ_Debug:Invoke("Tutorial")`.
+- **Code:** `Server/Services/QueueService` (pads, host options, teleports, the tutorial send-off), `MatchService.IsMatchServer` (a reserved server), `:RunMatch(players, options)`, `MapService:GetPads` / `:GetPadAt`, the remote `SetPadOptions`, and GameState `ServerKind`, `Pad1..4` (JSON), `Difficulty`, `MapId` and `Tutorial`. On the client, the squad panel is in `LobbyController`.
+- **Live lobby servers delete the city** (`MapService:Init`) since they never run a match.
 
 ## Commendations board (2026-11-02)
 This is the achievements station, **south of the plaza and facing it**, so players pass it every time they come back from a run.
@@ -49,10 +58,10 @@ This is the achievements station, **south of the plaza and facing it**, so playe
 - **Toasts:** a message pops up mid-run when you finish one.
 
 ## Our lobby build
-A fortified safehouse inside a ruined city at **x = 1000, z = 380**, on its own island south of the arena city (the old map is at x = 0). Its layout:
+A fortified safehouse inside a ruined city at **x = 1000, z = 1000** (moved from z = 380 on 2026-11-02, out of sight of the city; the Flight Line reaches north to z = 810), on its own island south of the arena city. Its layout:
 - **Foundation** (2026-11-02): one 184 × 172 slate slab under the whole footprint, top at Y = 0.95 and reaching below the seabed. Terrain water inside it is cleared, so no ocean shows between buildings. Before this, only the 124-stud asphalt floor existed and the ruins and containers hung over water. The lobby also moved from z = 235 to 380, which leaves about 140 studs of sea between it and the city.
-- **North:** ruined towers, and in front of them the **Deploy Zone helipad**, which will be the take-off point for the drop-in cutscene (see [[Match Start]]).
-- **Centre:** a concrete plaza with a flagpole and burning barrels. Players spawn in a ring around it, facing the helipad.
+- **North:** ruined towers, with a gate in the middle to the **Flight Line** (see above and [[Match Start]]).
+- **Centre:** a concrete plaza with a flagpole and burning barrels. Players spawn in a ring around it, facing north.
 - **West:** the armory tent (the loadout spot). **East:** a command post behind sandbags.
 - **Sides:** stacked shipping containers, with more ruins behind them. **South:** jersey barriers and a chain-link fence.
 
@@ -66,5 +75,4 @@ A fortified safehouse inside a ruined city at **x = 1000, z = 380**, on its own 
 
 ## Notes for later
 - Lighting and sky are still the original map's bright daytime look. Give our map its own atmosphere (overcast, fog, dusk) in [[City Map]], switching on `ActiveMap`.
-- The helipad is decorative for now. In phase 3 it's where the drop-in cutscene starts.
 - **Shared code:** the loadout and upgrade changes also apply to the friend's version.

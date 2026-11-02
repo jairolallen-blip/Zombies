@@ -1,7 +1,7 @@
 -- Radio: the commander's lines (vault: Match Start.md). PURE DATA.
 -- MatchService picks a random line for an event and sends it to run players (Remotes.Radio);
 -- Client/Controllers/RadioController shows it next to the commander's portrait.
--- "{wave}" is replaced with the wave number.
+-- "{wave}" is replaced with the wave number. Radio.TutorialTips are sent as-is during the tutorial.
 
 local Radio = {}
 
@@ -60,6 +60,23 @@ Radio.Lines = {
 		"Squad's gone dark... Overwatch out.",
 		"We lost them. Pull the bird back.",
 	},
+	-- First-time players' training run (MatchService uses "Tutorial<event>" over "<event>" when it exists)
+	TutorialDeploy = {
+		"Rookie, this is Overwatch. Training drop: three waves in the old city, then I bring you home.",
+	},
+	TutorialVictory = {
+		"That's how it's done, rookie. Bird's coming to take you to the safehouse. Gear up there, then pick a pad on the Flight Line.",
+	},
+	TutorialOverrun = {
+		"Rough first day, rookie. Pulling you out to the safehouse. Gear up and try again from the Flight Line.",
+	},
+}
+
+-- Tutorial: one tip a few seconds into each wave (by wave number)
+Radio.TutorialTips = {
+	"Click to shoot, R to reload. Every kill pays cash.",
+	"Got cash? Press 1 to upgrade your gun, 2 for more health. E is your class ability.",
+	"Kills charge your ultimate. When the bar's full, hit F!",
 }
 
 function Radio.Pick(event, vars)

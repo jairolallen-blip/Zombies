@@ -4,7 +4,7 @@
 --   local c = m:Clone(); c.Parent = m.Parent; require(c).Build(); c:Destroy()
 --
 -- Layout (north = -Z):
---   north   ruined building facades, helipad "deploy zone" in front of them
+--   north   ruined building facades; a gate through them leads to the Flight Line (4 helipads, Map/FlightLine)
 --   centre  concrete plaza with a flagpole and burning barrels; LobbySpawn pads ring it
 --   west    armory tent (gun shop)       east  barracks: class mannequins behind sandbags
 --   both shops have a ProximityPrompt (attribute Shop = "Armory" | "Classes") that opens
@@ -619,6 +619,7 @@ function OurLobby.Build()
 	buildDebris(lobby)
 	buildBounds(lobby)
 	lobby.Parent = root
+	require(script.Parent.FlightLine).Build(lobby) -- the 4-pad take-off deck north of the courtyard
 	return lobby
 end
 

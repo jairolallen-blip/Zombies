@@ -1,5 +1,5 @@
 -- LobbyService: lobby-only actions — equip class, put a gun in its Loadout slot (one per Level),
--- unlock with Gems. (Ready = standing on the helipad; MatchService sets it.)
+-- unlock with Gems. (Taking off = standing on a Flight Line pad; QueueService.)
 -- All requests are rejected while the player is in a run.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

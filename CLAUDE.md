@@ -30,9 +30,9 @@ return S.Services.MatchService.Source:find("_deploy") ~= nil, S.Services.DataSer
 If any are false, someone overwrote Studio. **Restore from GitHub with §6's import**, then check whether they added anything worth keeping (diff their scripts against `git show <commit>:src/...`).
 
 ## 3. Game content (current numbers live in config; these are summaries)
-**Flow:** Lobby (10s countdown that runs **only while someone stands on the helipad**; 4s when everyone is on it; only players on the pad deploy) → **Deploy** (18s first-person helicopter cutscene, parachute drop) → 12s intermission → waves 1–10 with an 8s break between each → **Victory** after wave 10, or **Overrun** if everyone dies → Results → Lobby.
+**Flow:** Lobby (squads form on the 4 **Flight Line pads**: 15s countdown while anyone is on a pad, 4s once its squad is full; live, each squad is teleported into **its own reserved server**) → **Deploy** (18s first-person helicopter cutscene, parachute drop) → 12s intermission → waves 1–10 with an 8s break between each → **Victory** after wave 10, or **Overrun** if everyone dies → Results → back to a lobby server. **New players** skip the lobby: a 3-wave solo tutorial run first (see Lobby below).
 
-- **Lobby** (`vault/Lobby.md`): a ruined-city safehouse at x = 1000. The screen shows only a small chip (Gems, best wave, class, gun lineup, shop locations) and the take-off status. Choices happen in two **walk-up shops**, opened with `E` at their ProximityPrompt:
+- **Lobby** (`vault/Lobby.md`): a ruined-city safehouse at (1000, 0, 1000), far south of the city. The screen shows only a small chip (Gems, best wave, class, gun lineup, shop locations) and the take-off status. Choices happen in two **walk-up shops**, opened with `E` at their ProximityPrompt:
   - **Armory** (west tent): level tabs 1–4, and a card per gun with a rotating 3D model, stat bars, and equip or unlock-with-Gems.
   - **Barracks** (east): class mannequins on pedestals, and a card per class with a rotating figure, abilities, traits, and equip or unlock.
   - **Commendations board** (south, facing the plaza): achievements that pay Gems.
@@ -43,7 +43,9 @@ If any are false, someone overwrote Studio. **Restore from GitHub with §6's imp
     - Old saves are credited from `TotalKills`, `RunsPlayed` and `BestWave`.
   - The shops close with X, by walking away, or when a run starts.
   - Rebuild one lobby area without touching hand edits: `require(<clone of OurLobby>).Rebuild("Barracks" | "Commendations")`.
-  - **The helipad (north) is the ready zone.** Each lobby tick, `MapService:IsOnHelipad` sets the player's `Ready` attribute. There's no Ready button, and the `SetReady` remote is gone.
+  - **Flight Line + squads** (2026-11-02, `Server/Map/FlightLine`, `Services/QueueService`): a gate in the north ruins leads to a deck with **4 helipads** (`PadId` 1-4). The first player on an empty pad is its **host** and picks squad size 1-4, difficulty (Hard locked "SOON") and map (one locked "???" slot) on the squad panel (`SetPadOptions`, choices in `GameConfig.Lobby`). Others join until full.
+  - **Servers:** one place file. A live squad is teleported into a **reserved server of the same place** (`MatchService.IsMatchServer`); there MatchService waits for the squad, plays one run (`RunMatch`), then teleports everyone back. **Studio can't teleport**, so a take-off plays the run in the lobby server, one at a time. Live lobby servers delete the Arena.
+  - **Tutorial:** profiles with `TutorialDone = false` (saves with any run count as done) are teleported into a solo 3-wave run, no boss, with a radio tip per wave (`Config/Radio` `TutorialTips`, `Tutorial<event>` lines). In Studio: `SAMZ_Debug:Invoke("Tutorial")`.
 - **Deploy cutscene** (`Controllers/CutsceneController`, `GameConfig.Deploy`): first person from a seat in the helicopter's open cabin.
   - **The ride:** it starts **over the ocean** north of the city (terrain water is baked all round the map), skims the waves, climbs over the rooftops and hovers above the square.
   - **The camera:** it looks out the door, through the windshield, and leans out over the streets. Then it turns to the **pilot** (helmet, shades, headset, tactical vest), who turns round, gives a thumbs-up and says "Good luck down there." You step out the door and parachute down in first person, until `CameraController` takes over on landing.
@@ -79,7 +81,7 @@ If any are false, someone overwrote Studio. **Restore from GitHub with §6's imp
   - **Clearing a wave also heals everyone to full.** HP never regenerates otherwise, because `StarterCharacterScripts.Health` is deliberately empty.
   - Gems at the end of a run: 5 per wave cleared, 0.2 per kill, +100 for a victory.
 - **Commander radio** (`Config/Radio`): Sgt. Voss (callsign Overwatch) speaks on deploy, drop, landing, every wave start and clear, boss incoming/enraged/down, victory and overrun.
-- **Map** (`vault/City Map.md`): `Workspace.OurMap`, holding the Lobby (centre 1000, 0, 380, on its own island with a slate `Foundation` slab) and the Arena city (centre 1000, 0, 0).
+- **Map** (`vault/City Map.md`): `Workspace.OurMap`, holding the Lobby (centre 1000, 0, 1000, on its own island with slate `Foundation` slabs, plus the Flight Line deck) and the Arena city (centre 1000, 0, 0).
   - **Layout:** 23 × 23 tiles of 12 studs, drawn as a text grid in `Server/Map/OurCity`. A big central square, 4 streets, a ring road, and a park, alleys, a parking lot and a market. No dead ends.
   - **Floor:** perfectly flat at Y = 1, which the zombie navigation requires.
   - **Lighting:** the sunset atmosphere is applied **at runtime only** (`MapService:ApplyAtmosphere`). In Edit mode it looks bright, and that's expected.
@@ -90,9 +92,10 @@ ServerScriptService/Server/
   Main.server.luau        loads Services/ in ORDER (Data, Map, Economy, Combat, Zombie, Ability, Lobby, Match), then Init() all, Start() all
   Services/               DataService (DataStore profiles; key "SAMZ_Profile_v1"), MapService (spawn points, nav bounds, atmosphere),
                           EconomyService (cash/upgrades/wave-clear heal), CombatService (server-validated hitscan),
-                          ZombieService (spawn/AI/damage/boss), AbilityService, LobbyService, MatchService (run loop, deploy, radio),
+                          ZombieService (spawn/AI/damage/boss), AbilityService, LobbyService, MatchService (run loop, deploy, radio; IsMatchServer),
+                          QueueService (Flight Line pads, squad options, teleports, tutorial send-off),
                           DebugService (Studio-only commands)
-  Map/                    NavGrid (flow-field pathing), OurLobby + OurCity (map BUILDERS, baked in Edit mode)
+  Map/                    NavGrid (flow-field pathing), OurLobby + FlightLine + OurCity (map BUILDERS, baked in Edit mode)
   ZombieModels            zombie bodies
 ReplicatedStorage/Shared/
   Config/                 GameConfig, Weapons, Classes, Zombies, Radio   <- pure data; tune numbers here
@@ -107,7 +110,7 @@ StarterPlayerScripts/Client/
 StarterCharacterScripts/Health   empty on purpose (disables regen)
 ```
 - **Server-authoritative:** the client sends `FireWeapon(origin, dirs)`, and the server validates fire rate, ammo, origin distance and pellet count before re-raycasting.
-- **Remotes:** FireWeapon, Reload, UseAbility, BuyUpgrade, SelectClass, SelectWeapon, UnlockItem, ClaimAchievement, Notify, HitConfirm, Effect, RunResults, Radio.
+- **Remotes:** FireWeapon, Reload, UseAbility, BuyUpgrade, SelectClass, SelectWeapon, UnlockItem, ClaimAchievement, SetPadOptions, Notify, HitConfirm, Effect, RunResults, Radio.
 - **Supply drops** (`Services/AirdropService`, `Config/Airdrops`, `Controllers/AirdropController`).
   - **When:** from wave 2, each wave has a 65% chance of one crate parachuting onto a street away from the squad. Red smoke, a light pillar and a `SUPPLY DROP · Nm` marker show where it is.
   - **The fight:** guards rise around the crate, and they count toward the wave.
@@ -115,8 +118,8 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
   - **Rewards:** Overcharge (+50% gun damage, 30s), Adrenaline (+35% speed and a full heal, 30s), Ult Surge (+50%), Cash Stash, or Gem Cache (+25).
   - **Buffs** live on the `Buff`/`BuffUntil` attributes. A chip under the wave counter shows them. `CombatService` asks `AirdropService:DamageMult`.
   - **Gotcha:** prompts only show when their part is on screen, so face the crate to open it.
-- **GameState attributes:** Phase (Lobby/Deploy/Break/Wave/Results), Wave, Timer, ZombiesLeft, BossName/Health/MaxHealth, BossEnraged, RunWon, DeployPath (JSON), DeployStart, DeployDuration.
-- **Player attributes:** InRun, Deploying, Cash, Kills, WeaponId, WeaponTier (= gun level), Ammo, Reloading, VitalityLevel, UltCharge, ClassId, LoadoutJson, OwnedJson, Gems.
+- **GameState attributes:** Phase (Lobby/Deploy/Break/Wave/Results), ServerKind (Lobby/Match), Pad1..Pad4 (JSON pad state), Difficulty, MapId, Tutorial, Wave, Timer, ZombiesLeft, BossName/Health/MaxHealth, BossEnraged, RunWon, DeployPath (JSON), DeployStart, DeployDuration.
+- **Player attributes:** InRun, PadId, Deploying, Cash, Kills, WeaponId, WeaponTier (= gun level), Ammo, Reloading, VitalityLevel, UltCharge, ClassId, LoadoutJson, OwnedJson, Gems.
 
 ## 5. Development workflow (with the Roblox Studio MCP)
 1. **Check the markers** (§2), and read the vault note for the system you're touching.
@@ -142,7 +145,7 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
 
 ## 7. Playtesting
 - `start_stop_play(true)`, then use `execute_luau` with datamodel **Server** or **Client**. In Studio, DataStores run memory-only, and new profiles get 2,500 test Gems.
-- **Start a run quickly:** in Server, move the character onto the helipad with `p.Character:PivotTo(CFrame.new(workspace.OurMap.Lobby.Helipad.Pad.Position + Vector3.new(4, 4, 0)))`. Solo, the countdown is 4s. Setting `Ready` by hand doesn't work: the lobby loop overwrites it.
+- **Start a run quickly:** in Server, move the character onto a pad with `p.Character:PivotTo(CFrame.new(workspace.OurMap.Lobby.Helipad.Pad.Position + Vector3.new(4, 4, 0)))` (any `Helipad` model; `PadId` 1-4), then click `LocalPlayer.PlayerGui.Lobby.Frame.Squad.Size1` so the squad is full and the countdown drops to 4s. In Studio the run plays in this server. Teleports (live squads, the tutorial send-off, the trip back) can only be tested in a published game.
 - **Freeze-frame the deploy cutscene** (after one real deploy, so `DeployPath` exists):
   1. In Client, set the `GameState` attribute `DeployDuration` to 1e6.
   2. Set `DeployStart` to `GetServerTimeNow() - t * 1e6`.
@@ -150,7 +153,7 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
   4. Good shots: t = 0.08 / 0.36 / 0.6 / 0.875 / 0.955.
   - **Screenshots and the MCP link:** several `screen_capture` calls in a row while the cutscene renders can time out and drop the MCP link. Use one capture at a time.
 - **Team Create:** before any repo → Studio push, compare first. Push only the files you changed. A full import overwrote a live GameConfig edit by AnimatedSL on 2026-11-02.
-- **Debug commands:** `game.ServerStorage.SAMZ_Debug:Invoke(cmd, ...)`. Commands: `God` (stays on across respawns until `God(false)`), `GiveCash`, `GiveGems`, `KillAll`, `SkipToWave n` (it applies after the current wave), `Spawn type n`, `NavCheck`, `State`, `ChargeUlt`, `AddStat key n` (achievement progress), `Airdrop` (drop a crate now), `Help`.
+- **Debug commands:** `game.ServerStorage.SAMZ_Debug:Invoke(cmd, ...)`. Commands: `God` (stays on across respawns until `God(false)`), `GiveCash`, `GiveGems`, `KillAll`, `SkipToWave n` (it applies after the current wave), `Spawn type n`, `NavCheck`, `State`, `ChargeUlt`, `AddStat key n` (achievement progress), `Airdrop` (drop a crate now), `Tutorial` (play the first-time solo run here), `Help`.
 - **Fire real shots** from Client: `Remotes.FireWeapon:FireServer(muzzle.WorldPosition, {dir})`, where the muzzle is `Character.Tool.Handle.Muzzle`. Use `Remotes.BuyUpgrade:FireServer("Weapon")` to upgrade.
 - **Balance:** `tools/balance-bot.luau` plays a full no-cheat solo run and logs each wave (instructions are in its header). Baseline from 2026-11-01: it reached wave 10 and got the boss to 9% HP. The owner approved that difficulty.
 - **Screenshots:** `screen_capture` with `camera_position` / `look_at_position` aims the camera in Play mode too. Effects far from the player won't be in view.
@@ -175,13 +178,7 @@ From the vault notes:
 - endless mode after wave 10
 - more city detail (fire escapes, traffic lights, an enterable shop)
 - group-play balance testing
-- **First-time drop-in (decided 2026-11-02, parked until the game is published).**
-  - A player with no save goes straight into the ocean cutscene and a short solo run (about 3 waves) as the Survivor, before ever seeing the lobby.
-  - The radio commander teaches E, `1` and F as they come up.
-  - It ends with results and a gem bonus, then the lobby with the shops pointed out.
-  - It needs a `TutorialDone` profile flag. Existing saves count as done.
-  - It runs in a **private solo server via TeleportService**, which doesn't work in Studio.
-  - Same plan for the helipad later: on publish, each squad that takes off is teleported to its own private server.
+- **First-time drop-in** and **per-squad private servers**: done on 2026-11-02 (see §3 Lobby). Still open: point out the shops when a new player first reaches the lobby, and make Hard mode and a second map (both locked "SOON" on the squad panel).
 - Replayability ideas from 2026-11-02, best first:
   1. pick 1 of 3 perks between waves
   2. endless mode plus a best-wave leaderboard
@@ -191,6 +188,15 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: **ready for a playerbase: squads, private servers, tutorial, bigger lobby.**
+  - **City:** the overhead wires between street lamps and over alleys are gone (they read as gridlines over the map from above). 124 baked parts were deleted, and `OurCity` no longer builds them.
+  - **Lobby moved** from z = 380 to **z = 1000** (`PivotTo`, so hand edits are kept; terrain sea refilled at the old spot and cleared at the new one).
+  - **Flight Line:** a gate replaces the middle north ruin and leads to a fenced deck with **4 helipads** (new builder `Server/Map/FlightLine`; `OurLobby.Build` calls it, a one-line insert into AnimatedSL's live `OurLobby`).
+  - **Squads:** new `QueueService`. The first player on a pad hosts and picks squad size, difficulty and map on a new squad panel (`LobbyController`); Hard and a second map are locked "SOON". Countdown 15s, or 4s once full.
+  - **Private servers:** live squads are teleported into a reserved server of this place, and `MatchService` there waits for the squad, plays one run (`RunMatch(players, options)`), then sends everyone back. Studio plays the run in the lobby server instead. Live lobby servers delete the Arena.
+  - **Tutorial:** new players (`TutorialDone` profile flag) are sent straight into a solo 3-wave run with radio tips. It's marked done even on a loss, and it isn't counted as a win.
+  - **Tested in Studio:** pad boarding, host options, take-off, overrun back to the new lobby, and the tutorial (3 waves, no boss, +115 Gems). **Not tested:** the teleports, which only work in a published game.
+  - Only targeted edits went into AnimatedSL's live `GameConfig` (the Lobby block, a new Tutorial block and LobbyCenter) and `OurLobby`.
 - 2026-11-02: **UI + cutscene fix pass (playtest list).**
   - **UI scales with the screen:** a new `UIKit.AutoScale(root)` (designed for an 800-px-tall screen, clamped 0.6–1.5) is on the HUD, Lobby, Shop, Radio, Airdrop, cutscene captions and boss title. HUD mouse-follow positions are divided by its scale.
   - **Ghost "RELOADING" text:** `UIKit.Label` outlines now fade with `TextTransparency`.

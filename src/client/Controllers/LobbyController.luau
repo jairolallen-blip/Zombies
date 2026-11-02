@@ -1,14 +1,18 @@
 -- LobbyController: lobby screen (visible while InRun is false) and the end-of-run results card.
 --   top-left   compact chip: Gems, best wave, current class + loadout, and where the shops are
 --              (class and gun choices happen in the Armory / Barracks shops: ShopController)
---   bottom     take-off status (standing on the helipad = Ready; MatchService runs the countdown)
+--   bottom     take-off status; on a Flight Line pad (player attribute PadId) it becomes the squad
+--              panel: squad count, countdown and the mission (squad size, difficulty, map), which
+--              only the pad's host can change (Remotes.SetPadOptions; QueueService)
 --   centre     results overlay after a run (Remotes.RunResults)
+--   full       "waiting for your squad" cover on a match server until the drop starts
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
+local GameConfig = require(Shared.Config.GameConfig)
 local Classes = require(Shared.Config.Classes)
 local Weapons = require(Shared.Config.Weapons)
 local Util = require(Shared.Util)
@@ -49,6 +53,63 @@ function LobbyController:ShowResults(results)
 	end)
 end
 
+-- Squad panel (shown on a pad): one row of choice buttons per mission setting
+local ROWS = {
+	{ Key = "Size", Label = "SQUAD SIZE" },
+	{ Key = "Difficulty", Label = "DIFFICULTY", List = GameConfig.Lobby.Difficulties },
+	{ Key = "Map", Label = "MAP", List = GameConfig.Lobby.Maps },
+}
+
+function LobbyController:_buildSquadPanel()
+	local cfg = GameConfig.Lobby
+	ui.Squad = UIKit.Panel({ Name = "Squad", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(560, 236), Visible = false, Parent = ui.Root })
+	UIKit.Padding(14).Parent = ui.Squad
+	ui.SquadTitle = UIKit.Label({ Size = UDim2.new(0.6, 0, 0, 30), TextSize = 26, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = ui.Squad })
+	ui.SquadTimer = UIKit.Label({ Position = UDim2.fromScale(0.6, 0), Size = UDim2.new(0.4, 0, 0, 30), TextSize = 24, TextColor3 = T.Cash, TextXAlignment = Enum.TextXAlignment.Right, Parent = ui.Squad })
+	ui.Choices = {} -- { Button, Key, Value, Locked }
+	ROWS[1].List = {}
+	for _, size in cfg.SquadSizes do
+		table.insert(ROWS[1].List, { Id = size, Name = tostring(size) })
+	end
+	for r, row in ROWS do
+		local y = 4 + r * 40
+		UIKit.Label({ Text = row.Label, Position = UDim2.fromOffset(0, y), Size = UDim2.fromOffset(130, 32), TextSize = 17, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, Parent = ui.Squad })
+		local width = math.floor(390 / #row.List) - 6
+		for i, entry in row.List do
+			local button = UIKit.Button({
+				Name = row.Key .. tostring(entry.Id),
+				Position = UDim2.fromOffset(142 + (i - 1) * (width + 6), y),
+				Size = UDim2.fromOffset(width, 32),
+				Text = if entry.Locked then entry.Name .. " · SOON" else entry.Name,
+				TextSize = 17,
+				Parent = ui.Squad,
+			}, function()
+				if not entry.Locked and ui.IsHost then
+					Remotes.SetPadOptions:FireServer({ [row.Key] = entry.Id })
+				end
+			end)
+			table.insert(ui.Choices, { Button = button, Key = row.Key, Value = entry.Id, Locked = entry.Locked })
+		end
+	end
+	ui.SquadHint = UIKit.Label({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 24), TextSize = 17, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, Parent = ui.Squad })
+end
+
+-- pad: decoded GameState "Pad<id>" (QueueService:_publish)
+function LobbyController:_showSquad(padId, pad)
+	ui.IsHost = pad.HostId == player.UserId
+	ui.SquadTitle.Text = string.format("PAD %d  ·  SQUAD %d/%d", padId, pad.Count, pad.Size)
+	ui.SquadTimer.Text = if pad.Status == "Launching" then "TAKING OFF..." elseif pad.Status == "Waiting" then "RUN IN PROGRESS" else "TAKE-OFF IN " .. pad.Timer .. "s"
+	for _, choice in ui.Choices do
+		local selected = pad[choice.Key] == choice.Value
+		local button = choice.Button
+		button.BackgroundColor3 = if selected then T.Accent elseif choice.Locked then T.Disabled else T.Card
+		button.TextColor3 = if selected then Color3.fromRGB(35, 35, 40) elseif choice.Locked then T.SubText else T.Text
+		button.AutoButtonColor = ui.IsHost and not choice.Locked
+	end
+	ui.SquadHint.Text = if ui.IsHost then "You're the host: pick the mission. Full squad = take-off in " .. GameConfig.Lobby.AllReadyTime .. "s"
+		else pad.Host .. " is the host and picks the mission"
+end
+
 function LobbyController:Init()
 	local gui = UIKit.Screen("Lobby")
 	ui.Root = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = gui })
@@ -63,11 +124,16 @@ function LobbyController:Init()
 	ui.Best = UIKit.Label({ Position = UDim2.new(0.55, 0, 0, 30), Size = UDim2.new(0.45, 0, 0, 24), TextSize = 18, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Right, Parent = chip })
 	ui.Class = UIKit.Label({ Position = UDim2.fromOffset(0, 58), Size = UDim2.new(1, 0, 0, 20), TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
 	ui.Guns = UIKit.Label({ Position = UDim2.fromOffset(0, 78), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = chip })
-	UIKit.Label({ Text = "ARMORY (west): guns  ·  BARRACKS (east): classes  ·  HELIPAD (north): deploy", Position = UDim2.fromOffset(0, 104), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
+	UIKit.Label({ Text = "ARMORY (west): guns  ·  BARRACKS (east): classes  ·  FLIGHT LINE (north): deploy", Position = UDim2.fromOffset(0, 104), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
 
 	-- take-off status
 	ui.StatusBar = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(560, 64), Parent = ui.Root })
 	ui.Status = UIKit.Label({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), TextSize = 21, TextWrapped = true, Parent = ui.StatusBar })
+	self:_buildSquadPanel()
+
+	-- match server: cover the empty world until the drop starts
+	ui.Waiting = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(10, 10, 12), Visible = false, ZIndex = 10, Parent = gui })
+	ui.WaitingText = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(600, 90), TextSize = 30, TextWrapped = true, ZIndex = 10, Parent = ui.Waiting })
 
 	-- Results overlay (own root: it shows over the lobby whether or not ui.Root is visible)
 	local resultsRoot = UIKit.new("Frame", { BackgroundTransparency = 1, Parent = gui })
@@ -94,22 +160,23 @@ end
 function LobbyController:Start()
 	while true do
 		local inRun = player:GetAttribute("InRun") == true
-		ui.Root.Visible = not inRun
-		if not inRun then
-			local onPad = player:GetAttribute("Ready") == true
-			local onCount = GameState:GetAttribute("ReadyCount") or 0
-			local timer = GameState:GetAttribute("Timer") or 0
-			ui.Status.TextColor3 = if onPad then T.Cash else T.Text
-			if GameState:GetAttribute("Phase") == "Lobby" then
-				if onPad then
-					ui.Status.Text = string.format("TAKE-OFF IN %ds\n%d / %d on the helipad · step off to wait", timer, onCount, GameState:GetAttribute("PlayerCount") or 0)
-				elseif onCount > 0 then
-					ui.Status.Text = string.format("Squad takes off in %ds\nGet on the HELIPAD (north) to join", timer)
-				else
-					ui.Status.Text = "Gear up, then step onto the HELIPAD (north) to deploy"
-				end
-			else
+		local matchServer = GameState:GetAttribute("ServerKind") == "Match"
+		ui.Root.Visible = not inRun and not matchServer
+		ui.Waiting.Visible = matchServer and not inRun and GameState:GetAttribute("Phase") == "Lobby"
+		if ui.Waiting.Visible then
+			ui.WaitingText.Text = "WHEELS UP SOON\nWaiting for your squad to board..."
+		elseif not inRun then
+			local padId = player:GetAttribute("PadId") or 0
+			local ok, pad = pcall(HttpService.JSONDecode, HttpService, GameState:GetAttribute("Pad" .. padId) or "")
+			local onPad = padId ~= 0 and ok and type(pad) == "table"
+			ui.Squad.Visible = onPad
+			ui.StatusBar.Visible = not onPad
+			if onPad then
+				self:_showSquad(padId, pad)
+			elseif GameState:GetAttribute("Phase") ~= "Lobby" then -- Studio: a run plays in this server
 				ui.Status.Text = "Run in progress (wave " .. (GameState:GetAttribute("Wave") or 0) .. ")\nYou'll join the next one"
+			else
+				ui.Status.Text = "Gear up, then head through the FLIGHT LINE gate (north)\nand step onto a pad to deploy"
 			end
 		end
 		task.wait(0.1)

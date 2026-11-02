@@ -11,6 +11,7 @@
 --   SelectWeapon(weaponId: string)          lobby only
 --   UnlockItem(kind: "Class" | "Weapon", id: string)   spend Gems, lobby only
 --   ClaimAchievement(id: string)            pay a completed achievement's Gems once (DataService)
+--   SetPadOptions({Size?, Difficulty?, Map?})   pad host picks the mission (QueueService; GameConfig.Lobby)
 -- Server -> Client
 --   Notify(text: string, kind: "Info" | "Good" | "Danger")     toast message
 --   HitConfirm(hits: {{Position, Damage, Headshot, Killed}})   shooter-only hit feedback
@@ -30,6 +31,7 @@ local NAMES = {
 	"SelectWeapon",
 	"UnlockItem",
 	"ClaimAchievement",
+	"SetPadOptions",
 	"Notify",
 	"HitConfirm",
 	"Effect",

@@ -1,7 +1,8 @@
 -- MapService: answers "where do things spawn" for our map and applies its sunset atmosphere.
 -- The map itself is baked into Workspace.<OurMap.Folder> in Edit mode by Server/Map/OurLobby and
 -- Server/Map/OurCity (vault: Lobby.md, City Map.md); this only reads the marker parts:
---   Lobby: "LobbySpawn" parts + the helipad "Pad"      Arena: "PlayerSpawn" + "ZombieSpawn" parts
+--   Lobby: "LobbySpawn" parts + the Flight Line pads ("Helipad" models with PadId, part "Pad")
+--   Arena: "PlayerSpawn" + "ZombieSpawn" parts
 --
 -- Public:
 --   MapService.GroundY
@@ -11,12 +12,14 @@
 --   MapService:GetZombiePads() -> {Vector3}
 --   MapService:GetBossSpawn() -> Vector3   the "BossSpawn" marker (open ground facing the square)
 --   MapService:GetNavBounds() -> center, halfSize, lattice   (area the zombie NavGrid scans)
---   MapService:GetDeployPoints() -> from, to   (helipad -> arena spawns, ground level)
---   MapService:IsOnHelipad(player) -> bool     standing on the lobby helipad (the take-off zone)
+--   MapService:GetDeployPoints() -> from, to   (pad 1 -> arena spawns, ground level)
+--   MapService:GetPads() -> {[PadId] = Pad part}   Flight Line pads (QueueService)
+--   MapService:GetPadAt(player) -> PadId?      the pad the player stands on (its take-off zone)
 --   MapService:GetDeployFlight() -> {Vector3}   helicopter path, ocean -> above the square
 --   MapService:ApplyAtmosphere()
 
 local Lighting = game:GetService("Lighting")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared").Config.GameConfig)
@@ -29,7 +32,7 @@ MapService.GroundY = 1
 
 local lobbySpawns, playerSpawns, zombiePads = {}, {}, {}
 local bossSpawn
-local helipad
+local pads = {} -- [PadId] = Pad part (a cylinder: Size.Y = diameter)
 
 local function collect(folder, name)
 	local found = {}
@@ -49,13 +52,18 @@ function MapService:Init(services)
 	local arena = root and root:FindFirstChild("Arena")
 	assert(lobby and arena, "[MapService] Workspace." .. OUR.Folder .. " needs Lobby + Arena (rebuild with Server/Map/OurLobby and OurCity)")
 	lobbySpawns = collect(lobby, "LobbySpawn")
-	helipad = collect(lobby, "Pad")[1]
+	for _, pad in collect(lobby, "Pad") do
+		pads[pad.Parent:GetAttribute("PadId") or 1] = pad
+	end
 	playerSpawns = collect(arena, "PlayerSpawn")
 	for _, pad in collect(arena, "ZombieSpawn") do
 		table.insert(zombiePads, pad.Position)
 	end
 	bossSpawn = collect(arena, "BossSpawn")[1].Position
 	self:ApplyAtmosphere()
+	if not services.MatchService.IsMatchServer and not RunService:IsStudio() then
+		arena:Destroy() -- a live lobby server never runs a match (squads get their own server)
+	end
 end
 
 -- Warm, hazy sunset (GameConfig.OurMap.Atmosphere). Runtime only; Edit-mode Lighting is untouched.
@@ -152,13 +160,22 @@ function MapService:GetBossSpawn()
 	return bossSpawn
 end
 
-function MapService:IsOnHelipad(player)
+function MapService:GetPads()
+	return pads
+end
+
+function MapService:GetPadAt(player)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	if not root then
-		return false
+		return nil
 	end
-	local offset = root.Position - helipad.Position
-	return Vector3.new(offset.X, 0, offset.Z).Magnitude < helipad.Size.Y / 2 and math.abs(offset.Y) < 10 -- Pad is a cylinder: Size.Y = diameter
+	for id, pad in pads do
+		local offset = root.Position - pad.Position
+		if Vector3.new(offset.X, 0, offset.Z).Magnitude < pad.Size.Y / 2 and math.abs(offset.Y) < 10 then
+			return id
+		end
+	end
+	return nil
 end
 
 -- Deploy flight for CutsceneController: from out over the ocean north of the city to the hover point
@@ -233,7 +250,7 @@ function MapService:GetDeployPoints()
 		sum += p.Position
 	end
 	local to = sum / #playerSpawns
-	return Vector3.new(helipad.Position.X, self.GroundY, helipad.Position.Z), Vector3.new(to.X, self.GroundY, to.Z)
+	return Vector3.new(pads[1].Position.X, self.GroundY, pads[1].Position.Z), Vector3.new(to.X, self.GroundY, to.Z)
 end
 
 return MapService

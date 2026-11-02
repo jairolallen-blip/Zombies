@@ -4,7 +4,7 @@ Part of the [[Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and p
 
 ## Status
 - Playtested timeline: Lobby → **Deploy at 3.6s** → **Break at 14.7s** (helicopter plus parachute, about 11s) → **Wave 1 at 27.4s** (12s intermission) → cleared → wave 2 break. No errors.
-- Code: `MatchService:_deploy`, `:_parachute` and `:_radio`. On the client, `CutsceneController` (helicopter, camera, letterbox) and `RadioController` (portrait panel). `MapService:GetDeployPoints()` uses the lobby helipad's `Pad` part and the centre of the arena spawns.
+- Code: `MatchService:_deploy`, `:_parachute` and `:_radio`. On the client, `CutsceneController` (helicopter, camera, letterbox) and `RadioController` (portrait panel). `MapService:GetDeployPoints()` uses Flight Line pad 1 and the centre of the arena spawns. Since 2026-11-02 a run is started by `MatchService:RunMatch` from a squad's pad: on a live server it plays in the squad's own reserved server (see [[Lobby]]).
 - **Bug fixed along the way:** the phase 1 wave-clear bonus called a helper before it was defined, which crashed the match loop after wave 1. Clearing a wave is now part of the playtest.
 
 ## Sequence

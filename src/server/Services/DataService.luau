@@ -54,6 +54,7 @@ local DEFAULT_PROFILE = {
 	RunsPlayed = 0,
 	Stats = {}, -- achievement progress, [stat key] = number (Config/Achievements)
 	Claimed = {}, -- [achievement id] = true
+	TutorialDone = false, -- first-time players get a solo training run before the lobby (QueueService)
 }
 
 local DataService = {}
@@ -175,6 +176,9 @@ function DataService:Load(player)
 	stats.Kills = math.max(stats.Kills or 0, data.TotalKills)
 	stats.Runs = math.max(stats.Runs or 0, data.RunsPlayed)
 	stats.BestWave = math.max(stats.BestWave or 0, data.BestWave)
+	if data.RunsPlayed > 0 then
+		data.TutorialDone = true -- saves from before the tutorial existed
+	end
 
 	profiles[player] = data
 

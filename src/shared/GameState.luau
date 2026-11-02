@@ -7,13 +7,15 @@
 --   DeployPath (JSON [[x,y,z],...]), DeployStart (server time), DeployDuration   drop-in cutscene
 --     (MapService:GetDeployFlight -> CutsceneController)
 --   Wave           current wave number (0 in lobby)
---   Timer          seconds left in Lobby countdown or Break
+--   Timer          seconds left in the Break countdown
 --   ZombiesLeft    zombies still to spawn + alive this wave
 --   RunWon         true when the last run cleared every wave (read during "Results")
 --   BossEnraged    true once the boss passed its enrage threshold
 --   BossName       "" when no boss alive
 --   BossHealth, BossMaxHealth
---   PlayerCount, ReadyCount   lobby readiness
+--   ServerKind     "Lobby" | "Match" (a squad's reserved server; MatchService.IsMatchServer)
+--   Difficulty, MapId, Tutorial   the current run's mission (MatchService:RunMatch)
+--   Pad1..Pad4     JSON state of each Flight Line pad (QueueService)
 
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,8 +28,10 @@ local DEFAULTS = {
 	BossName = "",
 	BossHealth = 0,
 	BossMaxHealth = 0,
-	PlayerCount = 0,
-	ReadyCount = 0,
+	ServerKind = "Lobby",
+	Difficulty = "Normal",
+	MapId = "City",
+	Tutorial = false,
 }
 
 local state

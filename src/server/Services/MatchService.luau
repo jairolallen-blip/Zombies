@@ -1,16 +1,26 @@
 -- MatchService: the game loop. Owns who is in the run, spawning characters, waves, and results.
 --
---   Lobby  --(countdown while someone is on the helipad; shortened when everyone is)-->  run starts
+-- Two kinds of server run this place (MatchService.IsMatchServer):
+--   lobby server   the safehouse; squads queue on the Flight Line pads (QueueService). On a live server a
+--                  squad that takes off is teleported to its own reserved server; in Studio (no
+--                  teleports) QueueService calls :RunMatch here instead, one run at a time
+--   match server   a reserved server holding one squad (or one first-time player's tutorial): waits for
+--                  the squad to arrive, plays one run, then teleports everyone back to a lobby server
+--
+-- A run (:RunMatch(players, options); options = Difficulty, Map, Tutorial from the pad / teleport data):
 --   Deploy (helicopter cutscene, players parachute onto the arena spawns; see _deploy)
 --   loop:  Break (countdown, dead teammates respawn) -> Wave (spawn N zombies, wait until cleared)
 --   the last wave (GameConfig.Waves.TotalWaves) is the boss wave; clearing it wins the run
---   ends on victory or when every participant is dead or gone -> Results (Gems, saved) -> Lobby
+--   (tutorial: GameConfig.Tutorial.Waves, no boss, radio tips from Config/Radio TutorialTips)
+--   ends on victory or when every participant is dead or gone -> Results (Gems, saved) -> lobby
 -- The commander comments on each step over Remotes.Radio (lines in Shared/Config/Radio).
 --
--- Writes GameState attributes (Phase, Wave, Timer, ZombiesLeft, PlayerCount, ReadyCount)
--- and player attribute InRun. Wave sizes/timings come from GameConfig.Waves.
+-- Writes GameState attributes (ServerKind, Phase, Wave, Timer, ZombiesLeft, Difficulty, MapId,
+-- Tutorial) and player attribute InRun. Wave sizes/timings come from GameConfig.Waves.
 --
 -- Public:
+--   MatchService.IsMatchServer
+--   MatchService:RunMatch(players, options), :IsRunning()
 --   MatchService:IsInRun(player), :IsAliveInRun(player), :GetRunPlayers()
 --   MatchService:SpawnInLobby(player), :SpawnInArena(player, cframe?)
 --   MatchService:ReviveDead(cframe)       respawn every dead participant near cframe
@@ -27,10 +37,14 @@ local GameState = require(Shared.GameState)
 local Radio = require(Shared.Config.Radio)
 
 local MatchService = {}
+-- a reserved server is one squad's private match (QueueService teleports squads into one)
+MatchService.IsMatchServer = game.PrivateServerId ~= "" and game.PrivateServerOwnerId == 0
 local Services
 local inRun = {} -- [Player] = true for participants of the current run
 local dead = {} -- [Player] = true if their character died during this run
 local spawnToken = {} -- [Player] = latest spawn request (ignore stale Died handlers)
+local running = false
+local tutorial = false -- the current run is a first-time player's tutorial
 
 function MatchService:Init(services)
 	Services = services
@@ -47,18 +61,58 @@ function MatchService:Init(services)
 			self:_radio("BossDown")
 		end
 	end)
+	GameState:SetAttribute("ServerKind", if self.IsMatchServer then "Match" else "Lobby")
 	Services.DataService.ProfileLoaded:Connect(function(player)
-		if not inRun[player] then
+		if not self.IsMatchServer then
 			self:SpawnInLobby(player)
-		end
+		elseif running and not inRun[player] then
+			-- a squad member whose teleport landed after the drop: straight into the fight
+			inRun[player] = true
+			player:SetAttribute("InRun", true)
+			Services.EconomyService:ResetRun(player)
+			self:SpawnInArena(player)
+		end -- otherwise the squad is still arriving; _awaitSquad picks them up
 	end)
 end
 
 function MatchService:Start()
-	while true do
-		self:_lobbyPhase()
-		self:_runMatch()
+	if not self.IsMatchServer then
+		return -- lobby server: QueueService runs the pads (and calls :RunMatch in Studio)
 	end
+	local players, options = self:_awaitSquad()
+	self:RunMatch(players, options)
+	Services.QueueService:ReturnToLobby(Players:GetPlayers())
+end
+
+-- Match server: the squad's teleport data (set by QueueService) lists who's coming. Start once all of
+-- them have loaded, or GameConfig.Lobby.SquadWaitTime after the first one did.
+function MatchService:_awaitSquad()
+	local DataService = Services.DataService
+	local function loaded()
+		local list = {}
+		for _, player in Players:GetPlayers() do
+			if DataService:Get(player) then
+				table.insert(list, player)
+			end
+		end
+		return list
+	end
+	while #loaded() == 0 do
+		task.wait(0.25)
+	end
+	local first = loaded()[1]
+	local data = first:GetJoinData().TeleportData
+	local options = if type(data) == "table" then data else {}
+	local expected = if type(options.Squad) == "table" then #options.Squad else 1
+	local deadline = os.clock() + GameConfig.Lobby.SquadWaitTime
+	while #loaded() < expected and os.clock() < deadline do
+		task.wait(0.25)
+	end
+	return loaded(), options
+end
+
+function MatchService:IsRunning()
+	return running
 end
 
 -- Queries ---------------------------------------------------------------------------------------
@@ -153,9 +207,9 @@ function MatchService:SpawnInArena(player, cframe)
 	end)
 end
 
--- Commander line to every run participant
+-- Commander line to every run participant (a tutorial uses the "Tutorial<event>" lines where there are any)
 function MatchService:_radio(event, vars)
-	local text = Radio.Pick(event, vars)
+	local text = Radio.Pick(if tutorial and Radio.Lines["Tutorial" .. event] then "Tutorial" .. event else event, vars)
 	if not text then
 		return
 	end
@@ -304,51 +358,6 @@ end
 
 -- Phases ----------------------------------------------------------------------------------------
 
-function MatchService:_lobbyPlayers()
-	local list = {}
-	for _, player in Players:GetPlayers() do
-		if Services.DataService:Get(player) and player.Character then
-			table.insert(list, player)
-		end
-	end
-	return list
-end
-
-function MatchService:_lobbyPhase()
-	local cfg = GameConfig.Lobby
-	GameState:SetAttribute("Phase", "Lobby")
-	GameState:SetAttribute("Wave", 0)
-	GameState:SetAttribute("ZombiesLeft", 0)
-	local timer = cfg.IntermissionTime
-	while true do
-		local players = self:_lobbyPlayers()
-		local ready = 0
-		for _, player in players do
-			local onPad = Services.MapService:IsOnHelipad(player)
-			player:SetAttribute("Ready", onPad)
-			if onPad then
-				ready += 1
-			end
-		end
-		local enough = ready >= cfg.MinPlayers
-		if not enough then
-			timer = cfg.IntermissionTime
-		elseif ready == #players then
-			timer = math.min(timer, cfg.AllReadyTime)
-		end
-		GameState:SetAttribute("PlayerCount", #players)
-		GameState:SetAttribute("ReadyCount", ready)
-		GameState:SetAttribute("Timer", timer)
-		if enough and timer <= 0 then
-			return
-		end
-		task.wait(1)
-		if enough then
-			timer -= 1
-		end
-	end
-end
-
 function MatchService:_countdown(phase, seconds)
 	GameState:SetAttribute("Phase", phase)
 	for t = seconds, 1, -1 do
@@ -431,29 +440,40 @@ function MatchService:_playWave(wave, isBoss)
 	end
 end
 
-function MatchService:_runMatch()
-	local participants = {}
-	for _, player in self:_lobbyPlayers() do
-		if player:GetAttribute("Ready") then -- on the helipad
-			table.insert(participants, player)
+-- Plays one run with these players. options (all optional, from the pad or the teleport data):
+-- Difficulty, Map (validated against GameConfig.Lobby), Tutorial (honoured only for one player whose
+-- profile hasn't done it, so it can't be farmed). Returns when the run is over and Results are done.
+function MatchService:RunMatch(participants, options)
+	options = options or {}
+	local cfg = GameConfig.Waves
+	local lobbyCfg = GameConfig.Lobby
+	local profile = #participants == 1 and Services.DataService:Get(participants[1])
+	tutorial = options.Tutorial == true and profile and not profile.TutorialDone or false
+	local function pick(list, id)
+		for _, entry in list do
+			if entry.Id == id and not entry.Locked then
+				return id
+			end
 		end
+		return list[1].Id
 	end
-	if #participants == 0 then
-		return
-	end
+	GameState:SetAttribute("Difficulty", pick(lobbyCfg.Difficulties, options.Difficulty))
+	GameState:SetAttribute("MapId", pick(lobbyCfg.Maps, options.Map))
+	GameState:SetAttribute("Tutorial", tutorial)
+	local totalWaves = if tutorial then GameConfig.Tutorial.Waves else cfg.TotalWaves
+
+	running = true
 	table.clear(inRun)
 	table.clear(dead)
-	for i, player in participants do
+	for _, player in participants do
 		inRun[player] = true
-		player:SetAttribute("Ready", false)
 		player:SetAttribute("InRun", true)
 		Services.EconomyService:ResetRun(player)
 	end
 	self:_deploy(participants)
 
-	local cfg = GameConfig.Waves
 	local wave, wavesCleared = 0, 0
-	while next(inRun) ~= nil and wavesCleared < cfg.TotalWaves do
+	while next(inRun) ~= nil and wavesCleared < totalWaves do
 		if self.DebugNextWave then -- set by DebugService:SkipToWave
 			wave = self.DebugNextWave - 1
 			self.DebugNextWave = nil
@@ -481,21 +501,33 @@ function MatchService:_runMatch()
 			end
 			task.wait(0.5)
 		end
-		local isBoss = wave >= cfg.TotalWaves
+		local isBoss = not tutorial and wave >= totalWaves
 		GameState:SetAttribute("Phase", "Wave")
 		if not isBoss then -- the boss's radio line comes with its roar (_bossIntro)
 			self:_radio(if wave == 1 then "FirstWave" else "WaveStart", { wave = wave })
+		end
+		local tip = tutorial and Radio.TutorialTips[wave]
+		if tip then
+			task.delay(4, function()
+				for player in inRun do
+					Remotes.Radio:FireClient(player, tip, "TutorialTip")
+				end
+			end)
 		end
 		if not self:_playWave(wave, isBoss) then
 			break
 		end
 		wavesCleared = wave
 		Services.EconomyService:OnWaveCleared(wave)
-		if wavesCleared < cfg.TotalWaves then
+		if wavesCleared < totalWaves then
 			self:_radio("WaveCleared", { wave = wave })
 		end
 	end
-	self:_endRun(wave, wavesCleared, wavesCleared >= cfg.TotalWaves)
+	self:_endRun(wave, wavesCleared, wavesCleared >= totalWaves)
+	running, tutorial = false, false
+	GameState:SetAttribute("Phase", "Lobby")
+	GameState:SetAttribute("Wave", 0)
+	GameState:SetAttribute("ZombiesLeft", 0)
 end
 
 function MatchService:_endRun(wave, wavesCleared, victory)
@@ -509,11 +541,14 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 		if player.Parent then
 			local kills = player:GetAttribute("Kills") or 0
 			local gems = math.floor(wavesCleared * econ.GemsPerWaveCleared + kills * econ.GemsPerKill + (if victory then econ.VictoryGems else 0))
-			local newBest = Services.DataService:RecordRun(player, wave, kills, gems)
 			local DataService = Services.DataService
+			if tutorial then
+				DataService:Get(player).TutorialDone = true -- even on a loss: never send them through it twice
+			end
+			local newBest = DataService:RecordRun(player, wave, kills, gems)
 			DataService:AddStat(player, "Runs")
 			DataService:AddStat(player, "BestWave", wave, true)
-			if victory then
+			if victory and not tutorial then -- a 3-wave training run isn't a win
 				DataService:AddStat(player, "Victories")
 				DataService:AddStat(player, "Wins_" .. (player:GetAttribute("ClassId") or "Survivor"))
 			end
@@ -527,6 +562,9 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 	end
 	table.clear(inRun)
 	table.clear(dead)
+	if self.IsMatchServer then
+		return -- Start sends everyone back to a lobby server
+	end
 	for _, player in returning do
 		if player.Parent then
 			task.spawn(self.SpawnInLobby, self, player)

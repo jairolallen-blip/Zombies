@@ -15,7 +15,7 @@ Part of the [[Roadmap]]. Our arena, centred at **x = 1000** (next to the [[Lobby
 - Swap procedural props for real models (cars, lamps) once there's a model pass.
 
 ## Look (from MAP REFERENCES)
-A warm, hazy, sepia sunset. Brick and concrete buildings with shuttered storefronts, street lamps, sagging power lines, abandoned cars and taxis, jersey barriers, a broken overpass, and overgrowth (grass, trees, vines).
+A warm, hazy, sepia sunset. Brick and concrete buildings with shuttered storefronts, street lamps (the sagging power lines between them were removed on 2026-11-02: from above they read as gridlines over the map), abandoned cars and taxis, jersey barriers, a broken overpass, and overgrowth (grass, trees, vines).
 
 ## Layout rules
 - **One big open city square** in the middle for mowing down zombies.

@@ -5,11 +5,28 @@
 local GameConfig = {}
 
 GameConfig.Lobby = {
-	-- the countdown only runs while someone stands on the helipad (MapService:IsOnHelipad); only
-	-- players on it when it hits 0 deploy, everyone else keeps shopping
-	IntermissionTime = 10, -- seconds of countdown once someone is on the helipad
-	AllReadyTime = 4, -- countdown snaps down to this when every lobby player is on the helipad
-	MinPlayers = 1,
+	-- Flight Line pads (Server/Services/QueueService): the first player on an empty pad is its host and
+	-- picks the mission; the countdown runs while anyone is on that pad and only its squad takes off
+	-- (live: into their own private match server; Studio: the run plays in the lobby server)
+	IntermissionTime = 15, -- seconds of countdown once someone is on a pad (time for friends to hop on)
+	AllReadyTime = 4, -- the countdown snaps down to this when the pad's squad is full
+	SquadSizes = { 1, 2, 3, 4 }, -- the host's squad-size choices
+	DefaultSquadSize = 4,
+	SquadWaitTime = 20, -- match server: seconds to wait for the rest of the squad after the first arrives
+	-- Locked entries show as "SOON" and can't be picked (MatchService:RunMatch falls back to the first)
+	Difficulties = {
+		{ Id = "Normal", Name = "NORMAL" },
+		{ Id = "Hard", Name = "HARD", Locked = true },
+	},
+	Maps = {
+		{ Id = "City", Name = "DEAD CITY" },
+		{ Id = "Unknown", Name = "???", Locked = true },
+	},
+}
+
+-- First-time players (profile TutorialDone = false) start with a short solo run instead of the lobby
+GameConfig.Tutorial = {
+	Waves = 3, -- no boss; Config/Radio TutorialTips teach a key per wave
 }
 
 GameConfig.Match = {
@@ -138,7 +155,7 @@ GameConfig.Keybinds = {
 -- (Arena: "PlayerSpawn" + "ZombieSpawn" parts). Read at runtime by MapService.
 GameConfig.OurMap = {
 	Folder = "OurMap",
-	LobbyCenter = Vector3.new(1000, 0, 380),
+	LobbyCenter = Vector3.new(1000, 0, 1000), -- far south of the city, out of sight; its Flight Line deck reaches north to z = 810
 	ArenaCenter = Vector3.new(1000, 0, 0),
 	ArenaHalfSize = 138, -- OurCity: 23 tiles x 12 studs / 2 (zombie nav grid covers this square)
 	NavCellSize = 4, -- zombie NavGrid cell (OurCity's 12-stud tiles are 3 x 3 cells)

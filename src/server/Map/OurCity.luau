@@ -7,7 +7,7 @@
 --   # building   . road   S city square   P park   A alley   L parking lot   M market
 -- Rules that keep the horde flowing (zombies use Map/NavGrid): the floor is perfectly flat (paint,
 -- no steps), walkable gaps are >= 1 tile wide, every side area has 2+ exits, and decorative bits
--- (facades, canopies, foliage, wires) are CanCollide = false so only real cover blocks the nav grid.
+-- (facades, canopies, foliage) are CanCollide = false so only real cover blocks the nav grid.
 -- Parts named "PlayerSpawn" / "ZombieSpawn" / "BossSpawn" are read by MapService.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -463,28 +463,13 @@ local function lamp(parent, x, z, facing, lit)
 	return head
 end
 
--- sagging wire between two points (two straight segments through a lower midpoint)
-local function wire(parent, a, b, sag)
-	local mid = (a + b) / 2 - Vector3.new(0, sag, 0)
-	for _, seg in { { a, mid }, { mid, b } } do
-		local p, q = seg[1], seg[2]
-		part(parent, "Wire", Vector3.new(0.12, 0.12, (q - p).Magnitude), CFrame.lookAt((p + q) / 2, q), C.Wire, Enum.Material.SmoothPlastic, PAINT)
-	end
-end
-
 local function buildStreets(parent)
 	local streets = model(parent, "Streets")
 	local lamps = model(streets, "Lamps")
-	local wires = model(streets, "Wires")
-	-- lamps along both sides of the main streets, wires strung between them
+	-- lamps along both sides of the main streets
 	local function lampRow(points, facing)
-		local prev
 		for n, p in points do
-			local head = lamp(lamps, p.X, p.Z, facing, n % 2 == 1)
-			if prev then
-				wire(wires, prev.Position + Vector3.new(0, 1, 0), head.Position + Vector3.new(0, 1, 0), 1.6)
-			end
-			prev = head
+			lamp(lamps, p.X, p.Z, facing, n % 2 == 1)
 		end
 	end
 	for _, s in { -1, 1 } do
@@ -616,7 +601,7 @@ local function buildDistricts(parent)
 					ball(park, "Bush", rng:NextNumber(2.5, 4.5), at(x + rng:NextNumber(-5, 5), GROUND_Y + 0.8, z + rng:NextNumber(-5, 5)), pick(C.Leaves), Enum.Material.Grass)
 				end
 			elseif c == "A" then
-				-- dumpster against a wall, trash, and wires overhead
+				-- dumpster against a wall, and trash
 				for _, d in { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } } do
 					if cell(i + d[1], j + d[2]) == "#" and rng:NextNumber() < 0.25 and not nearZombieSpawn(x, z) then
 						local cf = at(x + d[1] * 4.2, GROUND_Y + 1.6, z + d[2] * 4.2) * CFrame.Angles(0, if d[1] ~= 0 then math.rad(90) else 0, 0)
@@ -624,9 +609,6 @@ local function buildDistricts(parent)
 						ball(alley, "TrashBag", 1.6, cf * CFrame.new(3.6, -0.8, 0.4), Color3.fromRGB(24, 24, 26), Enum.Material.Plastic)
 						break
 					end
-				end
-				if rng:NextNumber() < 0.5 then
-					wire(alley, Vector3.new(origin.X + x - 6, GROUND_Y + 15, origin.Z + z + rng:NextNumber(-4, 4)), Vector3.new(origin.X + x + 6, GROUND_Y + 15, origin.Z + z + rng:NextNumber(-4, 4)), 1.2)
 				end
 			elseif c == "M" and not nearZombieSpawn(x, z) then
 				if rng:NextNumber() < 0.5 then

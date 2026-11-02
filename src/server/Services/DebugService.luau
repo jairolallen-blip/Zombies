@@ -81,6 +81,15 @@ Commands.Airdrop = function()
 	return "crate dropping"
 end
 
+-- Tutorial() — Studio: play the first-time solo training run here (live servers teleport new players into it)
+Commands.Tutorial = function(playerName)
+	local player = firstPlayer(playerName)
+	assert(not Services.MatchService:IsRunning(), "a run is already going")
+	Services.DataService:Get(player).TutorialDone = false
+	task.spawn(Services.MatchService.RunMatch, Services.MatchService, { player }, { Tutorial = true })
+	return "tutorial started for " .. player.Name
+end
+
 Commands.ChargeUlt = function(playerName)
 	local player = firstPlayer(playerName)
 	Services.EconomyService:AddUltCharge(player, math.huge)
