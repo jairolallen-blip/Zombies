@@ -4,6 +4,9 @@
 -- Feel (vault: Weapons.md): camera recoil kick (stats.Recoil), per-gun tracers/flash, ejected
 -- shells, and SpinUp guns (minigun) that ramp their fire rate while the barrel hub spins.
 --
+-- First person: shots originate at the camera (eye) through the crosshair; the flash, tracers,
+-- shells and recoil jolt come from ViewmodelController's gun. Sounds via SoundController.
+--
 -- Public: WeaponController:GetState() -> { Stats, Ammo, Reloading }, :Reload()
 
 local Players = game:GetService("Players")
@@ -58,6 +61,11 @@ local function spreadDirection(direction, degrees)
 end
 
 local function muzzlePosition()
+	-- first person: effects come from the viewmodel gun in front of the camera
+	local vmMuzzle = Controllers.ViewmodelController:GetMuzzle()
+	if vmMuzzle then
+		return vmMuzzle.WorldPosition, vmMuzzle
+	end
 	local character = player.Character
 	local tool = character and character:FindFirstChildOfClass("Tool")
 	local muzzle = tool and tool:FindFirstChild("Handle") and tool.Handle:FindFirstChild("Muzzle")
@@ -74,11 +82,15 @@ function WeaponController:Reload()
 	end
 	reloading = true
 	Remotes.Reload:FireServer()
+	Controllers.SoundController:PlayUI("Reload")
 end
 
 function WeaponController:TryFire()
 	if not stats or not player:GetAttribute("InRun") or not alive() or reloading then
 		return
+	end
+	if Controllers.ViewmodelController:IsThrowing() then
+		return -- the gun is lowered for a grenade throw
 	end
 	if ammo <= 0 then
 		self:Reload()
@@ -92,9 +104,10 @@ function WeaponController:TryFire()
 	lastShot = now
 	ammo -= 1
 
-	-- Shots leave the gun and fly toward the point under the mouse cursor
+	-- First person: shots start at the camera (the eye) and go through the crosshair, so what you
+	-- aim at is what you hit; tracers/flash are drawn from the viewmodel muzzle.
 	local from, muzzle = muzzlePosition()
-	local origin = from
+	local origin = if Controllers.CameraController:IsActive() then workspace.CurrentCamera.CFrame.Position else from
 	local aimPoint = Controllers.CameraController:GetAimPoint()
 	local aimDir = aimPoint - origin
 	if aimDir.Magnitude < 0.5 then
@@ -118,10 +131,11 @@ function WeaponController:TryFire()
 	end
 	Effects:MuzzleFlash(muzzle, from, stats.Flash, stats.FlashColor)
 	local port = muzzle and muzzle.Parent:FindFirstChild("EjectPort")
-	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-	if port and root and not stats.NoShells then
-		Effects:Shell(port.WorldPosition, root.CFrame.RightVector)
+	if port and not stats.NoShells then
+		Effects:Shell(port.WorldPosition, workspace.CurrentCamera.CFrame.RightVector)
 	end
+	Controllers.ViewmodelController:Kick(stats.Recoil)
+	Controllers.SoundController:PlayGunshot(stats.Id, from)
 	local kick = math.rad(stats.Recoil or 1)
 	recoil = math.min(recoil + kick * (0.85 + math.random() * 0.3), math.rad(12))
 	recoilYaw += kick * (math.random() - 0.5) * 0.5
@@ -176,12 +190,16 @@ function WeaponController:Init(controllers)
 		end
 		local character = player.Character
 		local tool = character and character:FindFirstChildOfClass("Tool")
-		local hub = tool and tool:FindFirstChild("SpinHub")
-		local spinWeld = hub and hub:FindFirstChild("SpinWeld")
-		if spinWeld then
-			spinAngle += dt * spin * 45
-			spinWeld.C0 = hub:GetAttribute("BaseC0") * CFrame.Angles(0, 0, spinAngle)
+		spinAngle += dt * spin * 45
+		-- spin the barrels on both the real tool and the first-person viewmodel
+		for _, gun in { tool, Controllers.ViewmodelController:GetModel() } do
+			local hub = gun and gun:FindFirstChild("SpinHub")
+			local spinWeld = hub and hub:FindFirstChild("SpinWeld")
+			if spinWeld then
+				spinWeld.C0 = hub:GetAttribute("BaseC0") * CFrame.Angles(0, 0, spinAngle)
+			end
 		end
+		Controllers.SoundController:SetSpin(if stats and stats.SpinUp then spin else 0)
 		if firing and stats and stats.Automatic then
 			self:TryFire()
 		end

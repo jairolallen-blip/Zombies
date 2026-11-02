@@ -258,23 +258,49 @@ Handlers.SpawnWarning = function(data)
 	end)
 end
 
+-- Optional hooks set by ThrowController: ThrowOrigin() -> Vector3? (your first-person throwing
+-- hand) and MakeGrenade(parent) -> Model (grenade projectiles fly as the grenade model).
 Handlers.Projectile = function(data)
-	local p = fxPart({
-		Shape = Enum.PartType.Ball,
-		Size = Vector3.one * 0.9,
-		Position = data.From,
-		Color = data.Color or Color3.new(0.2, 0.2, 0.2),
-		Material = Enum.Material.SmoothPlastic,
-	})
+	local from = data.From
+	if data.Owner == player.UserId and EffectsController.ThrowOrigin then
+		from = EffectsController.ThrowOrigin() or from
+	end
+	local p, grenade
+	if data.Grenade and EffectsController.MakeGrenade then
+		grenade = EffectsController.MakeGrenade(folder)
+		grenade:PivotTo(CFrame.new(from))
+	else
+		p = fxPart({
+			Shape = Enum.PartType.Ball,
+			Size = Vector3.one * 0.9,
+			Position = from,
+			Color = data.Color or Color3.new(0.2, 0.2, 0.2),
+			Material = Enum.Material.SmoothPlastic,
+		})
+	end
 	local start = os.clock()
-	local height = math.max(4, (data.To - data.From).Magnitude * 0.25)
+	local height = math.max(4, (data.To - from).Magnitude * 0.25)
+	local spinAxis = (data.To - from).Unit:Cross(Vector3.yAxis)
+	if spinAxis.Magnitude < 0.1 or spinAxis ~= spinAxis then
+		spinAxis = Vector3.xAxis
+	end
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
 		local t = math.clamp((os.clock() - start) / data.Time, 0, 1)
-		p.Position = data.From:Lerp(data.To, t) + Vector3.new(0, math.sin(t * math.pi) * height, 0)
+		local pos = from:Lerp(data.To, t) + Vector3.new(0, math.sin(t * math.pi) * height, 0)
+		if grenade then
+			-- tumbles end over end along the arc
+			grenade:PivotTo(CFrame.new(pos) * CFrame.fromAxisAngle(spinAxis.Unit, -(os.clock() - start) * 14))
+		else
+			p.Position = pos
+		end
 		if t >= 1 then
 			conn:Disconnect()
-			p:Destroy()
+			if grenade then
+				grenade:Destroy()
+			else
+				p:Destroy()
+			end
 		end
 	end)
 end

@@ -87,14 +87,23 @@ end
 
 local Handlers = {}
 
+-- Grenade: a "Throw" effect plays the throw animation on every client (ThrowController), then the
+-- grenade leaves the hand at the release point of the swing (GameConfig.Throw.Windup).
 Handlers.Grenade = function(ctx)
 	local p = ctx.Params
-	local from = ctx.Root.Position + Vector3.new(0, 2, 0)
-	local to = ctx.Target
-	local travel = math.clamp((to - from).Magnitude / 70, 0.3, 1.1)
-	Remotes.Effect:FireAllClients("Projectile", { From = from, To = to, Time = travel, Color = Color3.fromRGB(60, 90, 50) })
-	task.delay(travel, function()
-		Services.CombatService:Explode(to, p.Radius, p.Damage, ctx.Player)
+	local throw = GameConfig.Throw
+	Remotes.Effect:FireAllClients("Throw", { Character = ctx.Character, Windup = throw.Windup, Duration = throw.Duration })
+	task.delay(throw.Windup, function()
+		if not ctx.Root.Parent then
+			return
+		end
+		local from = (ctx.Root.CFrame * CFrame.new(1, 2.5, -1)).Position -- right hand, over the shoulder
+		local to = ctx.Target
+		local travel = math.clamp((to - from).Magnitude / 70, 0.3, 1.1)
+		Remotes.Effect:FireAllClients("Projectile", { From = from, To = to, Time = travel, Color = Color3.fromRGB(60, 90, 50), Grenade = true, Owner = ctx.Player.UserId })
+		task.delay(travel, function()
+			Services.CombatService:Explode(to, p.Radius, p.Damage, ctx.Player)
+		end)
 	end)
 end
 
