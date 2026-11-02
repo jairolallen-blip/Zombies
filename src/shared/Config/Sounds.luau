@@ -42,6 +42,14 @@ Sounds.Library = {
 	Helicopter = { Id = 126966962086051, Volume = 0.6, Looped = true },
 	WaveSting = { Id = 9039981895, Volume = 0.6 }, -- APM Music, "Hellish"
 	Victory = { Id = 9067124098, Volume = 0.7 },
+
+	-- deploy cutscene (CutsceneController drives the loops' volume per frame; ids checked 2026-11-01)
+	CabinWind = { Id = 85352789269452, Volume = 0.35, Looped = true }, -- loop_wind_01 (WhistleAcousticMan), wind through the open door
+	SeaWash = { Id = 93281700241946, Volume = 0.5, Looped = true }, -- Calm Sea Beach Ambience, waves under the rotor wash
+	PilotChatter = { Id = 7225461356, Volume = 0.18, Looped = true }, -- Vietnam War Radio Chatter - Briefing (3r5x4), faint cockpit radio
+	JumpWhoosh = { Id = 12222095, Volume = 0.6, Pitch = 0.8 }, -- Roblox, Rocket whoosh 01
+	ParachuteOpen = { Id = 157822167, Volume = 0.7 }, -- Parachute Open (DarpyAdultman)
+	FallWind = { Id = 6544555787, Volume = 0.35, Looped = true }, -- Fierce howling loud wind (Festivereinhard2), under the chute
 }
 
 -- Weapon id (Config/Weapons) -> { library key, pitch multiplier }

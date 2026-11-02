@@ -7,6 +7,10 @@
 -- then at the pilot, who turns and gives a thumbs-up ("Good luck down there."), and out the door
 -- as you jump. Then the camera goes first person on the character, who parachutes down
 -- (MatchService:_parachute) until CameraController takes over on landing.
+-- Sound + effects (ids in Shared/Config/Sounds, played through SoundController): cabin wind that
+-- swells at the door, sea wash and rotor-wash spray while skimming the waves, faint radio chatter,
+-- an intercom squelch before the pilot speaks, wind streaks past the door, a whoosh, shake and FOV
+-- kick on the jump, then the chute snapping open and falling wind until you land.
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -16,12 +20,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
+local Sounds = require(Shared.Config.Sounds)
 local GameState = require(Shared.GameState)
 local UIKit = require(script.Parent.Parent.UI.UIKit)
 
 local player = Players.LocalPlayer
 local CutsceneController = {}
+local Controllers
 local playing = false
+
+-- one-shot sounds by cutscene progress: { t, library name }
+local CUES = {
+	{ 0.815, "Radio" }, -- the pilot keys his intercom
+	{ 0.962, "JumpWhoosh" },
+}
 
 -- Helicopter in its local space (-Z = nose, +X = the open door side, origin = cabin centre).
 -- { name, size, offset, color, motion?, props? }   motion: "Y"/"X" = spinning rotor, or a POSE group
@@ -221,6 +233,47 @@ local function overlay()
 	return o
 end
 
+-- rotor-wash spray kicked up off the sea (moved under the helicopter each frame)
+local function seaSpray()
+	local attachment = Instance.new("Attachment")
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	e.Color = ColorSequence.new(Color3.fromRGB(225, 235, 240))
+	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.4), NumberSequenceKeypoint.new(1, 1) })
+	e.Size = NumberSequence.new(6, 20)
+	e.Lifetime = NumberRange.new(1.2, 2)
+	e.Speed = NumberRange.new(30, 50)
+	e.SpreadAngle = Vector2.new(80, 80)
+	e.Acceleration = Vector3.new(0, -6, 0)
+	e.Drag = 1.5
+	e.Rate = 0
+	e.Parent = attachment
+	attachment.Parent = workspace.Terrain
+	return attachment, e
+end
+
+-- thin wind streaks rushing back past the open door
+local function windStreaks(floor)
+	local attachment = Instance.new("Attachment")
+	attachment.Position = Vector3.new(3.6, 3.4, -1.5) -- top of the door opening, in Floor space
+	local e = Instance.new("ParticleEmitter")
+	e.Color = ColorSequence.new(Color3.new(1, 1, 1))
+	e.LightEmission = 0.3
+	e.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.3, 0.5), NumberSequenceKeypoint.new(1, 1) })
+	e.Size = NumberSequence.new(0.25)
+	e.Orientation = Enum.ParticleOrientation.VelocityParallel
+	e.Squash = NumberSequence.new(-2.5)
+	e.EmissionDirection = Enum.NormalId.Back
+	e.SpreadAngle = Vector2.new(25, 15)
+	e.Speed = NumberRange.new(30, 45)
+	e.Lifetime = NumberRange.new(0.25, 0.4)
+	e.LockedToPart = true
+	e.Rate = 0
+	e.Parent = attachment
+	attachment.Parent = floor
+	return e
+end
+
 -- Hide every deploying character (they hang above the square during the flight)
 local function setDeployersHidden(hidden)
 	for _, other in Players:GetPlayers() do
@@ -253,10 +306,39 @@ function CutsceneController:Play()
 	camera.FieldOfView = 70
 	local heliCF = CFrame.lookAt(points[1], points[2])
 	local pose = {}
+	local Sound = Controllers.SoundController
+	local loops = {}
+	for _, name in { "CabinWind", "SeaWash", "PilotChatter" } do
+		loops[name] = Sound:Loop(name)
+		loops[name].Volume = 0
+		loops[name]:Play()
+	end
+	local spray, sprayEmitter = seaSpray()
+	local streaks = windStreaks(folder.Floor)
+	local played = {} -- CUES already fired
 
 	local function finish()
 		RunService:UnbindFromRenderStep("SAMZ_Cutscene")
 		setDeployersHidden(false)
+		for _, loop in loops do
+			loop:Destroy()
+		end
+		spray:Destroy()
+		streaks.Enabled = false
+		if player:GetAttribute("Deploying") then
+			-- out of the door: the chute snaps open, falling wind until the landing
+			task.delay(0.4, Sound.Play, Sound, "ParachuteOpen")
+			local fall = Sound:Loop("FallWind")
+			fall:Play()
+			local function land()
+				if fall.Parent then
+					TweenService:Create(fall, TweenInfo.new(0.8), { Volume = 0 }):Play()
+					task.delay(0.9, fall.Destroy, fall)
+				end
+			end
+			player:GetAttributeChangedSignal("Deploying"):Once(land)
+			task.delay(12, land)
+		end
 		-- first person from the jump on (CameraController re-applies all of this on landing)
 		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 		player.CameraMode = Enum.CameraMode.LockFirstPerson
@@ -320,8 +402,26 @@ function CutsceneController:Play()
 		pose.Arm = CFrame.Angles(1.3 * arm, 0.6 * arm, 0)
 		placeHelicopter(parts, heliCF, now, pose)
 
+		-- sound + effects: door wind swells while you lean out and at the jump, the sea while low
+		local doorWind = window(t, 0.5, 0.56, 0.7, 0.76) + window(t, 0.93, 0.96, 1, 1.01)
+		local seaNear = math.clamp((60 - pos.Y) / 35, 0, 1)
+		loops.CabinWind.Volume = Sounds.Library.CabinWind.Volume * (0.5 + 0.5 * speed + doorWind)
+		loops.CabinWind.PlaybackSpeed = 0.9 + 0.2 * speed
+		loops.SeaWash.Volume = Sounds.Library.SeaWash.Volume * seaNear
+		loops.PilotChatter.Volume = Sounds.Library.PilotChatter.Volume * window(t, 0.03, 0.08, 0.74, 0.79)
+		spray.WorldPosition = Vector3.new(pos.X, 1, pos.Z)
+		sprayEmitter.Rate = 140 * seaNear
+		streaks.Rate = 30 * (speed + doorWind)
+		for _, c in CUES do
+			if t >= c[1] and t - c[1] < 0.02 and not played[c] then
+				played[c] = true
+				Sound:Play(c[2])
+			end
+		end
+
 		local yaw, pitch, seat = camPose(t)
-		local shake = 0.006 + 0.004 * speed
+		local shake = 0.006 + 0.004 * speed + 0.012 * doorWind
+		camera.FieldOfView = 70 + 12 * smooth((t - 0.95) / 0.05)
 		camera.CFrame = heliCF
 			* CFrame.new(seat)
 			* CFrame.Angles(0, yaw + math.noise(now * 7, 1) * shake, 0)
@@ -338,7 +438,8 @@ function CutsceneController:Play()
 	end)
 end
 
-function CutsceneController:Init()
+function CutsceneController:Init(controllers)
+	Controllers = controllers
 	player:GetAttributeChangedSignal("Deploying"):Connect(function()
 		if player:GetAttribute("Deploying") then
 			task.spawn(self.Play, self)

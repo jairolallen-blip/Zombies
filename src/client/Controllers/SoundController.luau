@@ -14,6 +14,7 @@
 --
 -- Public: :Play(name, opts?) 2D, :PlayAt(name, position, opts?) 3D, :PlayGunshot(weaponId, pos),
 --         :SetSpin(0..1), :PlayUI(name)
+--         :Loop(name) -> a looped Sound for the caller to drive (CutsceneController's deploy audio)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -97,6 +98,11 @@ function SoundController:PlayAt(name, position, opts)
 	else
 		attachment:Destroy()
 	end
+end
+
+-- A looped library sound in the game's SoundGroup, not playing yet (the caller drives + destroys it)
+function SoundController:Loop(name)
+	return (newSound(name, SoundService))
 end
 
 function SoundController:PlayUI(name)
