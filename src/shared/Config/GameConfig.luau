@@ -28,12 +28,19 @@ GameConfig.Deploy = {
 GameConfig.Waves = {
 	FirstBreakTime = 12, -- intermission after the drop, before wave 1
 	BreakTime = 8, -- countdown between waves
-	BaseCount = 10, -- zombies in wave 1 (solo)
-	CountPerWave = 5, -- +zombies each wave
+	-- intensity ramp over the 10 rounds (vault: Spawning.md)
+	BaseCount = 8, -- zombies in wave 1 (solo)
+	CountPerWave = 6, -- +zombies each wave (wave 10 = 62)
 	ExtraPlayerMultiplier = 0.6, -- each extra player adds +60% zombies
-	SpawnInterval = 0.7, -- seconds between spawns in wave 1
-	SpawnIntervalDecay = 0.04, -- interval shrinks by this each wave
-	MinSpawnInterval = 0.12,
+	SpawnInterval = 1.4, -- seconds between spawn groups in wave 1
+	SpawnIntervalDecay = 0.12, -- interval shrinks by this each wave (wave 10 = 0.32s)
+	MinSpawnInterval = 0.3,
+	BurstEvery = 3, -- zombies per spawn group = 1 + floor(wave / BurstEvery) (wave 10 = 4)
+	-- where and how they appear
+	SpawnMinDistance = 22, -- studs from every player
+	SpawnMaxDistance = 75, -- studs from the player it spawns around
+	SpawnWarning = 1.2, -- seconds the red circle shows before the zombie rises
+	RiseTime = 0.6, -- seconds to climb out of the ground
 	MaxAlive = 70, -- hard cap on simultaneous zombies (performance)
 	HealthScalePerWave = 0.10, -- zombie health +10% per wave
 	BossEvery = 10, -- boss joins every Nth wave (0 = never)

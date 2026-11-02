@@ -1,0 +1,29 @@
+# Spawning (phase 6): done
+
+Built and playtested on 2026-11-01.
+- **Wave 1:** zombies appear 50+ studs out and rise with the warning circle. The HUD counter includes warnings that haven't risen yet.
+- **Wave 7:** 30 zombies arrived in 8s, in **groups of 3**, at **23–70 studs** from the player, spread around **all 8 directions**, behind the player included. All 43 rose and were handed back to physics. The wave ended correctly once everything was dead.
+- **Code:** `MapService:GetZombieSpawnPosition()` picks the spot, `ZombieService:SpawnWarned()` handles the warning and rise, `MatchService:_playWave()` spawns in groups, and the client draws the `SpawnWarning` effect.
+
+Part of the [[Roadmap]]. Zombies come from the [[Zombies]] phase, and the map is [[City Map]].
+
+## Rules (from the ground rules)
+- **Random, scattered spawns** around the area rather than one spot. They can come from **behind you**.
+- **A red warning circle** appears under each spawn point just before the zombie appears, so a zombie never pops up without warning. If you're not watching, you still get flanked.
+- **Spawn rates start minimal** and **ramp up every round** across 10 rounds. The boss is on round 10 (see [[Waves and Boss]]).
+
+## How it works
+- **Where:** a random spot **22–75 studs** from a random living player, in any direction, on an open street cell with a little clearance (from the zombie NavGrid), and never closer than 22 studs to *any* player. If nothing fits after 40 tries, it falls back to the city's fixed `ZombieSpawn` pads. The boss always uses a pad, since it needs room.
+- **Warning:** a red circle pulses for **1.2s** (a ring closes in), then the zombie **rises out of the ground** over 0.6s with a burst of dirt.
+- **Ramp per wave (solo):**
+
+| Wave | Zombies | Spawned together | Gap between groups |
+|---|---|---|---|
+| 1 | 8 | 1 | 1.4s |
+| 3 | 20 | 2 | 1.16s |
+| 5 | 32 | 2 | 0.92s |
+| 7 | 44 | 3 | 0.68s |
+| 10 | 62 | 4 | 0.32s |
+
+There are +60% zombies per extra player, at most 70 alive at once, and zombie HP rises 10% per wave.
+- Tunables live in `GameConfig.Waves`.

@@ -326,10 +326,11 @@ function MatchService:_playWave(wave, bossAppearance)
 	local total = math.floor((cfg.BaseCount + cfg.CountPerWave * (wave - 1)) * (1 + cfg.ExtraPlayerMultiplier * math.max(0, players - 1)))
 	local healthMult = 1 + cfg.HealthScalePerWave * (wave - 1)
 	local interval = math.max(cfg.MinSpawnInterval, cfg.SpawnInterval - cfg.SpawnIntervalDecay * (wave - 1))
+	local burst = 1 + math.floor(wave / cfg.BurstEvery) -- zombies per spawn group (vault: Spawning.md)
 
 	if bossAppearance then
 		local bossId = Zombies.BossOrder[((bossAppearance - 1) % #Zombies.BossOrder) + 1]
-		ZombieService:Spawn(bossId, MapService:GetZombieSpawnPosition(), 1 + cfg.BossHealthScalePerAppearance * (bossAppearance - 1))
+		ZombieService:SpawnWarned(bossId, MapService:GetZombieSpawnPosition(true), 1 + cfg.BossHealthScalePerAppearance * (bossAppearance - 1))
 	end
 
 	local toSpawn = total
@@ -339,12 +340,15 @@ function MatchService:_playWave(wave, bossAppearance)
 			return false
 		end
 		local now = os.clock()
-		if toSpawn > 0 and now >= nextSpawn and ZombieService:GetAliveCount() < cfg.MaxAlive then
-			ZombieService:Spawn(ZombieService:PickType(wave), MapService:GetZombieSpawnPosition(), healthMult)
-			toSpawn -= 1
+		local onField = ZombieService:GetAliveCount() + ZombieService:GetPendingCount()
+		if toSpawn > 0 and now >= nextSpawn and onField < cfg.MaxAlive then
+			for _ = 1, math.min(burst, toSpawn, cfg.MaxAlive - onField) do
+				ZombieService:SpawnWarned(ZombieService:PickType(wave), MapService:GetZombieSpawnPosition(), healthMult)
+				toSpawn -= 1
+			end
 			nextSpawn = now + interval
 		end
-		local left = toSpawn + ZombieService:GetAliveCount()
+		local left = toSpawn + ZombieService:GetAliveCount() + ZombieService:GetPendingCount()
 		GameState:SetAttribute("ZombiesLeft", left)
 		if left == 0 then
 			return true

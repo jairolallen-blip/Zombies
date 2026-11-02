@@ -11,7 +11,9 @@
 -- (Server/Map/NavGrid.lua) around fences, terrace and props. See navigate().
 --
 -- Public:
---   ZombieService:Spawn(typeId, position, healthMult?) -> Model
+--   ZombieService:Spawn(typeId, position, healthMult?, riseTime?) -> Model
+--   ZombieService:SpawnWarned(typeId, position, healthMult?)   red circle first, then it rises (vault: Spawning.md)
+--   ZombieService:GetPendingCount()   warned spawns that haven't risen yet
 --   ZombieService:Damage(model, amount, attacker?) -> killed: boolean
 --   ZombieService:Kill(model, attacker?)
 --   ZombieService:Knockback(model, fromPosition, power, stunTime?)
@@ -23,6 +25,7 @@
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 local PhysicsService = game:GetService("PhysicsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -42,6 +45,8 @@ local Services
 local folder
 local alive = {} -- [Model] = state (see Spawn)
 local aliveCount = 0
+local pendingCount = 0 -- SpawnWarned zombies still in their warning window
+local generation = 0 -- bumped by ClearAll so warnings from a finished run never spawn
 local nextId = 0
 
 local function ensureGroup(name)
@@ -79,13 +84,17 @@ end
 
 -- Lifecycle ------------------------------------------------------------------------------------
 
-function ZombieService:Spawn(typeId, position, healthMult)
+function ZombieService:Spawn(typeId, position, healthMult, riseTime)
 	local def = Zombies.Types[typeId]
 	assert(def, "Unknown zombie type: " .. tostring(typeId))
 	local s = def.Scale or 1
 	local cf = CFrame.new(position.X, Services.MapService.GroundY + 2.5 * s + 0.05, position.Z)
 		* CFrame.Angles(0, math.random() * math.pi * 2, 0)
 	local model, root, lv, ao = ZombieModels.Build(typeId, def, cf)
+	if riseTime then -- start buried; _rise lifts it out, then hands it to physics
+		root.Anchored = true
+		root.CFrame = cf - Vector3.new(0, 5 * s, 0)
+	end
 	nextId += 1
 	model:SetAttribute("ZombieId", nextId)
 	model:SetAttribute("Type", typeId)
@@ -123,7 +132,19 @@ function ZombieService:Spawn(typeId, position, healthMult)
 		NextLunge = 0,
 	}
 	model.Parent = folder
-	root:SetNetworkOwner(nil)
+	if riseTime then
+		state.StunnedUntil = os.clock() + riseTime
+		local tween = TweenService:Create(root, TweenInfo.new(riseTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { CFrame = cf })
+		tween.Completed:Connect(function()
+			if root.Parent then
+				root.Anchored = false
+				root:SetNetworkOwner(nil)
+			end
+		end)
+		tween:Play()
+	else
+		root:SetNetworkOwner(nil)
+	end
 	alive[model] = state
 	aliveCount += 1
 
@@ -133,6 +154,27 @@ function ZombieService:Spawn(typeId, position, healthMult)
 		GameState:SetAttribute("BossHealth", maxHealth)
 	end
 	return model
+end
+
+-- Red warning circle on the ground, then the zombie climbs out of it (GameConfig.Waves timings).
+function ZombieService:SpawnWarned(typeId, position, healthMult)
+	local W = GameConfig.Waves
+	local s = Zombies.Types[typeId].Scale or 1
+	local ground = Vector3.new(position.X, Services.MapService.GroundY, position.Z)
+	Remotes.Effect:FireAllClients("SpawnWarning", { Position = ground, Radius = 2.4 * s, Time = W.SpawnWarning })
+	pendingCount += 1
+	local gen = generation
+	task.delay(W.SpawnWarning, function()
+		if gen ~= generation then
+			return -- run ended (ClearAll) while this one was still a warning
+		end
+		pendingCount -= 1
+		self:Spawn(typeId, position, healthMult, W.RiseTime)
+	end)
+end
+
+function ZombieService:GetPendingCount()
+	return pendingCount
 end
 
 function ZombieService:Damage(model, amount, attacker)
@@ -198,6 +240,8 @@ function ZombieService:Remove(model)
 end
 
 function ZombieService:ClearAll()
+	generation += 1
+	pendingCount = 0
 	for model in alive do
 		self:Remove(model)
 	end

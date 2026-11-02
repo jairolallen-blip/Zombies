@@ -230,6 +230,34 @@ Handlers.Marker = function(data)
 	Debris:AddItem(p, data.Time + 0.5)
 end
 
+-- Zombie about to rise here (ZombieService:SpawnWarned): a red disc fades in while a ring closes on
+-- it, then a burst of dirt as the zombie breaks through.
+Handlers.SpawnWarning = function(data)
+	local up = CFrame.Angles(0, 0, math.rad(90))
+	local at = CFrame.new(data.Position + Vector3.new(0, 0.12, 0)) * up
+	local d = data.Radius * 2
+	local disc = fxPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.2, d, d), CFrame = at, Color = Color3.fromRGB(255, 40, 30), Transparency = 0.85 })
+	tween(disc, data.Time, { Transparency = 0.35 }, Enum.EasingStyle.Linear)
+	local ringPart = fxPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.15, d * 2.2, d * 2.2), CFrame = at * CFrame.new(0.02, 0, 0), Color = Color3.fromRGB(255, 90, 70), Transparency = 0.5 })
+	tween(ringPart, data.Time, { Size = Vector3.new(0.15, d, d), Transparency = 0.2 }, Enum.EasingStyle.Linear)
+	task.delay(data.Time, function()
+		disc:Destroy()
+		ringPart:Destroy()
+		for _ = 1, 7 do
+			local chunk = fxPart({
+				Size = Vector3.one * (0.3 + math.random() * 0.5),
+				Position = data.Position + Vector3.new((math.random() - 0.5) * d, 0.5, (math.random() - 0.5) * d),
+				Color = Color3.fromRGB(70 + math.random(0, 30), 58, 46),
+				Material = Enum.Material.Concrete,
+				Anchored = false,
+				CanCollide = true,
+			})
+			chunk.AssemblyLinearVelocity = Vector3.new(math.random(-12, 12), math.random(18, 30), math.random(-12, 12))
+			Debris:AddItem(chunk, 1)
+		end
+	end)
+end
+
 Handlers.Projectile = function(data)
 	local p = fxPart({
 		Shape = Enum.PartType.Ball,

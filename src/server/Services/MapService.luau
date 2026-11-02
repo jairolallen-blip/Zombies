@@ -5,7 +5,9 @@
 --
 -- Public:
 --   MapService.GroundY
---   MapService:GetLobbySpawnCFrame(), :GetArenaSpawnCFrame(index?), :GetZombieSpawnPosition()
+--   MapService:GetLobbySpawnCFrame(), :GetArenaSpawnCFrame(index?)
+--   MapService:GetZombieSpawnPosition(usePads?)  random open street spot around a living player
+--     (GameConfig.Waves.SpawnMin/MaxDistance, vault: Spawning.md); usePads = a fixed ZombieSpawn pad
 --   MapService:GetZombiePads() -> {Vector3}
 --   MapService:GetNavBounds() -> center, halfSize, lattice   (area the zombie NavGrid scans)
 --   MapService:GetDeployPoints() -> from, to   (helipad -> arena spawns, ground level)
@@ -15,7 +17,9 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared").Config.GameConfig)
+local NavGrid = require(script.Parent.Parent:WaitForChild("Map"):WaitForChild("NavGrid"))
 local OUR = GameConfig.OurMap
+local Services
 
 local MapService = {}
 MapService.GroundY = 1
@@ -34,7 +38,8 @@ local function collect(folder, name)
 	return found
 end
 
-function MapService:Init()
+function MapService:Init(services)
+	Services = services
 	local root = workspace:FindFirstChild(OUR.Folder)
 	local lobby = root and root:FindFirstChild("Lobby")
 	local arena = root and root:FindFirstChild("Arena")
@@ -96,7 +101,40 @@ function MapService:GetArenaSpawnCFrame(index)
 	return CFrame.new(pad.Position + Vector3.new(0, pad.Size.Y / 2 + 3, 0)) * pad.CFrame.Rotation
 end
 
-function MapService:GetZombieSpawnPosition()
+-- open street (walkable nav cells around it too) and at least minDist from every player
+local function spawnSpotOK(pos, players, minDist)
+	for _, d in { Vector3.zero, Vector3.new(3, 0, 0), Vector3.new(-3, 0, 0), Vector3.new(0, 0, 3), Vector3.new(0, 0, -3) } do
+		if not NavGrid.IsWalkable(pos + d) then
+			return false
+		end
+	end
+	for _, p in players do
+		if (Vector3.new(p.X, pos.Y, p.Z) - pos).Magnitude < minDist then
+			return false
+		end
+	end
+	return true
+end
+
+function MapService:GetZombieSpawnPosition(usePads)
+	if not usePads then
+		local players = {}
+		for _, player in Services.MatchService:GetRunPlayers() do
+			if Services.MatchService:IsAliveInRun(player) then
+				table.insert(players, player.Character.HumanoidRootPart.Position)
+			end
+		end
+		local W = GameConfig.Waves
+		for _ = 1, if #players > 0 then 40 else 0 do
+			local around = players[math.random(1, #players)]
+			local angle = math.random() * math.pi * 2
+			local dist = W.SpawnMinDistance + math.random() * (W.SpawnMaxDistance - W.SpawnMinDistance)
+			local pos = Vector3.new(around.X + math.cos(angle) * dist, self.GroundY, around.Z + math.sin(angle) * dist)
+			if spawnSpotOK(pos, players, W.SpawnMinDistance) then
+				return pos
+			end
+		end
+	end
 	local pad = zombiePads[math.random(1, #zombiePads)]
 	return Vector3.new(pad.X + math.random(-4, 4), self.GroundY, pad.Z + math.random(-4, 4))
 end
