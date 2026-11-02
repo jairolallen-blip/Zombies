@@ -4,7 +4,8 @@
 --
 -- Attributes:
 --   Phase          "Lobby" | "Deploy" | "Break" | "Wave" | "Results"
---   DeployFrom, DeployTo (Vector3), DeployStart (server time), DeployDuration   drop-in cutscene
+--   DeployPath (JSON [[x,y,z],...]), DeployStart (server time), DeployDuration   drop-in cutscene
+--     (MapService:GetDeployFlight -> CutsceneController)
 --   Wave           current wave number (0 in lobby)
 --   Timer          seconds left in Lobby countdown or Break
 --   ZombiesLeft    zombies still to spawn + alive this wave

@@ -1,7 +1,7 @@
 -- LobbyController: lobby screen (visible while InRun is false) and the end-of-run results card.
 --   top-left   compact chip: Gems, best wave, current class + loadout, and where the shops are
 --              (class and gun choices happen in the Armory / Barracks shops: ShopController)
---   bottom     Ready toggle + countdown status
+--   bottom     take-off status (standing on the helipad = Ready; MatchService runs the countdown)
 --   centre     results overlay after a run (Remotes.RunResults)
 
 local Players = game:GetService("Players")
@@ -53,21 +53,18 @@ function LobbyController:Init()
 	local gui = UIKit.Screen("Lobby")
 	ui.Root = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = gui })
 
-	local chip = UIKit.Panel({ Position = UDim2.fromOffset(20, 20), Size = UDim2.fromOffset(420, 150), Parent = ui.Root })
+	local chip = UIKit.Panel({ Position = UDim2.fromOffset(20, 20), Size = UDim2.fromOffset(520, 150), Parent = ui.Root })
 	UIKit.Padding(12).Parent = chip
 	UIKit.Label({ Text = "SURVIVE A MILLION ZOMBIES", Size = UDim2.new(1, 0, 0, 28), TextSize = 24, TextColor3 = Color3.fromRGB(150, 255, 90), TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
 	ui.Gems = UIKit.Label({ Position = UDim2.fromOffset(0, 30), Size = UDim2.new(0.55, 0, 0, 24), TextSize = 20, TextColor3 = T.Gem, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
 	ui.Best = UIKit.Label({ Position = UDim2.new(0.55, 0, 0, 30), Size = UDim2.new(0.45, 0, 0, 24), TextSize = 16, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Right, Parent = chip })
 	ui.Class = UIKit.Label({ Position = UDim2.fromOffset(0, 58), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
 	ui.Guns = UIKit.Label({ Position = UDim2.fromOffset(0, 78), Size = UDim2.new(1, 0, 0, 20), TextSize = 14, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = chip })
-	UIKit.Label({ Text = "ARMORY (west tent): guns  ·  BARRACKS (east): classes", Position = UDim2.fromOffset(0, 104), Size = UDim2.new(1, 0, 0, 20), TextSize = 14, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
+	UIKit.Label({ Text = "ARMORY (west): guns  ·  BARRACKS (east): classes  ·  HELIPAD (north): deploy", Position = UDim2.fromOffset(0, 104), Size = UDim2.new(1, 0, 0, 20), TextSize = 14, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
 
-	-- Ready bar
-	local readyBar = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(420, 70), Parent = ui.Root })
-	ui.Status = UIKit.Label({ Position = UDim2.fromOffset(16, 0), Size = UDim2.new(1, -170, 1, 0), TextSize = 19, TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true, Parent = readyBar })
-	ui.Ready = UIKit.Button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(140, 48), TextSize = 24, Text = "READY", Parent = readyBar }, function()
-		Remotes.SetReady:FireServer(not player:GetAttribute("Ready"))
-	end)
+	-- take-off status
+	ui.StatusBar = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(440, 64), Parent = ui.Root })
+	ui.Status = UIKit.Label({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), TextSize = 19, TextWrapped = true, Parent = ui.StatusBar })
 
 	-- Results overlay
 	ui.Results = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.42), Size = UDim2.fromOffset(380, 230), Visible = false, ZIndex = 5, Parent = gui })
@@ -94,17 +91,18 @@ function LobbyController:Start()
 		local inRun = player:GetAttribute("InRun") == true
 		ui.Root.Visible = not inRun
 		if not inRun then
-			local ready = player:GetAttribute("Ready") == true
-			ui.Ready.Text = if ready then "UNREADY" else "READY"
-			ui.Ready.BackgroundColor3 = if ready then T.Cash else T.Accent
-			local phase = GameState:GetAttribute("Phase")
-			if phase == "Lobby" then
-				ui.Status.Text = string.format(
-					"Run starts in %ds\n%d / %d ready",
-					GameState:GetAttribute("Timer") or 0,
-					GameState:GetAttribute("ReadyCount") or 0,
-					GameState:GetAttribute("PlayerCount") or 0
-				)
+			local onPad = player:GetAttribute("Ready") == true
+			local onCount = GameState:GetAttribute("ReadyCount") or 0
+			local timer = GameState:GetAttribute("Timer") or 0
+			ui.Status.TextColor3 = if onPad then T.Cash else T.Text
+			if GameState:GetAttribute("Phase") == "Lobby" then
+				if onPad then
+					ui.Status.Text = string.format("TAKE-OFF IN %ds\n%d / %d on the helipad · step off to wait", timer, onCount, GameState:GetAttribute("PlayerCount") or 0)
+				elseif onCount > 0 then
+					ui.Status.Text = string.format("Squad takes off in %ds\nGet on the HELIPAD (north) to join", timer)
+				else
+					ui.Status.Text = "Gear up, then step onto the HELIPAD (north) to deploy"
+				end
 			else
 				ui.Status.Text = "Run in progress (wave " .. (GameState:GetAttribute("Wave") or 0) .. ")\nYou'll join the next one"
 			end

@@ -25,7 +25,13 @@ The always-on left and right panels were replaced by two **walk-up shops** (pres
 
 Each class figure has its own prop: the Survivor has a cap and a grenade, the Scout goggles, the Medic a cross and medkit, the Engineer a hard hat and wrench, and the Bruiser shoulder pads. They're built by `Shared/ClassFigures`.
 
-The lobby screen keeps only a small chip (Gems, best wave, class, gun lineup, where the shops are) and the Ready bar.
+The lobby screen keeps only a small chip (Gems, best wave, class, gun lineup, where the shops are) and the take-off status.
+
+## Helipad ready zone (2026-11-02)
+There's no Ready button; **standing on the helipad is being ready.** That way nobody is rushed while shopping.
+- **The countdown only runs while someone is on the pad.** It runs 10s, or 4s when every lobby player is on it. Step off and it resets.
+- **Only players on the pad deploy.** Everyone else keeps shopping and joins the next run.
+- **Code:** `MapService:IsOnHelipad` (a radius check on the `Pad` cylinder) sets `Ready` each tick in `MatchService:_lobbyPhase`. The tunables are in `GameConfig.Lobby`.
 
 ## Our lobby build
 A fortified safehouse inside a ruined city at **x = 1000** (the old map is at x = 0). Its layout:

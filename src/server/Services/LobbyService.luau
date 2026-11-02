@@ -1,7 +1,6 @@
 -- LobbyService: lobby-only actions — equip class, put a gun in its Loadout slot (one per Level),
--- unlock with Gems, Ready toggle.
+-- unlock with Gems. (Ready = standing on the helipad; MatchService sets it.)
 -- All requests are rejected while the player is in a run.
--- Player attribute: Ready (boolean) — read by MatchService for the countdown.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -41,11 +40,6 @@ function LobbyService:Init(services)
 	end)
 	Remotes.UnlockItem.OnServerEvent:Connect(function(player, kind, id)
 		self:Unlock(player, kind, id)
-	end)
-	Remotes.SetReady.OnServerEvent:Connect(function(player, ready)
-		if not Services.MatchService:IsInRun(player) then
-			player:SetAttribute("Ready", ready == true)
-		end
 	end)
 end
 

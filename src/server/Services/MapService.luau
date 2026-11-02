@@ -11,6 +11,8 @@
 --   MapService:GetZombiePads() -> {Vector3}
 --   MapService:GetNavBounds() -> center, halfSize, lattice   (area the zombie NavGrid scans)
 --   MapService:GetDeployPoints() -> from, to   (helipad -> arena spawns, ground level)
+--   MapService:IsOnHelipad(player) -> bool     standing on the lobby helipad (the take-off zone)
+--   MapService:GetDeployFlight() -> {Vector3}   helicopter path, ocean -> above the square
 --   MapService:ApplyAtmosphere()
 
 local Lighting = game:GetService("Lighting")
@@ -141,6 +143,76 @@ end
 
 function MapService:GetZombiePads()
 	return zombiePads
+end
+
+function MapService:IsOnHelipad(player)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		return false
+	end
+	local offset = root.Position - helipad.Position
+	return Vector3.new(offset.X, 0, offset.Z).Magnitude < helipad.Size.Y / 2 and math.abs(offset.Y) < 10 -- Pad is a cylinder: Size.Y = diameter
+end
+
+-- Deploy flight for CutsceneController: from out over the ocean north of the city to the hover point
+-- above the square. Built here because the server has every building; with streaming on, a client
+-- may not. Each sample flies at max(planned altitude, highest roof under the rotor + Clearance), and
+-- that floor is slope-limited both ways so the helicopter climbs early and never dips into a block.
+function MapService:GetDeployFlight()
+	local cfg = GameConfig.Deploy
+	local _, to = self:GetDeployPoints()
+	local from = to + cfg.OceanStart
+	local bend = to + cfg.FinalApproach
+	local hover = cfg.DropHeight + 12
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.IgnoreWater = true
+	local ignore = {}
+	for _, d in workspace:FindFirstChild(OUR.Folder):GetDescendants() do
+		if d:IsA("BasePart") and d.Transparency >= 0.95 then
+			table.insert(ignore, d) -- invisible walls / markers
+		end
+	end
+	for _, p in game:GetService("Players"):GetPlayers() do
+		table.insert(ignore, p.Character)
+	end
+	params.FilterDescendantsInstances = ignore
+
+	local function at(u)
+		return from:Lerp(bend, u):Lerp(bend:Lerp(to, u), u) -- quadratic bezier
+	end
+	local n = cfg.PathSamples
+	local points, floor = {}, {}
+	for i = 0, n do
+		local u = i / n
+		local xz = at(u)
+		local frame = CFrame.lookAt(xz, xz + (at(u + 0.01) - xz) * Vector3.new(1, 0, 1))
+		local top = 0
+		for _, dx in { -18, 0, 18 } do -- rotor span
+			for _, dz in { -14, 0, 14 } do -- nose to tail
+				local origin = (frame * CFrame.new(dx, 0, dz)).Position
+				local hit = workspace:Raycast(Vector3.new(origin.X, 600, origin.Z), Vector3.new(0, -700, 0), params)
+				top = math.max(top, if hit then hit.Position.Y else 0)
+			end
+		end
+		-- planned altitude: skim the sea, climb over the coast, settle at the hover height
+		local climb = math.clamp((u - 0.3) / 0.3, 0, 1)
+		local planned = cfg.SeaAltitude + (cfg.CruiseHeight - cfg.SeaAltitude) * climb * climb * (3 - 2 * climb)
+		planned += (hover - cfg.CruiseHeight) * math.clamp((u - 0.85) / 0.15, 0, 1)
+		points[i + 1] = Vector3.new(xz.X, planned, xz.Z)
+		floor[i + 1] = top + cfg.Clearance
+	end
+	local step = cfg.MaxClimbPerSample
+	for i = #floor - 1, 1, -1 do
+		floor[i] = math.max(floor[i], floor[i + 1] - step)
+	end
+	for i = 2, #floor do
+		floor[i] = math.max(floor[i], floor[i - 1] - step)
+	end
+	for i, p in points do
+		points[i] = Vector3.new(p.X, math.max(p.Y, floor[i]), p.Z)
+	end
+	return points
 end
 
 function MapService:GetNavBounds()

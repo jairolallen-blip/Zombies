@@ -5,8 +5,10 @@
 local GameConfig = {}
 
 GameConfig.Lobby = {
-	IntermissionTime = 20, -- seconds of countdown once enough players are in the lobby
-	AllReadyTime = 3, -- countdown snaps down to this when every lobby player pressed Ready
+	-- the countdown only runs while someone stands on the helipad (MapService:IsOnHelipad); only
+	-- players on it when it hits 0 deploy, everyone else keeps shopping
+	IntermissionTime = 10, -- seconds of countdown once someone is on the helipad
+	AllReadyTime = 4, -- countdown snaps down to this when every lobby player is on the helipad
 	MinPlayers = 1,
 }
 
@@ -16,14 +18,21 @@ GameConfig.Match = {
 	HealOnWaveClear = 1, -- living players heal this fraction of max HP when a wave is cleared (no regen otherwise)
 }
 
--- Drop-in at the start of a run (vault: Match Start.md): helicopter cutscene from the lobby helipad
--- to above the arena spawn, then players parachute down. Enabled = false -> teleport straight in.
+-- Drop-in at the start of a run (vault: Match Start.md): first-person helicopter cutscene from over
+-- the ocean to above the city square (path: MapService:GetDeployFlight), then players parachute
+-- down. Enabled = false -> teleport straight in.
 GameConfig.Deploy = {
 	Enabled = true,
-	FlightTime = 8, -- seconds of helicopter cutscene before the drop
+	FlightTime = 18, -- seconds of helicopter cutscene before the drop
 	DropHeight = 75, -- studs above the spawn pads where players jump
 	FallSpeed = 30, -- parachute descent, studs/s
-	CruiseHeight = 95, -- helicopter altitude over the rooftops
+	OceanStart = Vector3.new(140, 0, -1050), -- flight start, relative to the square (north = -Z, the sea)
+	FinalApproach = Vector3.new(0, 0, -300), -- bezier bend: lines up on the north avenue
+	SeaAltitude = 28, -- skimming the waves
+	CruiseHeight = 95, -- planned altitude over the city
+	Clearance = 16, -- minimum studs between the helicopter's centre and any roof under it
+	MaxClimbPerSample = 7, -- slope limit of that floor (samples are ~13 studs apart)
+	PathSamples = 80,
 }
 
 GameConfig.Waves = {
@@ -98,10 +107,20 @@ GameConfig.Combat = {
 }
 
 GameConfig.Camera = {
-	-- Mouse is free (not centre-locked): aim with the cursor, rotate the camera with right-click drag.
-	ShoulderOffset = Vector3.new(2, 1, 0), -- over-the-shoulder offset while in a run
-	MinZoom = 6,
-	MaxZoom = 14,
+	-- Runs are FIRST PERSON (CameraController): mouse locked to the screen centre, aim from the
+	-- centre, gun drawn by ViewmodelController. Hold Keybinds.FreeCursor to free the mouse.
+	FieldOfView = 80, -- first-person FOV during runs (lobby uses Roblox's default 70)
+	LobbyMaxZoom = 30, -- third-person zoom limit in the lobby
+	-- Viewmodel placement in camera space (studs): right, down, forward
+	ViewmodelOffset = Vector3.new(0.85, -0.95, -1.6),
+	ViewmodelKick = 0.18, -- how far the gun jolts back per shot (scaled by the gun's Recoil)
+}
+
+-- Grenade throw animation (ThrowController / ViewmodelController); the server releases the grenade
+-- at Windup, so the projectile leaves the hand at the top of the swing.
+GameConfig.Throw = {
+	Windup = 0.32, -- seconds from key press to release
+	Duration = 0.8, -- whole animation (wind-up, swing, recover)
 }
 
 GameConfig.Keybinds = {
@@ -110,6 +129,7 @@ GameConfig.Keybinds = {
 	Ultimate = Enum.KeyCode.F,
 	UpgradeWeapon = Enum.KeyCode.One,
 	UpgradeVitality = Enum.KeyCode.Two,
+	FreeCursor = Enum.KeyCode.LeftAlt, -- hold to free the mouse in first person (click HUD buttons)
 }
 
 -- The map: Workspace.OurMap (vault: Lobby.md, City Map.md), built and baked in Edit mode by

@@ -12,6 +12,7 @@ A Roblox **horde-survival shooter**. Players queue in a lobby, pick a class and 
 | What | Where |
 |---|---|
 | **Live game** | Roblox Studio place "Survive a Million Zombies", **placeId 110463048909417**, in **Team Create** (edits are live for everyone in the session) |
+| **Shared guide with the friend's agent** | `ServerStorage.README_AI_GUIDE` in the place. It's the main channel between our work and AnimatedSL's: **update its Status/Content and Changelog in Studio on every task**, same as this file |
 | **Code + notes, versioned** | GitHub `jairolallen-blip/Zombies` (`main`), cloned at `D:\CLAUDE WORK\Zombies` |
 | **Design notes** | `vault/`, an Obsidian vault in the repo. Start at `vault/Roadmap.md`. One note per system: Lobby, City Map, Match Start, Weapons, Zombies, Spawning, Waves and Boss |
 | **Reference images** | `vault/MAP REFERENCES`, `MODEL REFERENCES`, `UI REFERENCES`, `VISUAL REFERENCES`. Look at these before building art. Use them for inspiration, not copying |
@@ -29,12 +30,17 @@ return S.Services.MatchService.Source:find("_deploy") ~= nil, S.Services.DataSer
 If any are false, someone overwrote Studio. **Restore from GitHub with §6's import**, then check whether they added anything worth keeping (diff their scripts against `git show <commit>:src/...`).
 
 ## 3. Game content (current numbers live in config; these are summaries)
-**Flow:** Lobby (20s countdown, shorter when everyone is Ready) → **Deploy** (8s helicopter cutscene, parachute drop) → 12s intermission → waves 1–10 with an 8s break between each → **Victory** after wave 10, or **Overrun** if everyone dies → Results → Lobby.
+**Flow:** Lobby (10s countdown that runs **only while someone stands on the helipad**; 4s when everyone is on it; only players on the pad deploy) → **Deploy** (18s first-person helicopter cutscene, parachute drop) → 12s intermission → waves 1–10 with an 8s break between each → **Victory** after wave 10, or **Overrun** if everyone dies → Results → Lobby.
 
-- **Lobby** (`vault/Lobby.md`): a ruined-city safehouse at x = 1000. The screen shows only a small chip (Gems, best wave, class, gun lineup, shop locations) and the Ready bar. Choices happen in two **walk-up shops**, opened with `E` at their ProximityPrompt:
+- **Lobby** (`vault/Lobby.md`): a ruined-city safehouse at x = 1000. The screen shows only a small chip (Gems, best wave, class, gun lineup, shop locations) and the take-off status. Choices happen in two **walk-up shops**, opened with `E` at their ProximityPrompt:
   - **Armory** (west tent): level tabs 1–4, and a card per gun with a rotating 3D model, stat bars, and equip or unlock-with-Gems.
   - **Barracks** (east): class mannequins on pedestals, and a card per class with a rotating figure, abilities, traits, and equip or unlock.
-  - The shops close with X, by walking away, or when a run starts. The helipad is the Deploy Zone.
+  - The shops close with X, by walking away, or when a run starts.
+  - **The helipad (north) is the ready zone.** Each lobby tick, `MapService:IsOnHelipad` sets the player's `Ready` attribute. There's no Ready button, and the `SetReady` remote is gone.
+- **Deploy cutscene** (`Controllers/CutsceneController`, `GameConfig.Deploy`): first person from a seat in the helicopter's open cabin.
+  - **The ride:** it starts **over the ocean** north of the city (terrain water is baked all round the map), skims the waves, climbs over the rooftops and hovers above the square.
+  - **The camera:** it looks out the door, through the windshield, and leans out over the streets. Then it turns to the **pilot** (helmet, shades, headset, tactical vest), who turns round, gives a thumbs-up and says "Good luck down there." You step out the door and parachute down in first person, until `CameraController` takes over on landing.
+  - **The path** is built on the server by `MapService:GetDeployFlight`, which raycasts the roofs under the rotor span along a bezier with a slope-limited clearance floor, so the helicopter never clips a building. It's sent as JSON in GameState `DeployPath`. It's built server-side because StreamingEnabled is on and a client may not have every building loaded.
 - **Classes** (`Config/Classes`): Survivor (free), Scout 350, Medic 500, Engineer 750, Bruiser 750 Gems. Each has an ability on `E` and an ultimate on `F`.
 - **Guns** (`Config/Weapons`, models in `Shared/GunModels`): 4 levels, upgraded in-run for $500 / $2,500 / $10,000 (key `1` or the HUD button). The first gun of each level is free; the others cost Gems.
   - **Level 1:** Pistol, Revolver
@@ -91,8 +97,8 @@ StarterPlayerScripts/Client/
 StarterCharacterScripts/Health   empty on purpose (disables regen)
 ```
 - **Server-authoritative:** the client sends `FireWeapon(origin, dirs)`, and the server validates fire rate, ammo, origin distance and pellet count before re-raycasting.
-- **Remotes:** FireWeapon, Reload, UseAbility, BuyUpgrade, SelectClass, SelectWeapon, UnlockItem, SetReady, Notify, HitConfirm, Effect, RunResults, Radio.
-- **GameState attributes:** Phase (Lobby/Deploy/Break/Wave/Results), Wave, Timer, ZombiesLeft, BossName/Health/MaxHealth, BossEnraged, RunWon, Deploy*.
+- **Remotes:** FireWeapon, Reload, UseAbility, BuyUpgrade, SelectClass, SelectWeapon, UnlockItem, Notify, HitConfirm, Effect, RunResults, Radio.
+- **GameState attributes:** Phase (Lobby/Deploy/Break/Wave/Results), Wave, Timer, ZombiesLeft, BossName/Health/MaxHealth, BossEnraged, RunWon, DeployPath (JSON), DeployStart, DeployDuration.
 - **Player attributes:** InRun, Deploying, Cash, Kills, WeaponId, WeaponTier (= gun level), Ammo, Reloading, VitalityLevel, UltCharge, ClassId, LoadoutJson, OwnedJson, Gems.
 
 ## 5. Development workflow (with the Roblox Studio MCP)
@@ -119,7 +125,14 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
 
 ## 7. Playtesting
 - `start_stop_play(true)`, then use `execute_luau` with datamodel **Server** or **Client**. In Studio, DataStores run memory-only, and new profiles get 2,500 test Gems.
-- **Start a run quickly:** in Server, set `p:SetAttribute("Ready", true)` for each player. The countdown drops to 3s.
+- **Start a run quickly:** in Server, move the character onto the helipad with `p.Character:PivotTo(CFrame.new(workspace.OurMap.Lobby.Helipad.Pad.Position + Vector3.new(4, 4, 0)))`. Solo, the countdown is 4s. Setting `Ready` by hand doesn't work: the lobby loop overwrites it.
+- **Freeze-frame the deploy cutscene** (after one real deploy, so `DeployPath` exists):
+  1. In Client, set the `GameState` attribute `DeployDuration` to 1e6.
+  2. Set `DeployStart` to `GetServerTimeNow() - t * 1e6`.
+  3. Set the local player's `Deploying` to true. To change `t`, set it to false, then true again.
+  4. Good shots: t = 0.08 / 0.36 / 0.6 / 0.875 / 0.955.
+  - **Screenshots and the MCP link:** several `screen_capture` calls in a row while the cutscene renders can time out and drop the MCP link. Use one capture at a time.
+- **Team Create:** before any repo → Studio push, compare first. Push only the files you changed. A full import overwrote a live GameConfig edit by AnimatedSL on 2026-11-02.
 - **Debug commands:** `game.ServerStorage.SAMZ_Debug:Invoke(cmd, ...)`. Commands: `God`, `GiveCash`, `GiveGems`, `KillAll`, `SkipToWave n` (it applies after the current wave), `Spawn type n`, `NavCheck`, `State`, `ChargeUlt`, `Help`.
 - **Fire real shots** from Client: `Remotes.FireWeapon:FireServer(muzzle.WorldPosition, {dir})`, where the muzzle is `Character.Tool.Handle.Muzzle`. Use `Remotes.BuyUpgrade:FireServer("Weapon")` to upgrade.
 - **Balance:** `tools/balance-bot.luau` plays a full no-cheat solo run and logs each wave (instructions are in its header). Baseline from 2026-11-01: it reached wave 10 and got the boss to 9% HP. The owner approved that difficulty.
@@ -149,6 +162,7 @@ From the vault notes:
 - group-play balance testing
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: **helipad ready zone + first-person deploy cutscene.** The lobby countdown waits for someone to be on the helipad. The ride starts over the ocean, includes a cabin and a pilot, and the server-built path never clips a building. Place edits: terrain sea all round the map, and `Baseplate` sunk to Y = -21 and made invisible. Also exported AnimatedSL's first-person, sounds and throw work into the repo, which supersedes the "not committed" note below.
 - 2026-11-02: lobby shops. Armory and Barracks are walk-up shops with 3D gun and class previews; the side panels are gone and the screen keeps only the chip and Ready bar. **Friend's work in progress seen in Studio, not committed:** `ViewmodelController` (first-person viewmodel), `Config/Sounds`, plus edits to `Camera`, `Weapon` and `GameConfig`. `WeaponController` calls a `SoundController` that doesn't exist yet, so in Studio it throws `attempt to index nil with 'SetSpin'` every frame until they add it. Coordinate before exporting those files.
 - 2026-11-01: wrote this guide; moved the export/import/bot tools into `tools/`.
 - 2026-11-01: balance pass (spawns spread over a time window, full heal on wave clear). `94efbee`

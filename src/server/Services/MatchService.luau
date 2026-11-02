@@ -1,6 +1,6 @@
 -- MatchService: the game loop. Owns who is in the run, spawning characters, waves, and results.
 --
---   Lobby  --(countdown; shortened when everyone is Ready)-->  run starts
+--   Lobby  --(countdown while someone is on the helipad; shortened when everyone is)-->  run starts
 --   Deploy (helicopter cutscene, players parachute onto the arena spawns; see _deploy)
 --   loop:  Break (countdown, dead teammates respawn) -> Wave (spawn N zombies, wait until cleared)
 --   the last wave (GameConfig.Waves.TotalWaves) is the boss wave; clearing it wins the run
@@ -16,6 +16,7 @@
 --   MatchService:ReviveDead(cframe)       respawn every dead participant near cframe
 
 local Players = game:GetService("Players")
+local HttpService = game:GetService("HttpService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -227,9 +228,11 @@ function MatchService:_deploy(participants)
 		end
 		return
 	end
-	local from, to = Services.MapService:GetDeployPoints()
-	GameState:SetAttribute("DeployFrom", from)
-	GameState:SetAttribute("DeployTo", to)
+	local path = {}
+	for _, p in Services.MapService:GetDeployFlight() do
+		table.insert(path, { math.round(p.X), math.round(p.Y), math.round(p.Z) })
+	end
+	GameState:SetAttribute("DeployPath", HttpService:JSONEncode(path))
 	GameState:SetAttribute("DeployDuration", cfg.FlightTime)
 	GameState:SetAttribute("DeployStart", workspace:GetServerTimeNow())
 	GameState:SetAttribute("Phase", "Deploy")
@@ -292,11 +295,13 @@ function MatchService:_lobbyPhase()
 		local players = self:_lobbyPlayers()
 		local ready = 0
 		for _, player in players do
-			if player:GetAttribute("Ready") then
+			local onPad = Services.MapService:IsOnHelipad(player)
+			player:SetAttribute("Ready", onPad)
+			if onPad then
 				ready += 1
 			end
 		end
-		local enough = #players >= cfg.MinPlayers
+		local enough = ready >= cfg.MinPlayers
 		if not enough then
 			timer = cfg.IntermissionTime
 		elseif ready == #players then
@@ -368,7 +373,12 @@ function MatchService:_playWave(wave, isBoss)
 end
 
 function MatchService:_runMatch()
-	local participants = self:_lobbyPlayers()
+	local participants = {}
+	for _, player in self:_lobbyPlayers() do
+		if player:GetAttribute("Ready") then -- on the helipad
+			table.insert(participants, player)
+		end
+	end
 	if #participants == 0 then
 		return
 	end

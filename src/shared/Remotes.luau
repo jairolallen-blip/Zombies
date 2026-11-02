@@ -10,7 +10,6 @@
 --   SelectClass(classId: string)            lobby only
 --   SelectWeapon(weaponId: string)          lobby only
 --   UnlockItem(kind: "Class" | "Weapon", id: string)   spend Gems, lobby only
---   SetReady(ready: boolean)
 -- Server -> Client
 --   Notify(text: string, kind: "Info" | "Good" | "Danger")     toast message
 --   HitConfirm(hits: {{Position, Damage, Headshot, Killed}})   shooter-only hit feedback
@@ -29,7 +28,6 @@ local NAMES = {
 	"SelectClass",
 	"SelectWeapon",
 	"UnlockItem",
-	"SetReady",
 	"Notify",
 	"HitConfirm",
 	"Effect",
