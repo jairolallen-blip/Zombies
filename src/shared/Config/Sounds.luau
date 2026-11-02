@@ -55,7 +55,22 @@ Sounds.Library = {
 	JumpWhoosh = { Id = 12222095, Volume = 0.6, Pitch = 0.8 }, -- Roblox, Rocket whoosh 01
 	ParachuteOpen = { Id = 157822167, Volume = 0.7 }, -- Parachute Open (DarpyAdultman)
 	FallWind = { Id = 6544555787, Volume = 0.35, Looped = true }, -- Fierce howling loud wind (Festivereinhard2), under the chute
+
+	-- lobby (Client/Controllers/LobbyAudioController; ids checked 2026-11-02). Quiet on purpose: music is a
+	-- slow playlist (Sounds.LobbyPlaylist), and the 3D loops are placed in the lobby map (Server/Map/Commons)
+	LobbyMusic1 = { Id = 9043586747, Volume = 0.2 }, -- APM, "Remembering You (c)", sparse piano
+	LobbyMusic2 = { Id = 1838792473, Volume = 0.2 }, -- APM, "Dawn 2"
+	LobbyMusic3 = { Id = 9042042586, Volume = 0.18 }, -- APM, "Eternal Ice (b)", soft string drones
+	LobbySea = { Id = 93281700241946, Volume = 0.12, Looped = true }, -- Calm Sea Beach Ambience, the island's shore
+	LobbyEerie = { Id = 9112775414, Volume = 0.07, Looped = true }, -- PSE, Eerie Ambience 2 (the in-run bed, much quieter)
+	FireCrackle = { Id = 109494611784143, Volume = 0.45, MaxDistance = 26, Looped = true }, -- Kaminfeuer (DistrokidOfficial), fire crackle
+	RadioChatter = { Id = 7225461356, Volume = 0.4, MaxDistance = 36, Looped = true }, -- the cutscene's radio chatter, from the radio shack
+
 }
+
+-- Lobby music, played in order with a pause between tracks (LobbyAudioController)
+Sounds.LobbyPlaylist = { "LobbyMusic1", "LobbyMusic2", "LobbyMusic3" }
+
 
 -- Weapon id (Config/Weapons) -> { library key, pitch multiplier, follow-up sound? }
 Sounds.Guns = {

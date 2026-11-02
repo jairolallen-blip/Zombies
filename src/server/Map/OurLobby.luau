@@ -149,8 +149,11 @@ local function buildGround(parent)
 	end
 	for _ = 1, 34 do
 		local x, z = rng:NextNumber(-HALF + 4, HALF - 4), rng:NextNumber(-HALF + 4, HALF - 4)
-		local crack = part(ground, "Crack", Vector3.new(rng:NextNumber(0.2, 0.5), 0.05, rng:NextNumber(4, 12)), at(x, GROUND_Y + 0.27, z) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0), C.Crack, Enum.Material.SmoothPlastic)
+		local crack = part(ground, "Crack", Vector3.new(rng:NextNumber(0.2, 0.5), 0.05, rng:NextNumber(4, 12)), at(x, GROUND_Y + 0.03, z) * CFrame.Angles(0, rng:NextNumber(0, math.pi), 0), C.Crack, Enum.Material.SmoothPlastic)
 		crack.CanCollide = false
+		if math.abs(x - PLAZA.X) < 22 and math.abs(z - PLAZA.Z) < 22 then
+			crack:Destroy() -- not on the plaza slab (made after the rng calls, so the rest of the layout stays the same)
+		end
 	end
 end
 
@@ -520,7 +523,13 @@ local function buildPlaza(parent)
 	local c = at(PLAZA.X, GROUND_Y, PLAZA.Z)
 	cylinder(m, "FlagBase", 1, 4, c * CFrame.new(0, 0.5, 0), C.ConcreteDark, Enum.Material.Concrete)
 	part(m, "FlagPole", Vector3.new(0.5, 20, 0.5), c * CFrame.new(0, 10, 0), C.Metal, Enum.Material.Metal)
-	part(m, "Flag", Vector3.new(0.1, 3.4, 6), c * CFrame.new(0, 17.8, 3) * CFrame.Angles(0, 0, math.rad(4)), Color3.fromRGB(140, 40, 34), Enum.Material.Fabric)
+	-- the flag flies east-west so it faces the plaza (north-south it was edge-on); three panels give it a wave
+	local flagAt = c * CFrame.new(0.25, 17.8, 0)
+	for i, yaw in { 8, -10, 6 } do
+		flagAt = flagAt * CFrame.Angles(0, math.rad(yaw), 0)
+		part(m, "Flag", Vector3.new(2.05, 3.4 - i * 0.15, 0.1), flagAt * CFrame.new(1, -i * 0.08, 0), Color3.fromRGB(140, 40, 34), Enum.Material.Fabric)
+		flagAt = flagAt * CFrame.new(2, 0, 0)
+	end
 	for _, corner in { { -16, -16 }, { 16, -16 }, { -16, 16 }, { 16, 16 } } do
 		local barrel = cylinder(m, "FireBarrel", 3.4, 2.4, c * CFrame.new(corner[1], 1.7, corner[2]), C.Rust, Enum.Material.Metal)
 		fire(barrel, 4)
@@ -620,6 +629,7 @@ function OurLobby.Build()
 	buildBounds(lobby)
 	lobby.Parent = root
 	require(script.Parent.FlightLine).Build(lobby) -- the 4-pad take-off deck north of the courtyard
+	require(script.Parent.Commons).Build(lobby) -- the hangout area south of the courtyard
 	return lobby
 end
 

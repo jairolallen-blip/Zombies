@@ -124,7 +124,7 @@ function LobbyController:Init()
 	ui.Best = UIKit.Label({ Position = UDim2.new(0.55, 0, 0, 30), Size = UDim2.new(0.45, 0, 0, 24), TextSize = 18, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Right, Parent = chip })
 	ui.Class = UIKit.Label({ Position = UDim2.fromOffset(0, 58), Size = UDim2.new(1, 0, 0, 20), TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
 	ui.Guns = UIKit.Label({ Position = UDim2.fromOffset(0, 78), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = chip })
-	UIKit.Label({ Text = "ARMORY (west): guns  ·  BARRACKS (east): classes  ·  FLIGHT LINE (north): deploy", Position = UDim2.fromOffset(0, 104), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
+	UIKit.Label({ Text = "ARMORY west: guns  ·  BARRACKS east: classes  ·  FLIGHT LINE north: deploy  ·  COMMONS south", Position = UDim2.fromOffset(0, 104), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
 
 	-- take-off status
 	ui.StatusBar = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(560, 64), Parent = ui.Root })

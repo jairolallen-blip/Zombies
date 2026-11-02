@@ -34,6 +34,25 @@ Each class figure has its own pose and kit (`Shared/ClassFigures`, upgraded 2026
 
 The lobby screen keeps only a small chip (Gems, best wave, class, gun lineup, where the shops are) and the take-off status. Both scale with the screen height (`UIKit.AutoScale`, 2026-11-02). The chip sits at 0.75 on top of that, and the status bar is 560 wide so the prompt fits on one line.
 
+## The Commons and lobby sound (2026-11-02)
+The lobby was quiet and purely functional, so it got a place to hang out and some life.
+- **The Commons** (`Server/Map/Commons`, run by `OurLobby.Build` after FlightLine): the old south gate, blocked with barriers, is open again. Behind it, on its own slab (as wide as the courtyard's), are:
+  - a **campfire** ring with two couches, three log benches and crate side tables, under four poles of sagging warm string lights
+  - the **mess tent** (west): two long tables with benches, tins, a cooking barrel with a pot, crates
+  - **sleeping tents** (east): three A-frame tents with bedrolls and cots, and a lantern
+  - a **radio shack** (south-east): sandbag walls, a tin roof, a desk with a glowing radio set, a map board and an antenna mast with a red light
+  - a **hoop** (south-west) with a ball, faded court lines and crates
+  - container walls on both sides and a barrier fence at the south edge. The three south ruins moved back 84 studs to stand behind it.
+- **Sound** (`Client/Controllers/LobbyAudioController`; ids in `Config/Sounds`, checked in a playtest):
+  - Music: a quiet playlist of three APM tracks (Remembering You, Dawn, Eternal Ice) with 20s of quiet between them.
+  - Beds: a soft sea wash and a faint eerie ambience.
+  - The music and beds fade out when a run starts and back in when you return.
+  - 3D loops: a fire crackle on every fire (courtyard barrels, campfire, mess stove) and radio chatter from the shack. They are Sounds named `LobbyAmbient` that the controller starts as they stream in.
+- **Fixes found on the way:**
+  - The barrel flames burned sideways: the Fire's attachment inherited the barrel cylinder's 90° roll. It's set upright now.
+  - The flag hung edge-on to the plaza. It's three panels flying east-west now.
+  - The ground cracks floated 0.27 studs above the asphalt and lay across the plaza, so they read as sticks. They're flat on the ground now, and off the plaza.
+
 ## Flight Line and squads (2026-11-02, replaces the single helipad)
 The lobby is for many players now, so no one waits for a pad and every squad gets its **own private server**.
 - **The Flight Line:** a fenced deck north of the courtyard, through a gate where the middle north ruin stood (a "FLIGHT LINE" sign over it). It has **4 helipads** in a 2 × 2 grid, joined by taxi lines, with floodlights at the corners. Pad 1 is the old courtyard helipad, moved; pads 2–4 are copies of it (same glow, edge lights and sign). Each pad model has the attribute `PadId`. Built by `Server/Map/FlightLine`, which `OurLobby.Build` calls last.
