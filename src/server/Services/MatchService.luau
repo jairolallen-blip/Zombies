@@ -166,11 +166,55 @@ function MatchService:_radio(event, vars)
 	end
 end
 
--- Slow parachute descent: a world-space LinearVelocity on the root + a canopy, removed on landing.
+-- Ram-air canopy (an arc of fabric cells) and its lines, welded above the root
+local function buildCanopy(root)
+	local canopy = Instance.new("Model")
+	canopy.Name = "ParachuteCanopy"
+	local function add(size, cframe, color, material)
+		local p = Instance.new("Part")
+		p.Size = size
+		p.CFrame = root.CFrame * cframe
+		p.Color = color
+		p.Material = material
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.Massless = true
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = root
+		weld.Part1 = p
+		weld.Parent = p
+		p.Parent = canopy
+	end
+	local radius, cells = 11, 7
+	for i = 1, cells do
+		local a = (i - (cells + 1) / 2) * 0.16
+		local color = if i % 2 == 0 then Color3.fromRGB(170, 150, 105) else Color3.fromRGB(96, 108, 70)
+		add(Vector3.new(1.9, 0.35, 7), CFrame.new(math.sin(a) * radius, math.cos(a) * radius, 0) * CFrame.Angles(0, 0, -a), color, Enum.Material.Fabric)
+	end
+	local edge = math.sin(0.48) * radius
+	for _, x in { -1, 1 } do
+		for _, z in { -3, 0, 3 } do
+			local top = Vector3.new(x * edge, math.cos(0.48) * radius - 0.2, z)
+			local shoulder = Vector3.new(x * 0.9, 1.4, 0)
+			add(Vector3.new(0.05, 0.05, (top - shoulder).Magnitude), CFrame.lookAt((top + shoulder) / 2, top), Color3.fromRGB(205, 205, 195), Enum.Material.SmoothPlastic)
+		end
+	end
+	canopy.Parent = root.Parent
+	return canopy
+end
+
+-- The drop: a short freefall, then the canopy opens and a world-space LinearVelocity on the root holds
+-- a slow descent (the sudden brake is the opening jolt); both removed on landing.
 function MatchService:_parachute(player)
 	local character = player.Character
 	local root = character and character:FindFirstChild("HumanoidRootPart")
 	if not root then
+		return
+	end
+	root.Anchored = false
+	task.wait(GameConfig.Deploy.FreefallTime)
+	if not root.Parent then
 		return
 	end
 	local attachment = Instance.new("Attachment")
@@ -185,23 +229,7 @@ function MatchService:_parachute(player)
 	drag.LineVelocity = -GameConfig.Deploy.FallSpeed
 	drag.MaxForce = 1e7
 	drag.Parent = root
-	local canopy = Instance.new("Part")
-	canopy.Name = "ParachuteCanopy"
-	canopy.Shape = Enum.PartType.Ball
-	canopy.Size = Vector3.new(10, 3, 10)
-	canopy.Color = Color3.fromRGB(96, 108, 70)
-	canopy.Material = Enum.Material.Fabric
-	canopy.CanCollide = false
-	canopy.CanQuery = false
-	canopy.CanTouch = false
-	canopy.Massless = true
-	canopy.CFrame = root.CFrame * CFrame.new(0, 8, 0)
-	local weld = Instance.new("WeldConstraint")
-	weld.Part0 = root
-	weld.Part1 = canopy
-	weld.Parent = canopy
-	canopy.Parent = character
-	root.Anchored = false
+	local canopy = buildCanopy(root)
 
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude

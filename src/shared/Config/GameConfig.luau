@@ -24,8 +24,9 @@ GameConfig.Match = {
 GameConfig.Deploy = {
 	Enabled = true,
 	FlightTime = 18, -- seconds of helicopter cutscene before the drop
-	DropHeight = 75, -- studs above the spawn pads where players jump
-	FallSpeed = 30, -- parachute descent, studs/s
+	DropHeight = 110, -- studs above the spawn pads where players jump
+	FreefallTime = 0.5, -- seconds of freefall before the canopy opens
+	FallSpeed = 22, -- parachute descent, studs/s
 	OceanStart = Vector3.new(140, 0, -1050), -- flight start, relative to the square (north = -Z, the sea)
 	FinalApproach = Vector3.new(0, 0, -300), -- bezier bend: lines up on the north avenue
 	SeaAltitude = 28, -- skimming the waves

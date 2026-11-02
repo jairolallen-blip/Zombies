@@ -12,7 +12,7 @@ Part of the [[Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and p
    - **The ride:** it fades in already **over the ocean** north of the city, so the city feels far from the lobby. It skims the waves, then climbs over the coast and the rooftops, and slows to a hover above the square.
    - **Where you look:** out the door at the sea, forward through the windshield at the skyline (the "OPERATION LAST LIGHT / DROP ZONE" card), and leaning out the door at the streets.
    - **The pilot:** helmet, shades, headset and tactical vest. He turns round, gives a thumbs-up and says "Good luck down there."
-   - **The jump:** you step out of the door, a quick fade, then the parachute, all in first person.
+   - **The jump:** you step out of the door, a quick fade, then the fall, all in first person (2026-11-02). It starts with about 0.5s of freefall, arms out, looking down at the square. Then the ram-air canopy (7 striped cells plus lines) snaps open with a jolt. You look up at it and sway down with your forearms on the toggles. Your own body and gun are hidden locally, and other players see your canopy.
    - **No clipping:** the server builds the path (`MapService:GetDeployFlight`) by raycasting every roof under the rotor span, then keeps a slope-limited clearance above them. A check of a 34×10×34 box along the whole path found zero overlaps.
    - **Sound + effects:** cabin wind (louder at the door), sea wash and rotor-wash spray while low over the waves, faint radio chatter, an intercom squelch before the pilot, wind streaks past the door, a whoosh, shake and FOV kick on the jump, the chute opening, and falling wind until landing.
    - **The sea** is terrain water baked all round the map. The old `Baseplate` is sunk under it and made invisible.
@@ -27,7 +27,7 @@ Part of the [[Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and p
 - The server sends them over the `Radio` remote to run players only.
 
 ## Tunables
-`GameConfig.Deploy`: `FlightTime`, `DropHeight`, `FallSpeed`, `OceanStart`, `FinalApproach`, `SeaAltitude`, `CruiseHeight`, `Clearance`, `MaxClimbPerSample`. Camera shots are the `CAM_KEYS` table in `CutsceneController`. `GameConfig.Waves.FirstBreakTime` is the intermission.
+`GameConfig.Deploy`: `FlightTime`, `DropHeight` (110), `FreefallTime` (0.5), `FallSpeed` (22), `OceanStart`, `FinalApproach`, `SeaAltitude`, `CruiseHeight`, `Clearance`, `MaxClimbPerSample`. Camera shots are the `CAM_KEYS` table in `CutsceneController`. `GameConfig.Waves.FirstBreakTime` is the intermission.
 
 ## Later
 - A real voice line for the pilot (it's a subtitle plus a squelch for now).

@@ -11,6 +11,8 @@
 -- swells at the door, sea wash and rotor-wash spray while skimming the waves, faint radio chatter,
 -- an intercom squelch before the pilot speaks, wind streaks past the door, a whoosh, shake and FOV
 -- kick on the jump, then the chute snapping open and falling wind until you land.
+-- The fall (dropView) stays scripted first person: freefall, the canopy opening with a jolt, a look
+-- up at it, then a swaying descent holding the toggles, with your own body and gun hidden locally.
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -287,6 +289,100 @@ local function setDeployersHidden(hidden)
 	end
 end
 
+-- First person on the character from here on (CameraController re-applies all of this on landing)
+local function handOff(camera)
+	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	player.CameraMode = Enum.CameraMode.LockFirstPerson
+	camera.FieldOfView = GameConfig.Camera.FieldOfView
+	camera.CameraType = Enum.CameraType.Custom
+	if humanoid then
+		camera.CameraSubject = humanoid
+	end
+end
+
+-- Hands in camera space: arms spread in freefall, up on the steering toggles under the canopy
+local HANDS = {
+	{ Shoulder = Vector3.new(-0.7, -1.2, 0.5), Free = Vector3.new(-1.1, -0.4, -1.7), Toggle = Vector3.new(-0.7, 1.4, -1.6) },
+	{ Shoulder = Vector3.new(0.7, -1.2, 0.5), Free = Vector3.new(1.1, -0.4, -1.7), Toggle = Vector3.new(0.7, 1.4, -1.6) },
+}
+
+-- Out of the door until the landing, in first person: freefall looking down at the square, then the
+-- server opens the canopy (MatchService:_parachute) with a jolt, you look up at it, and sway down
+-- holding the toggles. Your own body and gun are hidden locally (no third-person fall pose or Tool
+-- in view); everyone else still sees you, canopy and all.
+local function dropView(camera, doorDir, Sound)
+	local character = player.Character
+	local root = character:FindFirstChild("HumanoidRootPart")
+	local facing = (doorDir * Vector3.new(1, 0, 1)).Unit
+	local fall = Sound:Loop("FallWind")
+	fall:Play()
+	local arms = {}
+	for i, hand in HANDS do
+		local sleeve = UIKit.new("Part", { Size = Vector3.new(0.4, 0.4, 1), Color = OLIVE, Material = Enum.Material.Fabric, Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, Parent = camera })
+		local glove = UIKit.new("Part", { Size = Vector3.new(0.27, 0.27, 0.32), Color = DARK, Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, Parent = camera })
+		arms[i] = { Hand = hand, Sleeve = sleeve, Glove = glove }
+	end
+	local start, openedAt = os.clock(), nil
+
+	local function land()
+		RunService:UnbindFromRenderStep("SAMZ_Drop")
+		for _, arm in arms do
+			arm.Sleeve:Destroy()
+			arm.Glove:Destroy()
+		end
+		for _, d in character:GetDescendants() do
+			if d:IsA("BasePart") or d:IsA("Decal") then
+				d.LocalTransparencyModifier = 0
+			end
+		end
+		TweenService:Create(fall, TweenInfo.new(0.8), { Volume = 0 }):Play()
+		task.delay(0.9, fall.Destroy, fall)
+		handOff(camera)
+	end
+
+	RunService:BindToRenderStep("SAMZ_Drop", Enum.RenderPriority.Camera.Value + 2, function()
+		local now = os.clock()
+		if player:GetAttribute("Deploying") ~= true or player:GetAttribute("InRun") ~= true or not root.Parent or now - start > 15 then
+			land()
+			return
+		end
+		local canopy = character:FindFirstChild("ParachuteCanopy")
+		for _, d in character:GetDescendants() do
+			if (d:IsA("BasePart") or d:IsA("Decal")) and not (canopy and d:IsDescendantOf(canopy)) then
+				d.LocalTransparencyModifier = 1
+			end
+		end
+		if canopy and not openedAt then
+			openedAt = now
+			Sound:Play("ParachuteOpen")
+		end
+
+		local open = if openedAt then smooth((now - openedAt) / 0.3) else 0
+		local o = if openedAt then now - openedAt else 0
+		local up = if openedAt then window(o, 0, 0.35, 1.3, 2.1) else 0 -- look up at the canopy
+		local pitch = -0.95 + open * (0.55 + 1.65 * up)
+		local jolt = if openedAt then math.exp(-o * 5) * math.sin(o * 22) * 0.7 else 0
+		local shake = 0.03 * (1 - open) + 0.005
+		fall.Volume = Sounds.Library.FallWind.Volume * (1 - 0.6 * open)
+		camera.FieldOfView = 86 - 10 * open
+		local head = root.Position + Vector3.new(0, 1.5 + jolt, 0)
+		local camCF = CFrame.lookAt(head, head + facing)
+			* CFrame.Angles(0, math.sin(now * 0.5) * 0.1 * open + math.noise(now * 9, 3) * shake, 0)
+			* CFrame.Angles(pitch + math.noise(now * 9, 4) * shake, 0, math.sin(now * 0.9) * 0.06 * open)
+		camera.CFrame = camCF
+
+		for _, arm in arms do
+			local hand = camCF * arm.Hand.Free:Lerp(arm.Hand.Toggle, open)
+			local shoulder = camCF * arm.Hand.Shoulder
+			-- forearm only: a full arm passes right by the lens and fills the screen
+			local elbow = hand + (shoulder - hand).Unit * 1.1
+			arm.Sleeve.Size = Vector3.new(0.24, 0.24, 1.1)
+			arm.Sleeve.CFrame = CFrame.lookAt((hand + elbow) / 2, hand)
+			arm.Glove.CFrame = CFrame.lookAt(hand, hand + (hand - shoulder))
+		end
+	end)
+end
+
 function CutsceneController:Play()
 	local start, duration = GameState:GetAttribute("DeployStart"), GameState:GetAttribute("DeployDuration")
 	local ok, raw = pcall(HttpService.JSONDecode, HttpService, GameState:GetAttribute("DeployPath") or "")
@@ -325,27 +421,10 @@ function CutsceneController:Play()
 		end
 		spray:Destroy()
 		streaks.Enabled = false
-		if player:GetAttribute("Deploying") then
-			-- out of the door: the chute snaps open, falling wind until the landing
-			task.delay(0.4, Sound.Play, Sound, "ParachuteOpen")
-			local fall = Sound:Loop("FallWind")
-			fall:Play()
-			local function land()
-				if fall.Parent then
-					TweenService:Create(fall, TweenInfo.new(0.8), { Volume = 0 }):Play()
-					task.delay(0.9, fall.Destroy, fall)
-				end
-			end
-			player:GetAttributeChangedSignal("Deploying"):Once(land)
-			task.delay(12, land)
-		end
-		-- first person from the jump on (CameraController re-applies all of this on landing)
-		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-		player.CameraMode = Enum.CameraMode.LockFirstPerson
-		camera.FieldOfView = GameConfig.Camera.FieldOfView
-		camera.CameraType = Enum.CameraType.Custom
-		if humanoid then
-			camera.CameraSubject = humanoid
+		if player:GetAttribute("Deploying") and player.Character then
+			dropView(camera, heliCF.RightVector, Sound)
+		else
+			handOff(camera)
 		end
 		for _, child in ui.Gui:GetChildren() do
 			if child:IsA("Frame") then
