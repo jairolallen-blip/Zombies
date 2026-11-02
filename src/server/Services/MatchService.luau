@@ -244,6 +244,7 @@ function MatchService:_parachute(player)
 	drag:Destroy()
 	attachment:Destroy()
 	canopy:Destroy()
+	player:SetAttribute("Deploying", false) -- control back on touchdown, not when the slowest lands
 end
 
 -- Run start: helicopter cutscene (client CutsceneController reads the Deploy* GameState attributes),

@@ -302,8 +302,8 @@ end
 
 -- Hands in camera space: arms spread in freefall, up on the steering toggles under the canopy
 local HANDS = {
-	{ Shoulder = Vector3.new(-0.7, -1.2, 0.5), Free = Vector3.new(-1.1, -0.4, -1.7), Toggle = Vector3.new(-0.7, 1.4, -1.6) },
-	{ Shoulder = Vector3.new(0.7, -1.2, 0.5), Free = Vector3.new(1.1, -0.4, -1.7), Toggle = Vector3.new(0.7, 1.4, -1.6) },
+	{ Shoulder = Vector3.new(-0.7, -1.2, 0.5), Free = Vector3.new(-1, -0.3, -1.1), Toggle = Vector3.new(-0.55, 1.2, -1.1) },
+	{ Shoulder = Vector3.new(0.7, -1.2, 0.5), Free = Vector3.new(1, -0.3, -1.1), Toggle = Vector3.new(0.55, 1.2, -1.1) },
 }
 
 -- Out of the door until the landing, in first person: freefall looking down at the square, then the
@@ -319,7 +319,7 @@ local function dropView(camera, doorDir, Sound)
 	local arms = {}
 	for i, hand in HANDS do
 		local sleeve = UIKit.new("Part", { Size = Vector3.new(0.4, 0.4, 1), Color = OLIVE, Material = Enum.Material.Fabric, Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, Parent = camera })
-		local glove = UIKit.new("Part", { Size = Vector3.new(0.27, 0.27, 0.32), Color = DARK, Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, Parent = camera })
+		local glove = UIKit.new("Part", { Size = Vector3.new(0.34, 0.34, 0.4), Color = DARK, Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, Parent = camera })
 		arms[i] = { Hand = hand, Sleeve = sleeve, Glove = glove }
 	end
 	local start, openedAt = os.clock(), nil
@@ -347,6 +347,10 @@ local function dropView(camera, doorDir, Sound)
 			return
 		end
 		local canopy = character:FindFirstChild("ParachuteCanopy")
+		if openedAt and not canopy then
+			land() -- the server removes the canopy on touchdown
+			return
+		end
 		for _, d in character:GetDescendants() do
 			if (d:IsA("BasePart") or d:IsA("Decal")) and not (canopy and d:IsDescendantOf(canopy)) then
 				d.LocalTransparencyModifier = 1
@@ -374,10 +378,9 @@ local function dropView(camera, doorDir, Sound)
 		for _, arm in arms do
 			local hand = camCF * arm.Hand.Free:Lerp(arm.Hand.Toggle, open)
 			local shoulder = camCF * arm.Hand.Shoulder
-			-- forearm only: a full arm passes right by the lens and fills the screen
-			local elbow = hand + (shoulder - hand).Unit * 1.1
-			arm.Sleeve.Size = Vector3.new(0.24, 0.24, 1.1)
-			arm.Sleeve.CFrame = CFrame.lookAt((hand + elbow) / 2, hand)
+			-- whole arm, shoulder to hand: it passes close to the lens and fills the screen edges
+			arm.Sleeve.Size = Vector3.new(0.32, 0.32, (hand - shoulder).Magnitude)
+			arm.Sleeve.CFrame = CFrame.lookAt((hand + shoulder) / 2, hand)
 			arm.Glove.CFrame = CFrame.lookAt(hand, hand + (hand - shoulder))
 		end
 	end)
