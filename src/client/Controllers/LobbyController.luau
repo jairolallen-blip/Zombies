@@ -38,8 +38,8 @@ function LobbyController:Rebuild()
 end
 
 function LobbyController:ShowResults(results)
-	ui.ResultsTitle.Text = if results.Victory then "VICTORY" elseif results.NewBest then "NEW BEST!" else "OVERRUN"
-	ui.ResultsTitle.TextColor3 = if results.Victory then T.Cash elseif results.NewBest then T.Accent else T.Danger
+	ui.ResultsTitle.Text = if results.Victory then "VICTORY" elseif results.NewBest and results.Wave > 1 then "NEW BEST!" else "OVERRUN"
+	ui.ResultsTitle.TextColor3 = if results.Victory then T.Cash elseif results.NewBest and results.Wave > 1 then T.Accent else T.Danger
 	local reached = if results.Victory then string.format("Survived all %d waves", results.WavesCleared) else string.format("Reached wave %d", results.Wave)
 	ui.ResultsBody.Text = string.format("%s\nZombies killed: %s", reached, Util.FormatNumber(results.Kills))
 	ui.ResultsGems.Text = "+ ◆ " .. Util.FormatNumber(results.Gems) .. " Gems"
@@ -52,26 +52,29 @@ end
 function LobbyController:Init()
 	local gui = UIKit.Screen("Lobby")
 	ui.Root = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = gui })
+	UIKit.AutoScale(ui.Root)
 
 	-- below Roblox's top-bar buttons (the screen ignores the inset), scaled down to stay out of the way
-	local chip = UIKit.Panel({ Position = UDim2.fromOffset(16, 68), Size = UDim2.fromOffset(520, 150), Parent = ui.Root })
+	local chip = UIKit.Panel({ Position = UDim2.fromOffset(16, 68), Size = UDim2.fromOffset(570, 150), Parent = ui.Root })
 	UIKit.new("UIScale", { Scale = 0.75, Parent = chip })
 	UIKit.Padding(12).Parent = chip
-	UIKit.Label({ Text = "SURVIVE A MILLION ZOMBIES", Size = UDim2.new(1, 0, 0, 28), TextSize = 24, TextColor3 = Color3.fromRGB(150, 255, 90), TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
-	ui.Gems = UIKit.Label({ Position = UDim2.fromOffset(0, 30), Size = UDim2.new(0.55, 0, 0, 24), TextSize = 20, TextColor3 = T.Gem, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
-	ui.Best = UIKit.Label({ Position = UDim2.new(0.55, 0, 0, 30), Size = UDim2.new(0.45, 0, 0, 24), TextSize = 16, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Right, Parent = chip })
-	ui.Class = UIKit.Label({ Position = UDim2.fromOffset(0, 58), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
-	ui.Guns = UIKit.Label({ Position = UDim2.fromOffset(0, 78), Size = UDim2.new(1, 0, 0, 20), TextSize = 14, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = chip })
-	UIKit.Label({ Text = "ARMORY (west): guns  ·  BARRACKS (east): classes  ·  HELIPAD (north): deploy", Position = UDim2.fromOffset(0, 104), Size = UDim2.new(1, 0, 0, 20), TextSize = 14, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
+	UIKit.Label({ Text = "SURVIVE A MILLION ZOMBIES", Size = UDim2.new(1, 0, 0, 28), TextSize = 26, TextColor3 = T.Sign, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
+	ui.Gems = UIKit.Label({ Position = UDim2.fromOffset(0, 30), Size = UDim2.new(0.55, 0, 0, 24), TextSize = 22, TextColor3 = T.Gem, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
+	ui.Best = UIKit.Label({ Position = UDim2.new(0.55, 0, 0, 30), Size = UDim2.new(0.45, 0, 0, 24), TextSize = 18, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Right, Parent = chip })
+	ui.Class = UIKit.Label({ Position = UDim2.fromOffset(0, 58), Size = UDim2.new(1, 0, 0, 20), TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
+	ui.Guns = UIKit.Label({ Position = UDim2.fromOffset(0, 78), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = chip })
+	UIKit.Label({ Text = "ARMORY (west): guns  ·  BARRACKS (east): classes  ·  HELIPAD (north): deploy", Position = UDim2.fromOffset(0, 104), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
 
 	-- take-off status
-	ui.StatusBar = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(440, 64), Parent = ui.Root })
-	ui.Status = UIKit.Label({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), TextSize = 19, TextWrapped = true, Parent = ui.StatusBar })
+	ui.StatusBar = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(560, 64), Parent = ui.Root })
+	ui.Status = UIKit.Label({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), TextSize = 21, TextWrapped = true, Parent = ui.StatusBar })
 
-	-- Results overlay
-	ui.Results = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.42), Size = UDim2.fromOffset(380, 230), Visible = false, ZIndex = 5, Parent = gui })
+	-- Results overlay (own root: it shows over the lobby whether or not ui.Root is visible)
+	local resultsRoot = UIKit.new("Frame", { BackgroundTransparency = 1, Parent = gui })
+	UIKit.AutoScale(resultsRoot)
+	ui.Results = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.42), Size = UDim2.fromOffset(380, 230), Visible = false, ZIndex = 5, Parent = resultsRoot })
 	ui.ResultsTitle = UIKit.Label({ Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 50), TextSize = 46, ZIndex = 5, Parent = ui.Results })
-	ui.ResultsBody = UIKit.Label({ Position = UDim2.fromOffset(0, 70), Size = UDim2.new(1, 0, 0, 56), TextSize = 21, ZIndex = 5, Parent = ui.Results })
+	ui.ResultsBody = UIKit.Label({ Position = UDim2.fromOffset(0, 70), Size = UDim2.new(1, 0, 0, 56), TextSize = 22, ZIndex = 5, Parent = ui.Results })
 	ui.ResultsGems = UIKit.Label({ Position = UDim2.fromOffset(0, 128), Size = UDim2.new(1, 0, 0, 34), TextSize = 28, TextColor3 = T.Gem, ZIndex = 5, Parent = ui.Results })
 	UIKit.Button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.fromOffset(140, 40), Text = "CONTINUE", ZIndex = 5, Parent = ui.Results }, function()
 		ui.Results.Visible = false

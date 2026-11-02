@@ -12,17 +12,18 @@ local UIKit = {}
 
 UIKit.Theme = {
 	Font = Enum.Font.FredokaOne,
-	Panel = Color3.fromRGB(20, 22, 28),
-	PanelTransparency = 0.2,
-	Card = Color3.fromRGB(38, 41, 50),
-	Text = Color3.fromRGB(245, 245, 245),
-	SubText = Color3.fromRGB(170, 175, 188),
-	Cash = Color3.fromRGB(92, 224, 122), -- in-run currency: always green + "$"
-	Gem = Color3.fromRGB(190, 130, 255), -- persistent currency: always purple + "◆"
-	Danger = Color3.fromRGB(240, 75, 70),
-	Health = Color3.fromRGB(90, 220, 110),
-	Accent = Color3.fromRGB(255, 196, 60),
-	Disabled = Color3.fromRGB(85, 88, 96),
+	Panel = Color3.fromRGB(52, 52, 55), -- Soot: warm toy-brick dark, not navy
+	PanelTransparency = 0.05,
+	Card = Color3.fromRGB(70, 74, 80), -- MetalDark
+	Text = Color3.fromRGB(235, 228, 205), -- Bone
+	SubText = Color3.fromRGB(206, 210, 220), -- StoneLight, brightened for readability on dark panels
+	Cash = Color3.fromRGB(140, 200, 70), -- LeafLime: in-run currency: always green + "$"
+	Gem = Color3.fromRGB(170, 90, 220), -- FlowerPurple: persistent currency: always purple + "◆"
+	Danger = Color3.fromRGB(200, 55, 50), -- world Red
+	Health = Color3.fromRGB(122, 194, 82), -- GrassLight
+	Accent = Color3.fromRGB(245, 200, 60), -- warm sign Yellow
+	Sign = Color3.fromRGB(150, 255, 90), -- the green the lobby's wooden sign boards use
+	Disabled = Color3.fromRGB(88, 92, 106), -- StoneDark
 }
 
 function UIKit.new(className, props, children)
@@ -51,7 +52,7 @@ local function merge(defaults, props)
 end
 
 function UIKit.Corner(radius)
-	return UIKit.new("UICorner", { CornerRadius = UDim.new(0, radius or 10) })
+	return UIKit.new("UICorner", { CornerRadius = UDim.new(0, radius or 4) })
 end
 
 function UIKit.Stroke(color, thickness)
@@ -95,7 +96,8 @@ function UIKit.Panel(props)
 		BackgroundTransparency = UIKit.Theme.PanelTransparency,
 		BorderSizePixel = 0,
 	}, props))
-	UIKit.Corner(12).Parent = frame
+	UIKit.Corner(4).Parent = frame
+	UIKit.Stroke(Color3.fromRGB(18, 20, 16), 2).Parent = frame
 	return frame
 end
 
@@ -107,8 +109,12 @@ function UIKit.Label(props)
 		TextSize = 20,
 		Text = "",
 	}, props))
-	local stroke = UIKit.new("UIStroke", { Thickness = 1.5, Transparency = 0.4 })
+	local stroke = UIKit.new("UIStroke", { Color = Color3.fromRGB(8, 6, 4), Thickness = 2, Transparency = label.TextTransparency })
 	stroke.Parent = label
+	-- the outline fades with the text, so hidden labels (TextTransparency = 1) leave no ghost
+	label:GetPropertyChangedSignal("TextTransparency"):Connect(function()
+		stroke.Transparency = label.TextTransparency
+	end)
 	return label
 end
 
@@ -117,11 +123,12 @@ function UIKit.Button(props, onClick)
 		BackgroundColor3 = UIKit.Theme.Accent,
 		BorderSizePixel = 0,
 		Font = UIKit.Theme.Font,
-		TextColor3 = Color3.fromRGB(25, 25, 30),
+		TextColor3 = Color3.fromRGB(35, 35, 40),
 		TextSize = 20,
 		AutoButtonColor = true,
 	}, props))
-	UIKit.Corner(8).Parent = button
+	UIKit.Corner(4).Parent = button
+	UIKit.Stroke(Color3.fromRGB(18, 20, 16), 3).Parent = button
 	if onClick then
 		button.Activated:Connect(onClick)
 	end

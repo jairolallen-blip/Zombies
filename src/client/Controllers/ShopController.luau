@@ -28,7 +28,7 @@ local Achievements = require(Shared.Config.Achievements)
 local UIKit = require(script.Parent.Parent.UI.UIKit)
 
 local T = UIKit.Theme
-local TITLE = Color3.fromRGB(150, 255, 90)
+local TITLE = T.Sign
 local player = Players.LocalPlayer
 local ShopController = {}
 local ui = {}
@@ -68,13 +68,14 @@ local function preview(parent, size, model, sway)
 	local vp = UIKit.new("ViewportFrame", {
 		Size = size,
 		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
-		Ambient = Color3.fromRGB(200, 200, 210),
+		Ambient = Color3.fromRGB(205, 200, 185),
 		LightColor = Color3.fromRGB(255, 245, 230),
 		LightDirection = Vector3.new(-0.6, -0.8, 0.4),
 		Parent = parent,
 	})
-	UIKit.Corner(10).Parent = vp
-	UIKit.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(150, 156, 170), Color3.fromRGB(70, 74, 86)), Parent = vp })
+	UIKit.Corner(4).Parent = vp
+	UIKit.Stroke(Color3.fromRGB(20, 22, 18), 2).Parent = vp
+	UIKit.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(148, 152, 138), Color3.fromRGB(58, 60, 50)), Parent = vp })
 	model.Parent = vp
 	local cf, extent = model:GetBoundingBox()
 	local center = cf.Position
@@ -112,11 +113,18 @@ end
 
 -- equip / unlock button shared by both shops
 local function actionButton(parent, isEquipped, isOwned, gemCost, onEquip, onUnlock)
-	local button = UIKit.Button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -10), Size = UDim2.new(1, -20, 0, 40), TextSize = 19, Parent = parent })
+	local button = UIKit.Button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -12), Size = UDim2.new(1, -20, 0, 44), TextSize = 20, Parent = parent })
+	UIKit.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 150, 150)), Parent = button })
+	local bc = button:FindFirstChildOfClass("UICorner")
+	if bc then
+		bc:Destroy()
+	end
+	UIKit.Corner(4).Parent = button
+	UIKit.Stroke(Color3.fromRGB(18, 20, 16), 3).Parent = button
 	if isEquipped then
 		button.Text = "EQUIPPED"
-		button.BackgroundColor3 = T.Disabled
-		button.TextColor3 = T.Text
+		button.BackgroundColor3 = T.Cash
+		button.TextColor3 = Color3.fromRGB(20, 30, 20)
 		button.AutoButtonColor = false
 	elseif isOwned then
 		button.Text = "EQUIP"
@@ -130,11 +138,14 @@ local function actionButton(parent, isEquipped, isOwned, gemCost, onEquip, onUnl
 	end
 end
 
-local function card(parent, width, accent, highlighted)
-	local frame = UIKit.new("Frame", { Size = UDim2.new(0, width, 1, 0), BackgroundColor3 = T.Card, BorderSizePixel = 0, Parent = parent })
-	UIKit.Corner(12).Parent = frame
-	local stroke = UIKit.Stroke(if highlighted then accent else Color3.fromRGB(60, 64, 74), if highlighted then 3 else 1)
+local function card(parent, width, accent, highlighted, name)
+	local frame = UIKit.new("Frame", { Size = UDim2.new(0, width, 1, 0), BackgroundColor3 = Color3.fromRGB(56, 54, 46), BorderSizePixel = 0, Parent = parent })
+	UIKit.Corner(4).Parent = frame
+	local stroke = UIKit.Stroke(if highlighted then accent else Color3.fromRGB(16, 18, 14), if highlighted then 4 else 3)
 	stroke.Parent = frame
+	local strip = UIKit.new("Frame", { Size = UDim2.new(1, 0, 0, 30), BackgroundColor3 = accent, BorderSizePixel = 0, Parent = frame })
+	UIKit.Corner(4).Parent = strip
+	UIKit.Label({ Text = name, Size = UDim2.new(1, 0, 1, 0), TextSize = 20, TextColor3 = Color3.fromRGB(22, 24, 18), Parent = strip })
 	return frame
 end
 
@@ -157,10 +168,11 @@ function ShopController:_buildArmory()
 			AutoButtonColor = true,
 			Parent = tabs,
 		})
-		UIKit.Corner(10).Parent = tab
-		UIKit.Stroke(color, if selected then 3 else 1).Parent = tab
+		UIKit.Corner(4).Parent = tab
+		UIKit.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(165, 165, 165)), Parent = tab })
+		UIKit.Stroke(if selected then color else Color3.fromRGB(70, 74, 62), if selected then 4 else 2).Parent = tab
 		UIKit.Label({ Text = "LEVEL " .. lvl, Position = UDim2.fromOffset(14, 10), Size = UDim2.new(1, -28, 0, 30), TextSize = 26, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Left, Parent = tab })
-		UIKit.Label({ Text = if lvl == 1 then "Starter gun" else "In-run upgrade $" .. Util.FormatNumber(costs[lvl - 1]), Position = UDim2.fromOffset(14, 42), Size = UDim2.new(1, -28, 0, 20), TextSize = 14, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, Parent = tab })
+		UIKit.Label({ Text = if lvl == 1 then "Starter gun" else "In-run upgrade $" .. Util.FormatNumber(costs[lvl - 1]), Position = UDim2.fromOffset(14, 42), Size = UDim2.new(1, -28, 0, 20), TextSize = 16, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, Parent = tab })
 		tab.Activated:Connect(function()
 			level = lvl
 			self:Refresh()
@@ -173,18 +185,17 @@ function ShopController:_buildArmory()
 	local equipped = picked[level] or Weapons.DefaultFor(level)
 	for _, id in Weapons.ForLevel(level) do
 		local def = Weapons.List[id]
-		local c = card(cards, 220, color, equipped == id)
-		preview(c, UDim2.new(1, -16, 0, 140), gunModel(id, level), true).Position = UDim2.fromOffset(8, 8)
-		UIKit.Label({ Text = def.DisplayName, Position = UDim2.fromOffset(12, 154), Size = UDim2.new(1, -24, 0, 26), TextSize = 23, TextColor3 = color, TextXAlignment = Enum.TextXAlignment.Left, Parent = c })
-		UIKit.Label({ Text = def.Description, Position = UDim2.fromOffset(12, 182), Size = UDim2.new(1, -24, 0, 50), TextSize = 14, TextWrapped = true, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, Parent = c })
+		local c = card(cards, 220, color, equipped == id, def.DisplayName)
+		preview(c, UDim2.new(1, -16, 0, 112), gunModel(id, level), true).Position = UDim2.fromOffset(8, 40)
+		UIKit.Label({ Text = def.Description, Position = UDim2.fromOffset(12, 158), Size = UDim2.new(1, -24, 0, 48), TextSize = 16, TextWrapped = true, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, Parent = c })
 		for i, stat in STATS do
-			local y = 236 + (i - 1) * 26
-			UIKit.Label({ Text = stat[1], Position = UDim2.fromOffset(12, y), Size = UDim2.fromOffset(80, 20), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, Parent = c })
-			local back = UIKit.new("Frame", { Position = UDim2.fromOffset(90, y + 6), Size = UDim2.new(1, -150, 0, 8), BackgroundColor3 = Color3.fromRGB(20, 22, 26), BorderSizePixel = 0, Parent = c })
+			local y = 206 + (i - 1) * 24
+			UIKit.Label({ Text = stat[1], Position = UDim2.fromOffset(12, y), Size = UDim2.fromOffset(80, 20), TextSize = 16, TextXAlignment = Enum.TextXAlignment.Left, Parent = c })
+			local back = UIKit.new("Frame", { Position = UDim2.fromOffset(90, y + 6), Size = UDim2.new(1, -156, 0, 8), BackgroundColor3 = Color3.fromRGB(30, 34, 28), BorderSizePixel = 0, Parent = c })
 			UIKit.Corner(4).Parent = back
 			local fill = UIKit.new("Frame", { Size = UDim2.fromScale(math.clamp(stat[2](def) / statMax[i], 0.04, 1), 1), BackgroundColor3 = color, BorderSizePixel = 0, Parent = back })
 			UIKit.Corner(4).Parent = fill
-			UIKit.Label({ Text = stat[3](def), AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, y), Size = UDim2.fromOffset(52, 20), TextSize = 14, TextXAlignment = Enum.TextXAlignment.Right, Parent = c })
+			UIKit.Label({ Text = stat[3](def), AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -10, 0, y), Size = UDim2.fromOffset(58, 20), TextSize = 16, TextXAlignment = Enum.TextXAlignment.Right, Parent = c })
 		end
 		local extras = {}
 		if def.Pierce > 1 then
@@ -197,7 +208,7 @@ function ShopController:_buildArmory()
 			table.insert(extras, "Spins up")
 		end
 		table.insert(extras, "Headshot ×" .. def.HeadshotMultiplier)
-		UIKit.Label({ Text = table.concat(extras, " · "), Position = UDim2.fromOffset(12, 338), Size = UDim2.new(1, -24, 0, 32), TextSize = 13, TextWrapped = true, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, Parent = c })
+		UIKit.Label({ Text = table.concat(extras, " · "), Position = UDim2.fromOffset(12, 302), Size = UDim2.new(1, -24, 0, 40), TextSize = 15, TextWrapped = true, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, Parent = c })
 		actionButton(c, equipped == id, owned[id], def.GemCost, function()
 			Remotes.SelectWeapon:FireServer(id)
 		end, function()
@@ -220,12 +231,11 @@ function ShopController:_buildClasses()
 	UIKit.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 12), Parent = body })
 	for _, id in ids do
 		local def = Classes.List[id]
-		local c = card(body, 168, def.Color, current == id)
-		preview(c, UDim2.new(1, -16, 0, 176), ClassFigures.Build(id), false).Position = UDim2.fromOffset(8, 8)
-		UIKit.Label({ Text = def.DisplayName, Position = UDim2.fromOffset(10, 188), Size = UDim2.new(1, -20, 0, 26), TextSize = 23, TextColor3 = def.Color, Parent = c })
-		UIKit.Label({ Text = def.Description, Position = UDim2.fromOffset(10, 216), Size = UDim2.new(1, -20, 0, 58), TextSize = 13, TextWrapped = true, TextColor3 = T.SubText, TextYAlignment = Enum.TextYAlignment.Top, Parent = c })
-		UIKit.Label({ Text = "[E] " .. def.Ability.Name, Position = UDim2.fromOffset(10, 278), Size = UDim2.new(1, -20, 0, 18), TextSize = 14, TextColor3 = T.Accent, Parent = c })
-		UIKit.Label({ Text = "[F] " .. def.Ultimate.Name, Position = UDim2.fromOffset(10, 298), Size = UDim2.new(1, -20, 0, 18), TextSize = 14, TextColor3 = T.Accent, Parent = c })
+		local c = card(body, 168, def.Color, current == id, def.DisplayName)
+		preview(c, UDim2.new(1, -16, 0, 164), ClassFigures.Build(id), false).Position = UDim2.fromOffset(8, 40)
+		UIKit.Label({ Text = def.Description, Position = UDim2.fromOffset(10, 212), Size = UDim2.new(1, -20, 0, 54), TextSize = 15, TextWrapped = true, TextColor3 = T.SubText, TextYAlignment = Enum.TextYAlignment.Top, Parent = c })
+		UIKit.Label({ Text = "[E] " .. def.Ability.Name, Position = UDim2.fromOffset(10, 270), Size = UDim2.new(1, -20, 0, 20), TextSize = 16, TextColor3 = T.Accent, Parent = c })
+		UIKit.Label({ Text = "[F] " .. def.Ultimate.Name, Position = UDim2.fromOffset(10, 290), Size = UDim2.new(1, -20, 0, 20), TextSize = 16, TextColor3 = T.Accent, Parent = c })
 		local traits = {}
 		if def.HealthBonus ~= 0 then
 			table.insert(traits, string.format("%+d HP", def.HealthBonus))
@@ -236,7 +246,7 @@ function ShopController:_buildClasses()
 		if def.DamageTakenMult ~= 1 then
 			table.insert(traits, string.format("%d%% armor", math.floor((1 - def.DamageTakenMult) * 100 + 0.5)))
 		end
-		UIKit.Label({ Text = if #traits > 0 then table.concat(traits, " · ") else "Balanced", Position = UDim2.fromOffset(10, 322), Size = UDim2.new(1, -20, 0, 18), TextSize = 13, TextColor3 = T.Text, Parent = c })
+		UIKit.Label({ Text = if #traits > 0 then table.concat(traits, " · ") else "Balanced", Position = UDim2.fromOffset(10, 312), Size = UDim2.new(1, -20, 0, 20), TextSize = 15, TextColor3 = T.Text, Parent = c })
 		actionButton(c, current == id, owned[id], def.GemCost, function()
 			Remotes.SelectClass:FireServer(id)
 		end, function()
@@ -282,17 +292,26 @@ function ShopController:_buildAchievements()
 		local def = row.Def
 		local ready, done = row.Rank == 0, row.Rank == 2
 		local accent = if ready then T.Cash elseif done then T.SubText else T.Accent
-		local c = UIKit.new("Frame", { Size = UDim2.new(1, -12, 0, 66), BackgroundColor3 = T.Card, BorderSizePixel = 0, Parent = list })
-		UIKit.Corner(10).Parent = c
-		UIKit.Stroke(if ready then T.Cash else Color3.fromRGB(60, 64, 74), if ready then 2 else 1).Parent = c
+		local c = UIKit.new("Frame", { Size = UDim2.new(1, -12, 0, 66), BackgroundColor3 = Color3.fromRGB(56, 54, 46), BorderSizePixel = 0, Parent = list })
+		UIKit.Corner(4).Parent = c
+		UIKit.Stroke(if ready then T.Cash else Color3.fromRGB(16, 18, 14), if ready then 4 else 3).Parent = c
+		local edge = UIKit.new("Frame", { Size = UDim2.fromOffset(6, 66), BackgroundColor3 = accent, BorderSizePixel = 0, Parent = c })
+		UIKit.Corner(4).Parent = edge
 		UIKit.Label({ Text = def.Name, Position = UDim2.fromOffset(14, 8), Size = UDim2.new(1, -330, 0, 24), TextSize = 21, TextColor3 = accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = c })
-		UIKit.Label({ Text = def.Desc, Position = UDim2.fromOffset(14, 34), Size = UDim2.new(1, -330, 0, 20), TextSize = 14, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, Parent = c })
-		local back = UIKit.new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -170, 0, 18), Size = UDim2.fromOffset(140, 10), BackgroundColor3 = Color3.fromRGB(20, 22, 26), BorderSizePixel = 0, Parent = c })
+		UIKit.Label({ Text = def.Desc, Position = UDim2.fromOffset(14, 34), Size = UDim2.new(1, -330, 0, 20), TextSize = 16, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, Parent = c })
+		local back = UIKit.new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -170, 0, 18), Size = UDim2.fromOffset(140, 10), BackgroundColor3 = Color3.fromRGB(30, 34, 28), BorderSizePixel = 0, Parent = c })
 		UIKit.Corner(5).Parent = back
 		local fill = UIKit.new("Frame", { Size = UDim2.fromScale(math.max(row.Fraction, 0.03), 1), BackgroundColor3 = accent, BorderSizePixel = 0, Parent = back })
 		UIKit.Corner(5).Parent = fill
-		UIKit.Label({ Text = Util.FormatNumber(math.min(row.Progress, def.Goal)) .. " / " .. Util.FormatNumber(def.Goal), AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -170, 0, 34), Size = UDim2.fromOffset(140, 18), TextSize = 13, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Right, Parent = c })
-		local button = UIKit.Button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(140, 42), TextSize = 18, Parent = c })
+		UIKit.Label({ Text = Util.FormatNumber(math.min(row.Progress, def.Goal)) .. " / " .. Util.FormatNumber(def.Goal), AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -170, 0, 34), Size = UDim2.fromOffset(140, 20), TextSize = 15, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Right, Parent = c })
+		local button = UIKit.Button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(140, 42), TextSize = 20, Parent = c })
+		UIKit.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(150, 150, 150)), Parent = button })
+		local bc = button:FindFirstChildOfClass("UICorner")
+		if bc then
+			bc:Destroy()
+		end
+		UIKit.Corner(4).Parent = button
+		UIKit.Stroke(Color3.fromRGB(18, 20, 16), 3).Parent = button
 		if ready then
 			button.Text = "CLAIM ◆" .. def.Gems
 			button.BackgroundColor3 = T.Cash
@@ -376,17 +395,35 @@ function ShopController:Init()
 	gui.Enabled = false
 	ui.Gui = gui
 	UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(), BackgroundTransparency = 0.45, BorderSizePixel = 0, Parent = gui })
-	local panel = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(960, 530), BackgroundTransparency = 0.05, Parent = gui })
-	UIKit.Stroke(TITLE, 2).Parent = panel
+	local fit = UIKit.new("Frame", { BackgroundTransparency = 1, Parent = gui }) -- shrinks the 960 px shop on small screens
+	UIKit.AutoScale(fit)
+	UIKit.new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(1000, 570), BackgroundColor3 = Color3.new(), BackgroundTransparency = 0.35, BorderSizePixel = 0, Parent = fit })
+	local panel = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(960, 530), BackgroundTransparency = 0.05, Parent = fit })
+	panel.BackgroundColor3 = Color3.fromRGB(34, 32, 26)
+	UIKit.Stroke(TITLE, 3).Parent = panel
+	local pc = panel:FindFirstChildOfClass("UICorner")
+	if pc then
+		pc:Destroy()
+	end
+	UIKit.Corner(4).Parent = panel
 	ui.Scale = UIKit.new("UIScale", { Parent = panel })
 	UIKit.new("UISizeConstraint", { MaxSize = Vector2.new(960, 530), Parent = panel })
-	ui.Title = UIKit.Label({ Position = UDim2.fromOffset(24, 14), Size = UDim2.fromOffset(400, 40), TextSize = 36, TextColor3 = TITLE, TextXAlignment = Enum.TextXAlignment.Left, Parent = panel })
-	ui.Subtitle = UIKit.Label({ Position = UDim2.fromOffset(24, 52), Size = UDim2.new(1, -220, 0, 20), TextSize = 15, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, Parent = panel })
-	ui.Gems = UIKit.Label({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -76, 0, 20), Size = UDim2.fromOffset(160, 30), TextSize = 24, TextColor3 = T.Gem, TextXAlignment = Enum.TextXAlignment.Right, Parent = panel })
-	UIKit.Button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -16, 0, 16), Size = UDim2.fromOffset(44, 44), Text = "X", TextSize = 24, BackgroundColor3 = T.Danger, TextColor3 = T.Text, Parent = panel }, function()
+	local header = UIKit.new("Frame", { Position = UDim2.fromOffset(14, 14), Size = UDim2.new(1, -28, 0, 92), BackgroundColor3 = Color3.fromRGB(22, 24, 18), BorderSizePixel = 0, Parent = panel })
+	UIKit.Corner(4).Parent = header
+	UIKit.new("Frame", { Size = UDim2.fromOffset(6, 92), BackgroundColor3 = TITLE, BorderSizePixel = 0, Parent = header })
+	ui.Title = UIKit.Label({ Position = UDim2.fromOffset(24, 10), Size = UDim2.fromOffset(430, 48), TextSize = 40, TextColor3 = TITLE, TextXAlignment = Enum.TextXAlignment.Left, Parent = header })
+	ui.Subtitle = UIKit.Label({ Position = UDim2.fromOffset(24, 60), Size = UDim2.new(1, -270, 0, 24), TextSize = 17, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, Parent = header })
+	ui.Gems = UIKit.Label({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -76, 0, 22), Size = UDim2.fromOffset(160, 30), TextSize = 26, TextColor3 = T.Gem, TextXAlignment = Enum.TextXAlignment.Right, Parent = panel })
+	local closeButton = UIKit.Button({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -22, 0, 22), Size = UDim2.fromOffset(40, 40), Text = "X", TextSize = 22, BackgroundColor3 = T.Danger, TextColor3 = T.Text, Parent = panel }, function()
 		self:Close()
 	end)
-	ui.Body = UIKit.new("Frame", { Name = "Body", Position = UDim2.fromOffset(24, 90), Size = UDim2.new(1, -48, 1, -110), BackgroundTransparency = 1, Parent = panel })
+	local xc = closeButton:FindFirstChildOfClass("UICorner")
+	if xc then
+		xc:Destroy()
+	end
+	UIKit.Corner(4).Parent = closeButton
+	UIKit.Stroke(Color3.fromRGB(18, 20, 16), 3).Parent = closeButton
+	ui.Body = UIKit.new("Frame", { Name = "Body", Position = UDim2.fromOffset(24, 120), Size = UDim2.new(1, -48, 1, -140), BackgroundTransparency = 1, Parent = panel })
 	panel.Name = "Panel"
 
 	ProximityPromptService.PromptTriggered:Connect(function(prompt)
