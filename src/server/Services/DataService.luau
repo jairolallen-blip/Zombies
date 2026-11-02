@@ -5,7 +5,10 @@
 -- Profile shape (DEFAULT_PROFILE). Add a field there and it is back-filled into old saves.
 -- Replicated to the owning client as player attributes:
 --   Gems, BestWave, ClassId, OwnedJson ('{"Classes":{...},"Weapons":{...}}'),
---   LoadoutJson ('["Pistol","SMG",...]' — one weapon id per Level)
+--   LoadoutJson ('["Pistol","SMG",...]' — one weapon id per Level),
+--   AchievementsJson ('{"Stats":{...},"Claimed":{...}}'; Config/Achievements)
+-- Achievements: :AddStat(player, key, amount, isMax) counts progress (toast when one completes);
+-- the ClaimAchievement remote pays its Gems once.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -18,6 +21,8 @@ local GameConfig = require(Shared.Config.GameConfig)
 local Classes = require(Shared.Config.Classes)
 local Weapons = require(Shared.Config.Weapons)
 local Util = require(Shared.Util)
+local Remotes = require(Shared.Remotes)
+local Achievements = require(Shared.Config.Achievements)
 
 local function freeWeapons()
 	local owned = {}
@@ -47,6 +52,8 @@ local DEFAULT_PROFILE = {
 	BestWave = 0,
 	TotalKills = 0,
 	RunsPlayed = 0,
+	Stats = {}, -- achievement progress, [stat key] = number (Config/Achievements)
+	Claimed = {}, -- [achievement id] = true
 }
 
 local DataService = {}
@@ -102,6 +109,9 @@ function DataService:Start()
 	for _, player in Players:GetPlayers() do
 		task.spawn(self.Load, self, player)
 	end
+	Remotes.ClaimAchievement.OnServerEvent:Connect(function(player, id)
+		self:ClaimAchievement(player, id)
+	end)
 	Players.PlayerRemoving:Connect(function(player)
 		self:Save(player)
 		profiles[player] = nil
@@ -160,6 +170,12 @@ function DataService:Load(player)
 		end
 	end
 
+	-- credit progress from before achievements existed
+	local stats = data.Stats
+	stats.Kills = math.max(stats.Kills or 0, data.TotalKills)
+	stats.Runs = math.max(stats.Runs or 0, data.RunsPlayed)
+	stats.BestWave = math.max(stats.BestWave or 0, data.BestWave)
+
 	profiles[player] = data
 
 	local leaderstats = Instance.new("Folder")
@@ -206,6 +222,7 @@ function DataService:Replicate(player)
 	player:SetAttribute("ClassId", data.EquippedClass)
 	player:SetAttribute("LoadoutJson", HttpService:JSONEncode(data.Loadout))
 	player:SetAttribute("OwnedJson", HttpService:JSONEncode({ Classes = data.OwnedClasses, Weapons = data.OwnedWeapons }))
+	player:SetAttribute("AchievementsJson", HttpService:JSONEncode({ Stats = data.Stats, Claimed = data.Claimed }))
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if leaderstats then
 		leaderstats["Best Wave"].Value = data.BestWave
@@ -219,6 +236,40 @@ function DataService:AddGems(player, amount)
 	end
 	data.Gems = math.max(0, data.Gems + math.floor(amount))
 	self:Replicate(player)
+end
+
+-- Achievement progress: adds `amount` (default 1) to Stats[key], or keeps the max when isMax.
+-- Toasts each achievement this completes; the client sees it on AchievementsJson.
+function DataService:AddStat(player, key, amount, isMax)
+	local data = profiles[player]
+	if not data then
+		return
+	end
+	local stats = data.Stats
+	local before = {}
+	for _, def in Achievements.List do
+		before[def] = Achievements.Progress(def, stats)
+	end
+	stats[key] = if isMax then math.max(stats[key] or 0, amount) else (stats[key] or 0) + (amount or 1)
+	for _, def in Achievements.List do
+		if before[def] < def.Goal and Achievements.Progress(def, stats) >= def.Goal then
+			Remotes.Notify:FireClient(player, "Achievement: " .. def.Name .. "! Claim ◆" .. def.Gems .. " at the board", "Good")
+		end
+	end
+	player:SetAttribute("AchievementsJson", HttpService:JSONEncode({ Stats = stats, Claimed = data.Claimed }))
+end
+
+function DataService:ClaimAchievement(player, id)
+	local data = profiles[player]
+	local def = Achievements.ById[id]
+	if not data or not def or data.Claimed[id] or Achievements.Progress(def, data.Stats) < def.Goal then
+		return
+	end
+	data.Claimed[id] = true
+	data.Gems += def.Gems
+	self:Replicate(player)
+	Remotes.Notify:FireClient(player, "+◆" .. def.Gems .. "  " .. def.Name, "Good")
+	task.spawn(self.Save, self, player)
 end
 
 -- Called by MatchService at the end of a run. Returns true if this was a new best wave.

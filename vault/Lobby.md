@@ -40,6 +40,14 @@ There's no Ready button; **standing on the helipad is being ready.** That way no
 - **Only players on the pad deploy.** Everyone else keeps shopping and joins the next run.
 - **Code:** `MapService:IsOnHelipad` (a radius check on the `Pad` cylinder) sets `Ready` each tick in `MatchService:_lobbyPhase`. The tunables are in `GameConfig.Lobby`.
 
+## Commendations board (2026-11-02)
+This is the achievements station, **south of the plaza and facing it**, so players pass it every time they come back from a run.
+- **The board:** a corkboard of pinned papers and medals under an awning lit by two lamps, with an open crate of glowing gems beside it.
+- **Status sign:** shows "N READY TO CLAIM" in green when there's something to collect.
+- **The screen:** press `E` to open it. It's a scrolling list of 22 achievements (`Config/Achievements`), each with a progress bar and a CLAIM button that pays Gems.
+- **What counts:** total kills, kills per zombie type, headshot kills, waves cleared, best wave, runs, wins (total and per class, including "win as every class"), and supply drops opened.
+- **Toasts:** a message pops up mid-run when you finish one.
+
 ## Our lobby build
 A fortified safehouse inside a ruined city at **x = 1000** (the old map is at x = 0). Its layout:
 - **North:** ruined towers, and in front of them the **Deploy Zone helipad**, which will be the take-off point for the drop-in cutscene (see [[Match Start]]).

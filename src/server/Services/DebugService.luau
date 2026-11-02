@@ -68,6 +68,19 @@ Commands.GiveGems = function(amount, playerName)
 	return player.Name .. " gems = " .. player:GetAttribute("Gems")
 end
 
+-- AddStat("Kills", 100) — achievement progress for the first player
+Commands.AddStat = function(key, amount, playerName)
+	local player = firstPlayer(playerName)
+	Services.DataService:AddStat(player, key, amount or 1)
+	return player:GetAttribute("AchievementsJson")
+end
+
+-- Airdrop() — drop a supply crate now (mid-run)
+Commands.Airdrop = function()
+	Services.AirdropService:Drop(math.max(require(ReplicatedStorage.Shared.GameState):GetAttribute("Wave") or 0, 1))
+	return "crate dropping"
+end
+
 Commands.ChargeUlt = function(playerName)
 	local player = firstPlayer(playerName)
 	Services.EconomyService:AddUltCharge(player, math.huge)

@@ -3,6 +3,9 @@
 --   Armory   (west tent)   level tabs 1-4; one card per gun with a rotating 3D model, stat bars and
 --                          equip / unlock-with-Gems
 --   Classes  (barracks)    one card per class with a rotating figure (Shared/ClassFigures)
+--   Achievements (commendations board, south)  scrolling list of Config/Achievements with progress
+--                          bars and CLAIM buttons (Remotes.ClaimAchievement); the board's status sign
+--                          shows how many are ready to claim
 -- Closes with the X button, by walking away, or when a run starts. Buttons fire the same remotes
 -- LobbyService validates (SelectWeapon / SelectClass / UnlockItem).
 
@@ -21,6 +24,7 @@ local Util = require(Shared.Util)
 local Remotes = require(Shared.Remotes)
 local GunModels = require(Shared.GunModels)
 local ClassFigures = require(Shared.ClassFigures)
+local Achievements = require(Shared.Config.Achievements)
 local UIKit = require(script.Parent.Parent.UI.UIKit)
 
 local T = UIKit.Theme
@@ -241,6 +245,90 @@ function ShopController:_buildClasses()
 	end
 end
 
+-- ready to claim first, then closest to done, claimed last
+local function sortedAchievements(stats, claimed)
+	local rows = {}
+	for i, def in Achievements.List do
+		local progress = Achievements.Progress(def, stats)
+		local rank = if claimed[def.Id] then 2 elseif progress >= def.Goal then 0 else 1
+		table.insert(rows, { Def = def, Progress = progress, Rank = rank, Fraction = math.min(progress / def.Goal, 1), Order = i })
+	end
+	table.sort(rows, function(a, b)
+		if a.Rank ~= b.Rank then
+			return a.Rank < b.Rank
+		end
+		if a.Rank == 1 and a.Fraction ~= b.Fraction then
+			return a.Fraction > b.Fraction
+		end
+		return a.Order < b.Order
+	end)
+	return rows
+end
+
+function ShopController:_buildAchievements()
+	local data = decode("AchievementsJson")
+	local stats, claimed = data.Stats or {}, data.Claimed or {}
+	local list = UIKit.new("ScrollingFrame", {
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		Parent = ui.Body,
+	})
+	UIKit.new("UIListLayout", { Padding = UDim.new(0, 8), Parent = list })
+	for _, row in sortedAchievements(stats, claimed) do
+		local def = row.Def
+		local ready, done = row.Rank == 0, row.Rank == 2
+		local accent = if ready then T.Cash elseif done then T.SubText else T.Accent
+		local c = UIKit.new("Frame", { Size = UDim2.new(1, -12, 0, 66), BackgroundColor3 = T.Card, BorderSizePixel = 0, Parent = list })
+		UIKit.Corner(10).Parent = c
+		UIKit.Stroke(if ready then T.Cash else Color3.fromRGB(60, 64, 74), if ready then 2 else 1).Parent = c
+		UIKit.Label({ Text = def.Name, Position = UDim2.fromOffset(14, 8), Size = UDim2.new(1, -330, 0, 24), TextSize = 21, TextColor3 = accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = c })
+		UIKit.Label({ Text = def.Desc, Position = UDim2.fromOffset(14, 34), Size = UDim2.new(1, -330, 0, 20), TextSize = 14, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, Parent = c })
+		local back = UIKit.new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -170, 0, 18), Size = UDim2.fromOffset(140, 10), BackgroundColor3 = Color3.fromRGB(20, 22, 26), BorderSizePixel = 0, Parent = c })
+		UIKit.Corner(5).Parent = back
+		local fill = UIKit.new("Frame", { Size = UDim2.fromScale(math.max(row.Fraction, 0.03), 1), BackgroundColor3 = accent, BorderSizePixel = 0, Parent = back })
+		UIKit.Corner(5).Parent = fill
+		UIKit.Label({ Text = Util.FormatNumber(math.min(row.Progress, def.Goal)) .. " / " .. Util.FormatNumber(def.Goal), AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -170, 0, 34), Size = UDim2.fromOffset(140, 18), TextSize = 13, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Right, Parent = c })
+		local button = UIKit.Button({ AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -12, 0.5, 0), Size = UDim2.fromOffset(140, 42), TextSize = 18, Parent = c })
+		if ready then
+			button.Text = "CLAIM ◆" .. def.Gems
+			button.BackgroundColor3 = T.Cash
+			button.TextColor3 = Color3.fromRGB(20, 30, 20)
+			button.Activated:Connect(function()
+				Remotes.ClaimAchievement:FireServer(def.Id)
+			end)
+		else
+			button.Text = if done then "CLAIMED" else "◆ " .. def.Gems
+			button.BackgroundColor3 = T.Disabled
+			button.TextColor3 = if done then T.SubText else T.Gem
+			button.AutoButtonColor = false
+		end
+	end
+end
+
+-- "N READY TO CLAIM" on the lobby board's status sign (Workspace.OurMap.Lobby.Commendations.Status)
+local function updateBoardSign()
+	local data = decode("AchievementsJson")
+	local stats, claimed = data.Stats or {}, data.Claimed or {}
+	local ready = 0
+	for _, def in Achievements.List do
+		if not claimed[def.Id] and Achievements.Progress(def, stats) >= def.Goal then
+			ready += 1
+		end
+	end
+	local map = workspace:FindFirstChild(GameConfig.OurMap.Folder)
+	local status = map and map:FindFirstChild("Lobby") and map.Lobby:FindFirstChild("Commendations")
+	status = status and status:FindFirstChild("Status")
+	local label = status and status:FindFirstChildOfClass("SurfaceGui") and status:FindFirstChildOfClass("SurfaceGui"):FindFirstChildOfClass("TextLabel")
+	if label then
+		label.Text = if ready > 0 then ready .. " READY TO CLAIM" else "KEEP FIGHTING"
+		label.TextColor3 = if ready > 0 then T.Cash else T.SubText
+	end
+end
+
 function ShopController:Refresh()
 	if not openShop then
 		return
@@ -252,6 +340,10 @@ function ShopController:Refresh()
 		ui.Title.Text = "ARMORY"
 		ui.Subtitle.Text = "Pick one gun for each level. A run starts on Level 1; upgrade in-run with cash."
 		self:_buildArmory()
+	elseif openShop == "Achievements" then
+		ui.Title.Text = "COMMENDATIONS"
+		ui.Subtitle.Text = "Lifetime goals. Finish one, then claim its Gems here."
+		self:_buildAchievements()
 	else
 		ui.Title.Text = "BARRACKS"
 		ui.Subtitle.Text = "Choose your class. Each has an ability [E] and an ultimate [F]."
@@ -303,11 +395,20 @@ function ShopController:Init()
 			self:Open(shop, prompt.Parent)
 		end
 	end)
-	for _, attr in { "Gems", "OwnedJson", "ClassId", "LoadoutJson" } do
+	for _, attr in { "Gems", "OwnedJson", "ClassId", "LoadoutJson", "AchievementsJson" } do
 		player:GetAttributeChangedSignal(attr):Connect(function()
-			self:Refresh()
+			if attr ~= "AchievementsJson" or openShop == "Achievements" then
+				self:Refresh()
+			end
 		end)
 	end
+	player:GetAttributeChangedSignal("AchievementsJson"):Connect(updateBoardSign)
+	task.spawn(function() -- the board may stream in after the attribute arrives
+		while true do
+			updateBoardSign()
+			task.wait(3)
+		end
+	end)
 	RunService.RenderStepped:Connect(function()
 		if not openShop then
 			return

@@ -478,6 +478,13 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 			local kills = player:GetAttribute("Kills") or 0
 			local gems = math.floor(wavesCleared * econ.GemsPerWaveCleared + kills * econ.GemsPerKill + (if victory then econ.VictoryGems else 0))
 			local newBest = Services.DataService:RecordRun(player, wave, kills, gems)
+			local DataService = Services.DataService
+			DataService:AddStat(player, "Runs")
+			DataService:AddStat(player, "BestWave", wave, true)
+			if victory then
+				DataService:AddStat(player, "Victories")
+				DataService:AddStat(player, "Wins_" .. (player:GetAttribute("ClassId") or "Survivor"))
+			end
 			Remotes.RunResults:FireClient(player, { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest, Victory = victory })
 		end
 	end

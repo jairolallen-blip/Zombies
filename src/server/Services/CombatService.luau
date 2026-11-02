@@ -129,8 +129,11 @@ function CombatService:_traceShot(player, origin, dir, stats, hits)
 		end
 		local partName = result.Instance.Name
 		local headshot = partName:sub(1, 4) == "Head" or partName == "Eye" -- Head + face details (ZombieModels)
-		local damage = stats.Damage * (if headshot then stats.HeadshotMultiplier else 1)
+		local damage = stats.Damage * (if headshot then stats.HeadshotMultiplier else 1) * Services.AirdropService:DamageMult(player)
 		local killed = ZombieService:Damage(model, damage, player)
+		if killed and headshot then
+			Services.DataService:AddStat(player, "Headshots")
+		end
 		table.insert(hits, { Position = result.Position, Damage = math.floor(damage + 0.5), Headshot = headshot, Killed = killed })
 		pierceLeft -= 1
 		if pierceLeft <= 0 then

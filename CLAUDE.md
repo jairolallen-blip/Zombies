@@ -35,7 +35,14 @@ If any are false, someone overwrote Studio. **Restore from GitHub with §6's imp
 - **Lobby** (`vault/Lobby.md`): a ruined-city safehouse at x = 1000. The screen shows only a small chip (Gems, best wave, class, gun lineup, shop locations) and the take-off status. Choices happen in two **walk-up shops**, opened with `E` at their ProximityPrompt:
   - **Armory** (west tent): level tabs 1–4, and a card per gun with a rotating 3D model, stat bars, and equip or unlock-with-Gems.
   - **Barracks** (east): class mannequins on pedestals, and a card per class with a rotating figure, abilities, traits, and equip or unlock.
+  - **Commendations board** (south, facing the plaza): achievements that pay Gems.
+    - **Data:** `Config/Achievements` holds the list. Progress lives in profile `Stats`, claims in `Claimed`, and the client sees both as the `AchievementsJson` attribute.
+    - **Counting:** `DataService:AddStat` counts progress and toasts each completion. It's called for kills (total and per zombie type), headshot kills, waves cleared, runs, best wave, wins (total and per class) and supply drops opened.
+    - **Claiming:** the `ClaimAchievement` remote pays once.
+    - **Screen:** a third ShopController view. The board's `Status` sign shows how many are ready to claim.
+    - Old saves are credited from `TotalKills`, `RunsPlayed` and `BestWave`.
   - The shops close with X, by walking away, or when a run starts.
+  - Rebuild one lobby area without touching hand edits: `require(<clone of OurLobby>).Rebuild("Barracks" | "Commendations")`.
   - **The helipad (north) is the ready zone.** Each lobby tick, `MapService:IsOnHelipad` sets the player's `Ready` attribute. There's no Ready button, and the `SetReady` remote is gone.
 - **Deploy cutscene** (`Controllers/CutsceneController`, `GameConfig.Deploy`): first person from a seat in the helicopter's open cabin.
   - **The ride:** it starts **over the ocean** north of the city (terrain water is baked all round the map), skims the waves, climbs over the rooftops and hovers above the square.
@@ -100,7 +107,14 @@ StarterPlayerScripts/Client/
 StarterCharacterScripts/Health   empty on purpose (disables regen)
 ```
 - **Server-authoritative:** the client sends `FireWeapon(origin, dirs)`, and the server validates fire rate, ammo, origin distance and pellet count before re-raycasting.
-- **Remotes:** FireWeapon, Reload, UseAbility, BuyUpgrade, SelectClass, SelectWeapon, UnlockItem, Notify, HitConfirm, Effect, RunResults, Radio.
+- **Remotes:** FireWeapon, Reload, UseAbility, BuyUpgrade, SelectClass, SelectWeapon, UnlockItem, ClaimAchievement, Notify, HitConfirm, Effect, RunResults, Radio.
+- **Supply drops** (`Services/AirdropService`, `Config/Airdrops`, `Controllers/AirdropController`).
+  - **When:** from wave 2, each wave has a 65% chance of one crate parachuting onto a street away from the squad. Red smoke, a light pillar and a `SUPPLY DROP · Nm` marker show where it is.
+  - **The fight:** guards rise around the crate, and they count toward the wave.
+  - **Opening:** **hold G** to open it (E is the ability). It gives a random reward to every living squad member within 30 studs.
+  - **Rewards:** Overcharge (+50% gun damage, 30s), Adrenaline (+35% speed and a full heal, 30s), Ult Surge (+50%), Cash Stash, or Gem Cache (+25).
+  - **Buffs** live on the `Buff`/`BuffUntil` attributes. A chip under the wave counter shows them. `CombatService` asks `AirdropService:DamageMult`.
+  - **Gotcha:** prompts only show when their part is on screen, so face the crate to open it.
 - **GameState attributes:** Phase (Lobby/Deploy/Break/Wave/Results), Wave, Timer, ZombiesLeft, BossName/Health/MaxHealth, BossEnraged, RunWon, DeployPath (JSON), DeployStart, DeployDuration.
 - **Player attributes:** InRun, Deploying, Cash, Kills, WeaponId, WeaponTier (= gun level), Ammo, Reloading, VitalityLevel, UltCharge, ClassId, LoadoutJson, OwnedJson, Gems.
 
@@ -136,7 +150,7 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
   4. Good shots: t = 0.08 / 0.36 / 0.6 / 0.875 / 0.955.
   - **Screenshots and the MCP link:** several `screen_capture` calls in a row while the cutscene renders can time out and drop the MCP link. Use one capture at a time.
 - **Team Create:** before any repo → Studio push, compare first. Push only the files you changed. A full import overwrote a live GameConfig edit by AnimatedSL on 2026-11-02.
-- **Debug commands:** `game.ServerStorage.SAMZ_Debug:Invoke(cmd, ...)`. Commands: `God`, `GiveCash`, `GiveGems`, `KillAll`, `SkipToWave n` (it applies after the current wave), `Spawn type n`, `NavCheck`, `State`, `ChargeUlt`, `Help`.
+- **Debug commands:** `game.ServerStorage.SAMZ_Debug:Invoke(cmd, ...)`. Commands: `God`, `GiveCash`, `GiveGems`, `KillAll`, `SkipToWave n` (it applies after the current wave), `Spawn type n`, `NavCheck`, `State`, `ChargeUlt`, `AddStat key n` (achievement progress), `Airdrop` (drop a crate now), `Help`.
 - **Fire real shots** from Client: `Remotes.FireWeapon:FireServer(muzzle.WorldPosition, {dir})`, where the muzzle is `Character.Tool.Handle.Muzzle`. Use `Remotes.BuyUpgrade:FireServer("Weapon")` to upgrade.
 - **Balance:** `tools/balance-bot.luau` plays a full no-cheat solo run and logs each wave (instructions are in its header). Baseline from 2026-11-01: it reached wave 10 and got the boss to 9% HP. The owner approved that difficulty.
 - **Screenshots:** `screen_capture` with `camera_position` / `look_at_position` aims the camera in Play mode too. Effects far from the player won't be in view.
@@ -173,10 +187,15 @@ From the vault notes:
   2. endless mode plus a best-wave leaderboard
   3. daily challenge run with a modifier
   4. class mastery cosmetics
-  5. mid-run events (supply drop, blackout, extraction)
-  6. badges
+  5. mid-run events: supply drops are **done**. Blackout and extraction are saved for a possible **Nightmare mode**.
+  6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: **achievements + supply drops.**
+  - 22 achievements that pay Gems, claimed at the new Commendations board, south of the plaza.
+  - Mid-run supply crates you fight to reach, with timed buffs, ult, cash or gems.
+  - Edits to AnimatedSL's live `OurLobby` were targeted inserts only; their helipad glow is kept, and it's still not in the repo.
+  - **Idea from the owner:** a future "Nightmare" mode built from a blackout wave plus an extraction wave.
 - 2026-11-02: **Engineer nerf.** Early Sentry cooldown is 42s through wave 4, sentry range drops from 65 to 30 (Nest from 75 to 35), and the Nest needs twice the ult charge. HUD ability bar uses the early cooldown (targeted edit on AnimatedSL's live HUDController).
 - 2026-11-02: **class figures + barracks upgrade.** `ClassFigures` now gives each class a face, vest, gloves, a pose and class kit. The barracks is a tent on a deck with string lights, class-coloured pedestal rings, nameplates and spotlights. It was rebuilt in place with the new `OurLobby.RebuildBarracks()`. Three debris chunks overlapping the deck were deleted from the baked lobby, and `buildDebris` now skips that area.
 - 2026-11-02: lobby info chip scaled to 0.75 and moved to (16, 68), below Roblox's top-bar buttons.

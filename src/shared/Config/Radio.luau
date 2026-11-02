@@ -33,6 +33,11 @@ Radio.Lines = {
 		"They're pouring out of the alleys. Wave {wave}!",
 		"Bigger group this time. Wave {wave}, stay together!",
 	},
+	Airdrop = {
+		"Supply drop inbound! Red smoke marks the crate. Fight your way to it!",
+		"Dropping you a care package. Watch the red smoke, it'll be swarmed!",
+		"Crate's on the way down. Grab it before the horde does!",
+	},
 	WaveCleared = {
 		"Wave {wave} down. Reload and spend that cash.",
 		"Good work. Catch your breath — there's more coming.",

@@ -64,6 +64,8 @@ function EconomyService:OnZombieKilled(player, zombie)
 		leaderstats.Kills.Value = kills
 	end
 	self:AddUltCharge(player, if def.Boss then GameConfig.Ultimate.BossKillCharge else GameConfig.Ultimate.ChargePerKill)
+	Services.DataService:AddStat(player, "Kills")
+	Services.DataService:AddStat(player, "Kills_" .. zombie.Type)
 
 	local share = def.Cash * GameConfig.Economy.TeamShare
 	if share >= 1 then
@@ -85,6 +87,7 @@ function EconomyService:OnWaveCleared(wave)
 			local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
 			humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + humanoid.MaxHealth * GameConfig.Match.HealOnWaveClear)
 			self:AddCash(player, amount)
+			Services.DataService:AddStat(player, "WavesCleared")
 			Remotes.Notify:FireClient(player, "Wave " .. wave .. " cleared: +$" .. Util.FormatNumber(amount), "Good")
 		end
 	end

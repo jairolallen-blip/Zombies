@@ -10,6 +10,7 @@
 --   both shops have a ProximityPrompt (attribute Shop = "Armory" | "Classes") that opens
 --   their UI on the client (Client/Controllers/ShopController)
 --   sides   stacked shipping containers   south jersey barriers + chain-link fence
+--   south   commendations board (achievements; prompt Shop = "Achievements"), facing the plaza
 -- Parts named "LobbySpawn" are read by MapService:GetLobbySpawnCFrame().
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -422,17 +423,75 @@ local function buildBarracks(parent)
 	shopPrompt(m, c * CFrame.new(1.5, 3, 0), "Classes", "Choose class")
 end
 
--- Rebuilds only the Barracks inside the baked lobby (keeps every other hand edit):
---   require(<clone of this module>).RebuildBarracks()
-function OurLobby.RebuildBarracks()
+-- Commendations: the achievements board south of the plaza, facing it. A corkboard of pinned
+-- papers and medals under an awning; the Status sign is rewritten by the client (ShopController)
+-- with how many achievements are ready to claim; an open crate of gems beside it.
+local function buildCommendations(parent)
+	local m = model(parent, "Commendations")
+	local c = at(0, GROUND_Y, 44) -- front of the board faces -Z (the plaza)
+	local warm = Color3.fromRGB(255, 220, 160)
+	part(m, "Slab", Vector3.new(22, 0.4, 8), c * CFrame.new(0, 0.2, -1), C.ConcreteDark, Enum.Material.Concrete)
+	for _, x in { -8.4, 8.4 } do
+		part(m, "Post", Vector3.new(0.8, 11, 0.8), c * CFrame.new(x, 5.5, 0.6), C.Wood, Enum.Material.WoodPlanks)
+	end
+	part(m, "Backing", Vector3.new(16.4, 7.4, 0.5), c * CFrame.new(0, 5.8, 0.6), C.Wood, Enum.Material.WoodPlanks)
+	part(m, "Cork", Vector3.new(15.4, 6.6, 0.2), c * CFrame.new(0, 5.8, 0.3), Color3.fromRGB(176, 128, 82), Enum.Material.Sand)
+	local header = part(m, "Header", Vector3.new(15.6, 1.8, 0.4), c * CFrame.new(0, 10.3, 0.2), C.Charred, Enum.Material.Metal)
+	sign(header, Enum.NormalId.Front, "COMMENDATIONS", Color3.fromRGB(30, 34, 28), Color3.fromRGB(150, 255, 90))
+	local status = part(m, "Status", Vector3.new(9, 1.1, 0.3), c * CFrame.new(0, 1.55, 0.3), C.Charred, Enum.Material.Metal)
+	sign(status, Enum.NormalId.Front, "KEEP FIGHTING", Color3.fromRGB(22, 24, 22), C.White)
+	-- pinned papers and three medals
+	for i = 1, 14 do
+		local x, y = -6.4 + ((i - 1) % 7) * 2.1 + rng:NextNumber(-0.3, 0.3), if i <= 7 then 7.2 else 4.6
+		local paper = part(m, "Paper", Vector3.new(1.5, 1.9, 0.05), c * CFrame.new(x, y + rng:NextNumber(-0.4, 0.4), 0.17) * CFrame.Angles(0, 0, rng:NextNumber(-0.18, 0.18)), Color3.fromRGB(236, 230, 210):Lerp(Color3.fromRGB(210, 190, 150), rng:NextNumber()), Enum.Material.SmoothPlastic)
+		part(m, "Pin", Vector3.new(0.18, 0.18, 0.12), paper.CFrame * CFrame.new(0, 0.75, -0.06), Color3.fromRGB(200, 40, 40), Enum.Material.SmoothPlastic)
+	end
+	for i, color in { Color3.fromRGB(230, 190, 60), Color3.fromRGB(200, 205, 215), Color3.fromRGB(190, 120, 70) } do
+		local x = (i - 2) * 1.6
+		part(m, "Ribbon", Vector3.new(0.5, 0.9, 0.05), c * CFrame.new(x, 8.75, 0.12), Color3.fromRGB(160, 40, 40), Enum.Material.Fabric)
+		cylinder(m, "Medal", 0.12, 0.8, c * CFrame.new(x, 8.15, 0.1) * CFrame.Angles(math.rad(90), 0, 0), color, Enum.Material.Metal)
+	end
+	-- awning with two lamps on the board
+	part(m, "Awning", Vector3.new(19, 0.3, 4), c * CFrame.new(0, 11.4, -1.3) * CFrame.Angles(math.rad(-8), 0, 0), C.Metal, Enum.Material.Metal)
+	for _, x in { -5, 5 } do
+		local lamp = part(m, "Lamp", Vector3.new(1, 0.5, 0.8), c * CFrame.new(x, 11, -2.4), C.Metal, Enum.Material.Metal)
+		part(m, "Bulb", Vector3.new(0.7, 0.1, 0.5), lamp.CFrame * CFrame.new(0, -0.3, 0), warm, Enum.Material.Neon)
+		local spot = Instance.new("SpotLight")
+		spot.Face = Enum.NormalId.Bottom
+		spot.Angle = 70
+		spot.Range = 16
+		spot.Brightness = 1.6
+		spot.Color = warm
+		spot.Parent = lamp
+	end
+	-- open crate of gems
+	local crate = c * CFrame.new(11.2, 1.4, -1)
+	part(m, "GemCrate", Vector3.new(2.8, 2, 2.8), crate, C.Crate, Enum.Material.WoodPlanks)
+	part(m, "GemLid", Vector3.new(2.8, 0.25, 2.8), crate * CFrame.new(0, 1.4, 1.6) * CFrame.Angles(math.rad(-70), 0, 0), C.Crate, Enum.Material.WoodPlanks)
+	local gemColor = Color3.fromRGB(170, 110, 255)
+	for _ = 1, 9 do
+		part(m, "Gem", Vector3.new(0.5, 0.5, 0.5), crate * CFrame.new(rng:NextNumber(-0.9, 0.9), 1.05 + rng:NextNumber(0, 0.3), rng:NextNumber(-0.9, 0.9)) * CFrame.Angles(rng:NextNumber(0, 3), rng:NextNumber(0, 3), 0), gemColor, Enum.Material.Neon, { CanCollide = false })
+	end
+	local glow = Instance.new("PointLight")
+	glow.Color = gemColor
+	glow.Range = 10
+	glow.Brightness = 1.2
+	glow.Parent = m:FindFirstChild("GemCrate")
+	shopPrompt(m, c * CFrame.new(0, 3, -3), "Achievements", "View achievements")
+end
+
+-- Rebuilds one area inside the baked lobby (keeps every other hand edit):
+--   require(<clone of this module>).Rebuild("Barracks")   -- or "Commendations"
+local AREAS = { Barracks = buildBarracks, Commendations = buildCommendations }
+function OurLobby.Rebuild(name)
 	origin = GameConfig.OurMap.LobbyCenter
 	rng = Random.new(2611)
 	local lobby = workspace[GameConfig.OurMap.Folder].Lobby
-	local old = lobby:FindFirstChild("Barracks")
+	local old = lobby:FindFirstChild(name)
 	if old then
 		old:Destroy()
 	end
-	buildBarracks(lobby)
+	AREAS[name](lobby)
 end
 
 local function buildFloodlight(parent, x, z)
@@ -503,7 +562,8 @@ local function buildDebris(parent)
 		local nearPlaza = math.abs(x - PLAZA.X) < 26 and math.abs(z - PLAZA.Z) < 26
 		local nearPad = (Vector3.new(x, 0, z) - HELIPAD).Magnitude < 20
 		local inBarracks = x > 27 and x < 48 and math.abs(z - PLAZA.Z) < 16
-		if not nearPlaza and not nearPad and not inBarracks then
+		local atBoard = math.abs(x) < 16 and z > 33 and z < 52
+		if not nearPlaza and not nearPad and not inBarracks and not atBoard then
 			local s = rng:NextNumber(1, 3.5)
 			part(m, "Chunk", Vector3.new(s * rng:NextNumber(0.8, 1.6), s * 0.7, s), at(x, GROUND_Y + s * 0.3, z) * CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, math.pi), rng:NextNumber(-0.4, 0.4)), C.Concrete:Lerp(C.ConcreteDark, rng:NextNumber()), Enum.Material.Concrete)
 			placed += 1
@@ -547,6 +607,7 @@ function OurLobby.Build()
 	buildHelipad(lobby)
 	buildArmory(lobby)
 	buildBarracks(lobby)
+	buildCommendations(lobby)
 	buildFloodlight(lobby, -44, -46)
 	buildFloodlight(lobby, 44, -46)
 	buildPlaza(lobby)
