@@ -1,4 +1,5 @@
--- Zombies: every enemy type. PURE DATA. ZombieService builds the blocky model from Look.
+-- Zombies: every enemy type. PURE DATA. Server/ZombieModels builds the blocky model from Look
+-- (vault: Zombies.md); every zombie picks its own shirt/pants from the palettes.
 -- To add a zombie: copy an entry, give it a new key, set MinWave/Weight so it enters the spawn pool.
 --
 -- Fields:
@@ -17,7 +18,10 @@
 --                     on death; if killed by a player, players take Damage * ShotPlayerDamageMult.
 --   Slam = { Radius, Damage, Windup, Cooldown, TriggerRange }
 --                     telegraphed ground slam (red ring) — used by bosses
---   Look = { Skin, Shirt, Pants, Eyes, TorsoSize? }   colours; TorsoSize is a Vector3 multiplier
+--   Lunge = { Range, SpeedMult, Duration, Cooldown }
+--                     burst of speed when a player is within Range (runners)
+--   Look = { Build, Skin, Eyes, Shirts = {...}, Pants = {...} }
+--                     Build: "Normal" | "Lean" | "Bloated" | "Hulk" | "Titan" (see ZombieModels)
 
 local Zombies = {}
 
@@ -34,10 +38,11 @@ Zombies.Types = {
 		MinWave = 1,
 		Weight = 10,
 		Look = {
+			Build = "Normal",
 			Skin = Color3.fromRGB(120, 170, 90),
-			Shirt = Color3.fromRGB(90, 80, 110),
-			Pants = Color3.fromRGB(60, 60, 75),
 			Eyes = Color3.fromRGB(255, 60, 40),
+			Shirts = { Color3.fromRGB(90, 80, 110), Color3.fromRGB(120, 60, 50), Color3.fromRGB(70, 90, 110), Color3.fromRGB(150, 140, 110), Color3.fromRGB(60, 80, 60) },
+			Pants = { Color3.fromRGB(60, 60, 75), Color3.fromRGB(50, 70, 100), Color3.fromRGB(80, 70, 55) },
 		},
 	},
 	Runner = {
@@ -51,11 +56,13 @@ Zombies.Types = {
 		Scale = 0.9,
 		MinWave = 3,
 		Weight = 4,
+		Lunge = { Range = 12, SpeedMult = 2, Duration = 0.5, Cooldown = 3 },
 		Look = {
+			Build = "Lean",
 			Skin = Color3.fromRGB(160, 175, 110),
-			Shirt = Color3.fromRGB(170, 60, 50),
-			Pants = Color3.fromRGB(50, 50, 60),
 			Eyes = Color3.fromRGB(255, 220, 60),
+			Shirts = { Color3.fromRGB(170, 60, 50), Color3.fromRGB(200, 190, 170), Color3.fromRGB(60, 60, 60) },
+			Pants = { Color3.fromRGB(50, 50, 60), Color3.fromRGB(70, 60, 50) },
 		},
 	},
 	Bloater = {
@@ -71,11 +78,11 @@ Zombies.Types = {
 		Weight = 2,
 		Explode = { Radius = 13, Damage = 40, Fuse = 0.9, TriggerRange = 7, ShotPlayerDamageMult = 0.4 },
 		Look = {
+			Build = "Bloated",
 			Skin = Color3.fromRGB(150, 200, 60),
-			Shirt = Color3.fromRGB(120, 180, 40),
-			Pants = Color3.fromRGB(70, 90, 40),
 			Eyes = Color3.fromRGB(230, 255, 80),
-			TorsoSize = Vector3.new(1.5, 1.3, 1.8),
+			Shirts = { Color3.fromRGB(120, 180, 40), Color3.fromRGB(170, 160, 120) },
+			Pants = { Color3.fromRGB(70, 90, 40) },
 		},
 	},
 	Brute = {
@@ -90,11 +97,11 @@ Zombies.Types = {
 		MinWave = 7,
 		Weight = 1,
 		Look = {
+			Build = "Hulk",
 			Skin = Color3.fromRGB(95, 130, 85),
-			Shirt = Color3.fromRGB(50, 45, 40),
-			Pants = Color3.fromRGB(40, 40, 45),
 			Eyes = Color3.fromRGB(255, 40, 40),
-			TorsoSize = Vector3.new(1.3, 1.1, 1.3),
+			Shirts = { Color3.fromRGB(50, 45, 40), Color3.fromRGB(80, 40, 35) },
+			Pants = { Color3.fromRGB(40, 40, 45) },
 		},
 	},
 	GraveTitan = {
@@ -109,11 +116,11 @@ Zombies.Types = {
 		Scale = 3.4,
 		Slam = { Radius = 20, Damage = 45, Windup = 1.3, Cooldown = 6, TriggerRange = 28 },
 		Look = {
+			Build = "Titan",
 			Skin = Color3.fromRGB(80, 110, 95),
-			Shirt = Color3.fromRGB(35, 30, 40),
-			Pants = Color3.fromRGB(30, 30, 35),
 			Eyes = Color3.fromRGB(120, 255, 230),
-			TorsoSize = Vector3.new(1.3, 1.15, 1.2),
+			Shirts = { Color3.fromRGB(35, 30, 40) },
+			Pants = { Color3.fromRGB(30, 30, 35) },
 		},
 	},
 }

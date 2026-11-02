@@ -8,7 +8,7 @@ Our take on *Survive a Million Zombies*, built next to the friend's version. Eac
 | 2 | Main map: apocalyptic city | [[City Map]] | **Done** (2026-11-01) |
 | 3 | Drop-in cutscene, intermission, commander notice | [[Match Start]] | **Done** (2026-11-01) |
 | 4 | Gun functionality (4 levels) | [[Weapons]] | **Done** (2026-11-01) |
-| 5 | Zombie models and AI | [[Zombies]] | Not started |
+| 5 | Zombie models and AI | [[Zombies]] | **Done** (2026-11-01) |
 | 6 | Zombie spawns (random, red warning circle) | [[Spawning]] | Not started |
 | 7 | Waves (10 rounds) and final boss | [[Waves and Boss]] | Not started |
 

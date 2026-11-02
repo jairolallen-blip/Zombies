@@ -1,5 +1,7 @@
--- ZombieService: builds blocky zombie models from Config.Zombies, runs their AI every Heartbeat,
--- and owns zombie health/death. Zombies live in Workspace.Zombies.
+-- ZombieService: spawns zombies (models from Server/ZombieModels), runs their AI every Heartbeat,
+-- and owns zombie health/death. Zombies live in Workspace.Zombies. Behaviour (vault: Zombies.md):
+-- per-zombie speed variety, surround slots near the player, runner lunges, hit flinch, and an
+-- "AttackAt" model attribute the client uses for the swipe animation.
 --
 -- Movement: each zombie is one physics assembly (invisible "Root" hitbox + welded/motor limbs).
 -- A LinearVelocity (plane mode) drives it toward its target and an AlignOrientation faces it.
@@ -31,6 +33,7 @@ local Remotes = require(Shared.Remotes)
 local GameState = require(Shared.GameState)
 local GameConfig = require(Shared.Config.GameConfig)
 local NavGrid = require(script.Parent.Parent:WaitForChild("Map"):WaitForChild("NavGrid"))
+local ZombieModels = require(script.Parent.Parent:WaitForChild("ZombieModels"))
 
 local ZombieService = {}
 ZombieService.Killed = Util.Signal.new()
@@ -74,100 +77,6 @@ function ZombieService:BuildNavGrid()
 	print(string.format("[ZombieService] NavGrid built: %d cells, %d blocked", cells, blocked))
 end
 
--- Model building -------------------------------------------------------------------------------
-
-local function newPart(name, size, color)
-	local p = Instance.new("Part")
-	p.Name = name
-	p.Size = size
-	p.Color = color
-	p.Material = Enum.Material.SmoothPlastic
-	p.TopSurface = Enum.SurfaceType.Smooth
-	p.BottomSurface = Enum.SurfaceType.Smooth
-	p.CanCollide = false
-	p.CanTouch = false
-	p.Massless = true
-	p.CollisionGroup = "Zombies"
-	return p
-end
-
-local function buildModel(typeId, def, cf)
-	local s = def.Scale or 1
-	local look = def.Look
-	local torsoMult = look.TorsoSize or Vector3.one
-	local model = Instance.new("Model")
-	model.Name = typeId
-
-	local root = newPart("Root", Vector3.new(2.4, 5, 1.6) * s, Color3.new())
-	root.Transparency = 1
-	root.CanCollide = true
-	root.Massless = false
-	root.CustomPhysicalProperties = PhysicalProperties.new(1, 0, 0, 100, 100)
-	root.CFrame = cf
-	root.Parent = model
-	model.PrimaryPart = root
-
-	local function weld(p, offset)
-		p.CFrame = cf * offset
-		local w = Instance.new("Weld")
-		w.Part0 = root
-		w.Part1 = p
-		w.C0 = offset
-		w.Parent = p
-		p.Parent = model
-	end
-	local function motor(p, joint, limbCenter)
-		p.CFrame = cf * limbCenter
-		local m = Instance.new("Motor6D")
-		m.Name = p.Name
-		m.Part0 = root
-		m.Part1 = p
-		m.C0 = joint
-		m.C1 = limbCenter:Inverse() * joint
-		m.Parent = root
-		p.Parent = model
-	end
-
-	weld(newPart("Torso", Vector3.new(2, 2, 1) * s * torsoMult, look.Shirt), CFrame.new(0, 0.5 * s, 0))
-	weld(newPart("Head", Vector3.new(1.25, 1.25, 1.25) * s, look.Skin), CFrame.new(0, 2.1 * s, 0))
-	for _, x in { -0.28, 0.28 } do
-		local eye = newPart("Eye", Vector3.new(0.28, 0.22, 0.1) * s, look.Eyes)
-		eye.Material = Enum.Material.Neon
-		weld(eye, CFrame.new(x * s, 2.25 * s, -0.63 * s))
-	end
-	local armX = 1 * s + 0.5 * s * torsoMult.X
-	for _, side in { { "LeftArm", -1 }, { "RightArm", 1 } } do
-		local x = armX * side[2]
-		motor(newPart(side[1], Vector3.new(1, 1, 2.4) * s, look.Skin), CFrame.new(x, 1.0 * s, 0), CFrame.new(x, 1.0 * s, -1.1 * s))
-	end
-	for _, side in { { "LeftLeg", -0.5 }, { "RightLeg", 0.5 } } do
-		local x = side[2] * s
-		motor(newPart(side[1], Vector3.new(1, 2, 1) * s, look.Pants), CFrame.new(x, -0.5 * s, 0), CFrame.new(x, -1.5 * s, 0))
-	end
-
-	local attachment = Instance.new("Attachment")
-	attachment.Name = "Move"
-	attachment.Parent = root
-	local lv = Instance.new("LinearVelocity")
-	lv.Attachment0 = attachment
-	lv.RelativeTo = Enum.ActuatorRelativeTo.World
-	lv.VelocityConstraintMode = Enum.VelocityConstraintMode.Plane
-	lv.PrimaryTangentAxis = Vector3.xAxis
-	lv.SecondaryTangentAxis = Vector3.zAxis
-	lv.PlaneVelocity = Vector2.zero
-	lv.MaxForce = root:GetMass() * 250
-	lv.Parent = root
-	local ao = Instance.new("AlignOrientation")
-	ao.Mode = Enum.OrientationAlignmentMode.OneAttachment
-	ao.Attachment0 = attachment
-	ao.Responsiveness = 25
-	ao.MaxTorque = math.huge
-	ao.CFrame = cf.Rotation
-	ao.Parent = root
-
-	return model, root, lv, ao
-end
-
 -- Lifecycle ------------------------------------------------------------------------------------
 
 function ZombieService:Spawn(typeId, position, healthMult)
@@ -176,7 +85,7 @@ function ZombieService:Spawn(typeId, position, healthMult)
 	local s = def.Scale or 1
 	local cf = CFrame.new(position.X, Services.MapService.GroundY + 2.5 * s + 0.05, position.Z)
 		* CFrame.Angles(0, math.random() * math.pi * 2, 0)
-	local model, root, lv, ao = buildModel(typeId, def, cf)
+	local model, root, lv, ao = ZombieModels.Build(typeId, def, cf)
 	nextId += 1
 	model:SetAttribute("ZombieId", nextId)
 	model:SetAttribute("Type", typeId)
@@ -206,6 +115,12 @@ function ZombieService:Spawn(typeId, position, healthMult)
 		LastPos = position,
 		StuckCount = 0,
 		DetourUntil = 0,
+		-- behaviour (see _step)
+		SpeedMult = if def.Boss then 1 else 0.85 + math.random() * 0.3,
+		Slot = nil, -- angle around the player this zombie closes in on (set when it gets near)
+		FlinchUntil = 0,
+		LungeUntil = 0,
+		NextLunge = 0,
 	}
 	model.Parent = folder
 	root:SetNetworkOwner(nil)
@@ -226,6 +141,9 @@ function ZombieService:Damage(model, amount, attacker)
 		return false
 	end
 	z.Health -= amount
+	if not z.Def.Boss then
+		z.FlinchUntil = os.clock() + 0.15
+	end
 	if z.Def.Boss then
 		GameState:SetAttribute("BossHealth", math.max(0, math.floor(z.Health)))
 	end
@@ -350,6 +268,7 @@ end
 --   blocked     -> follow the flow field (walks around fences/terrace/props through the gaps)
 -- Fallback: if it hasn't moved for ~0.6s while trying to, it detours sideways briefly.
 local NAV_INTERVAL = 0.25
+local SURROUND_RANGE = 14 -- studs: inside this, zombies spread into slots around their target
 local losParams = RaycastParams.new()
 losParams.FilterType = Enum.RaycastFilterType.Exclude
 losParams.RespectCanCollide = true
@@ -483,15 +402,41 @@ function ZombieService:_step(_dt)
 			local reach = def.AttackRange + 1.2 * s
 			if dist > 0.05 then
 				local dir = flat / dist
-				local wantsMove = dist > reach * 0.6
-				local moveDir = if wantsMove then navigate(z, dir, dist, target.Position, now) else dir
-				z.AO.CFrame = CFrame.lookAt(Vector3.zero, moveDir)
+				local goal, goalDist = target.Position, dist
+				-- surround: near the player, close in on an own slot around them instead of the centre
+				if dist < SURROUND_RANGE and not def.Boss then
+					z.Slot = z.Slot or math.atan2(-dir.Z, -dir.X) + (math.random() - 0.5) * 1.2
+					goal = target.Position + Vector3.new(math.cos(z.Slot), 0, math.sin(z.Slot)) * reach * 0.7
+					local toGoal = Vector3.new(goal.X - root.Position.X, 0, goal.Z - root.Position.Z)
+					goalDist = toGoal.Magnitude
+					if goalDist > 0.05 then
+						dir = toGoal / goalDist
+					end
+				elseif dist > SURROUND_RANGE * 1.5 then
+					z.Slot = nil -- lost them: pick a fresh slot next time
+				end
+				local wantsMove = dist > reach * 0.6 and goalDist > 0.6
+				local moveDir = if wantsMove then navigate(z, dir, goalDist, goal, now) else flat / dist
+				z.AO.CFrame = CFrame.lookAt(Vector3.zero, if wantsMove then moveDir else flat / dist)
 				if wantsMove then
-					velocity = Vector2.new(moveDir.X, moveDir.Z) * def.Speed
+					local speed = def.Speed * z.SpeedMult
+					local lunge = def.Lunge
+					if lunge and dist <= lunge.Range and now >= z.NextLunge then
+						z.LungeUntil = now + lunge.Duration
+						z.NextLunge = now + lunge.Cooldown
+					end
+					if now < z.LungeUntil then
+						speed *= lunge.SpeedMult
+					end
+					if now < z.FlinchUntil then
+						speed *= 0.4
+					end
+					velocity = Vector2.new(moveDir.X, moveDir.Z) * speed
 				end
 			end
 			if def.Damage > 0 and dist <= reach and math.abs(offset.Y) < 6 * s and now >= z.NextAttack then
 				z.NextAttack = now + def.AttackCooldown
+				model:SetAttribute("AttackAt", workspace:GetServerTimeNow())
 				local player = Players:GetPlayerFromCharacter(target.Parent)
 				if player then
 					Services.CombatService:DamagePlayer(player, def.Damage)

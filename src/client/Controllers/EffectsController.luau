@@ -282,10 +282,14 @@ function EffectsController:Shake(strength, duration)
 	shakeUntil = math.max(shakeUntil, os.clock() + duration)
 end
 
--- Zombie limb animation (local only)
+-- Zombie limb animation (local only). The stride advances with the zombie's real ground speed, so
+-- runners pump their legs and a stalled zombie stands still; arms reach forward with a lazy bob and
+-- swipe down when the server stamps "AttackAt" (ZombieService).
+local ATTACK_TIME = 0.35
 local motorCache = setmetatable({}, { __mode = "k" })
-local function animateZombies(zombieFolder)
+local function animateZombies(zombieFolder, dt)
 	local t = os.clock()
+	local serverNow = workspace:GetServerTimeNow()
 	for _, model in zombieFolder:GetChildren() do
 		local motors = motorCache[model]
 		if not motors then
@@ -294,27 +298,35 @@ local function animateZombies(zombieFolder)
 				continue
 			end
 			motors = {
+				Root = root,
 				LeftLeg = root:FindFirstChild("LeftLeg"),
 				RightLeg = root:FindFirstChild("RightLeg"),
 				LeftArm = root:FindFirstChild("LeftArm"),
 				RightArm = root:FindFirstChild("RightArm"),
 				Phase = (model:GetAttribute("ZombieId") or 0) * 1.7,
+				Scale = root.Size.Y / 5,
 			}
 			motorCache[model] = motors
 		end
-		local swing = math.sin(t * 9 + motors.Phase)
-		local bob = math.sin(t * 4.5 + motors.Phase) * 0.18
+		local v = motors.Root.AssemblyLinearVelocity
+		local speed = Vector2.new(v.X, v.Z).Magnitude / motors.Scale
+		motors.Phase += dt * speed * 0.75
+		local stride = math.clamp(speed / 10, 0, 1)
+		local swing = math.sin(motors.Phase) * 0.7 * stride
+		local bob = math.sin(t * 3 + motors.Phase * 0.3) * 0.12
+		local attackAge = serverNow - (model:GetAttribute("AttackAt") or -1e9)
+		local swipe = if attackAge < ATTACK_TIME then -math.sin(attackAge / ATTACK_TIME * math.pi) * 1.1 else 0
 		if motors.LeftLeg then
-			motors.LeftLeg.Transform = CFrame.Angles(swing * 0.6, 0, 0)
+			motors.LeftLeg.Transform = CFrame.Angles(swing, 0, 0)
 		end
 		if motors.RightLeg then
-			motors.RightLeg.Transform = CFrame.Angles(-swing * 0.6, 0, 0)
+			motors.RightLeg.Transform = CFrame.Angles(-swing, 0, 0)
 		end
 		if motors.LeftArm then
-			motors.LeftArm.Transform = CFrame.Angles(bob, 0, 0)
+			motors.LeftArm.Transform = CFrame.Angles(bob + swipe + swing * 0.15, 0, 0)
 		end
 		if motors.RightArm then
-			motors.RightArm.Transform = CFrame.Angles(-bob, 0, 0)
+			motors.RightArm.Transform = CFrame.Angles(-bob + swipe - swing * 0.15, 0, 0)
 		end
 	end
 end
@@ -348,8 +360,8 @@ function EffectsController:Init()
 
 	task.spawn(function()
 		local zombieFolder = workspace:WaitForChild("Zombies")
-		RunService.RenderStepped:Connect(function()
-			animateZombies(zombieFolder)
+		RunService.RenderStepped:Connect(function(dt)
+			animateZombies(zombieFolder, dt)
 		end)
 	end)
 end
