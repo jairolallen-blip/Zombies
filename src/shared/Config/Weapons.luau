@@ -47,7 +47,7 @@ Weapons.List = {
 		Level = 1, GemCost = 300, Order = 2,
 		Damage = 60, FireRate = 2, Automatic = false, MagSize = 6, ReloadTime = 1.9,
 		Pellets = 1, Spread = 0.3, Range = 340, Pierce = 2, HeadshotMultiplier = 2.5,
-		Recoil = 2.2, Tracer = { Color = BULLET, Width = 0.16, Fade = 0.12 }, Flash = 1.3,
+		Recoil = 3, Tracer = { Color = BULLET, Width = 0.16, Fade = 0.12 }, Flash = 1.3,
 	},
 
 	-- Level 2: SMG / first shotgun

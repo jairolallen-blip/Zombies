@@ -191,6 +191,13 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: **boss overhaul + sound fix.**
+  - **Boss:** the Grave Titan now spawns at the new `BossSpawn` marker (south avenue, in the open) after a 7s entrance cutscene.
+    - **Server:** `MatchService:_bossIntro` freezes players and sets the `BossIntro` player attribute, which makes CameraController stand down.
+    - **Client:** the new `BossController` handles the camera, title, drums, HUD hide, boss music and knockback.
+    - **New moves:** Charge (red lane) and Leap (red ring), added to the slam (`Zombies.GraveTitan.Charge` / `Leap` / `SpecialGap` / `Intro`). `ZombieService:Spawn` takes `faceTowards`, and there's a new `:Hold`.
+  - **Sound fix:** SoundController one-shots were destroyed after `TimeLength`, which is 0 before the asset loads, so first plays cut off at ~1s (the wave sting). They now clean up on `Ended`, with a 30s safety net.
+  - **Hand cannon:** back to the pistol grip, and recoil is now 3.
 - 2026-11-02: **owner playtest fixes.**
   - The hand cannon is back to the "Heavy Pistol Gunshot" sound (`3102797479`), and its recoil went from 4 to 2.2.
   - The hand cannon is held SMG-style, with the left hand under the barrel (`ViewmodelController`, where `pistol` excludes the Revolver).

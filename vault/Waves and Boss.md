@@ -16,7 +16,15 @@ Part of the [[Roadmap]]. The spawn ramp per wave is in [[Spawning]].
 - **Dying** is the same as before: OVERRUN, with rewards for the waves you cleared.
 
 ## The Grave Titan
-- **Entrance:** a huge warning circle, then the Titan rises out of the ground. The radio warns that something big is coming, and a "THE GRAVE TITAN APPROACHES" banner shows with its health bar.
+- **Entrance cutscene (2026-11-02), 7s:** before the horde spawns, every player is frozen and the camera takes over (`MatchService:_bossIntro`, client `BossController`).
+  - **Shots:** letterboxed, with tense drums ("Stalking the Prey"). It starts high over the square pushing down the south avenue, cuts low in front as the Titan claws out of the ground, then goes close up for the **roar**.
+  - **The roar:** heavy shake, an FOV punch, a red flash, a shockwave ring, the radio line and the "THE GRAVE TITAN · FINAL WAVE" title card.
+  - **Back to the fight:** a fade back to first person, and the boss track ("Vengeful Attack") fades in. It fades out when the Titan dies.
+  - The HUD is hidden during the shot.
+- **Spawn:** at the `BossSpawn` marker, the open mouth of the south avenue at (1000, 46), facing the square. It used to spawn on a random zombie pad behind obstacles and get stuck.
+- **Charge:** stops behind a red lane (9 wide, 70 long) for 1.1s, then runs it at 75 studs/s. 40 damage and a big knockback to anyone in it. Cooldown 9s, at 22–85 studs and only with a clear line to you.
+- **Leap:** a red ring lands on a far-away player (32+ studs), then the Titan jumps onto it 1.1s later with a shockwave. 45 damage and knockback. Cooldown 13s.
+- **Pacing:** at least 2.5s between special attacks. Enrage halves every cooldown. Knockback is applied by the hit player's own client (`BossKnock`), since players own their characters' physics.
 - **Health:** 18,000, plus 60% per extra player. That's roughly 45s solo with a level 3 gun and 20–30s with level 4, while the horde keeps coming.
 - **Slam:** a telegraphed ground-pound with a red ring (already existed), every 6s.
 - **Enrage at 50% HP:** a "THE TITAN IS ENRAGED" banner and radio line. It moves 40% faster, slams twice as often, and **summons 6 Runners** around itself, each with its own warning circle.

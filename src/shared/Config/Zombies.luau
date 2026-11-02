@@ -18,6 +18,7 @@
 --                     on death; if killed by a player, players take Damage * ShotPlayerDamageMult.
 --   Slam = { Radius, Damage, Windup, Cooldown, TriggerRange }
 --                     telegraphed ground slam (red ring) — used by bosses
+--   Charge, Leap, SpecialGap, Intro   boss-only extras; see GraveTitan
 --   Enrage = { At, SpeedMult, SlamCooldownMult, Summon, SummonCount, SummonRadius }
 --                     at At (fraction of max HP): faster, slams more often, summons a ring of Summon
 --   Lunge = { Range, SpeedMult, Duration, Cooldown }
@@ -117,6 +118,14 @@ Zombies.Types = {
 		Cash = 1500,
 		Scale = 3.4,
 		Slam = { Radius = 20, Damage = 45, Windup = 1.3, Cooldown = 6, TriggerRange = 28 },
+		-- Charge: plants its feet (red lane on the ground), then barrels straight down it, flattening
+		-- anyone in the way. Leap: crouches, jumps onto a far-away player's spot (red ring) and lands
+		-- with a shockwave. SpecialGap = minimum seconds between any two special attacks.
+		Charge = { Windup = 1.1, Speed = 75, Distance = 70, Width = 9, Damage = 40, Knockback = 90, Cooldown = 9, MinRange = 22, MaxRange = 85 },
+		Leap = { Windup = 0.8, AirTime = 1.1, Height = 30, Radius = 18, Damage = 45, Cooldown = 13, MinRange = 32 },
+		SpecialGap = 2.5,
+		-- entrance cutscene before the final wave (MatchService:_bossIntro, Client BossController)
+		Intro = { Time = 7, RiseAt = 1.2, RiseTime = 3.2, RoarAt = 4.8 },
 		Enrage = { At = 0.5, SpeedMult = 1.4, SlamCooldownMult = 0.5, Summon = "Runner", SummonCount = 6, SummonRadius = 14 },
 		Look = {
 			Build = "Titan",

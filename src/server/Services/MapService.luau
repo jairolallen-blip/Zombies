@@ -9,6 +9,7 @@
 --   MapService:GetZombieSpawnPosition(usePads?)  random open street spot around a living player
 --     (GameConfig.Waves.SpawnMin/MaxDistance, vault: Spawning.md); usePads = a fixed ZombieSpawn pad
 --   MapService:GetZombiePads() -> {Vector3}
+--   MapService:GetBossSpawn() -> Vector3   the "BossSpawn" marker (open ground facing the square)
 --   MapService:GetNavBounds() -> center, halfSize, lattice   (area the zombie NavGrid scans)
 --   MapService:GetDeployPoints() -> from, to   (helipad -> arena spawns, ground level)
 --   MapService:IsOnHelipad(player) -> bool     standing on the lobby helipad (the take-off zone)
@@ -27,6 +28,7 @@ local MapService = {}
 MapService.GroundY = 1
 
 local lobbySpawns, playerSpawns, zombiePads = {}, {}, {}
+local bossSpawn
 local helipad
 
 local function collect(folder, name)
@@ -52,6 +54,7 @@ function MapService:Init(services)
 	for _, pad in collect(arena, "ZombieSpawn") do
 		table.insert(zombiePads, pad.Position)
 	end
+	bossSpawn = collect(arena, "BossSpawn")[1].Position
 	self:ApplyAtmosphere()
 end
 
@@ -143,6 +146,10 @@ end
 
 function MapService:GetZombiePads()
 	return zombiePads
+end
+
+function MapService:GetBossSpawn()
+	return bossSpawn
 end
 
 function MapService:IsOnHelipad(player)

@@ -44,6 +44,10 @@ Sounds.Library = {
 	WaveSting = { Id = 9039981895, Volume = 0.6 }, -- APM Music, "Hellish"
 	Victory = { Id = 9067124098, Volume = 0.7 },
 
+	-- final boss (BossController; ids checked 2026-11-02)
+	BossMusic = { Id = 1837840355, Volume = 0.45, Looped = true }, -- APM Music, "Vengeful Attack" (fades in after the intro)
+	BossIntroDrums = { Id = 1835248722, Volume = 0.6, Looped = true }, -- APM Music, "Stalking the Prey 60" (under the entrance)
+
 	-- deploy cutscene (CutsceneController drives the loops' volume per frame; ids checked 2026-11-01)
 	CabinWind = { Id = 85352789269452, Volume = 0.35, Looped = true }, -- loop_wind_01 (WhistleAcousticMan), wind through the open door
 	SeaWash = { Id = 93281700241946, Volume = 0.5, Looped = true }, -- Calm Sea Beach Ambience, waves under the rotor wash

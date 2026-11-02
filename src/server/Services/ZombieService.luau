@@ -86,12 +86,15 @@ end
 
 -- Lifecycle ------------------------------------------------------------------------------------
 
-function ZombieService:Spawn(typeId, position, healthMult, riseTime)
+function ZombieService:Spawn(typeId, position, healthMult, riseTime, faceTowards)
 	local def = Zombies.Types[typeId]
 	assert(def, "Unknown zombie type: " .. tostring(typeId))
 	local s = def.Scale or 1
 	local cf = CFrame.new(position.X, Services.MapService.GroundY + 2.5 * s + 0.05, position.Z)
 		* CFrame.Angles(0, math.random() * math.pi * 2, 0)
+	if faceTowards then
+		cf = CFrame.lookAt(cf.Position, Vector3.new(faceTowards.X, cf.Position.Y, faceTowards.Z))
+	end
 	local model, root, lv, ao = ZombieModels.Build(typeId, def, cf)
 	if riseTime then -- start buried; _rise lifts it out, then hands it to physics
 		root.Anchored = true
@@ -432,6 +435,7 @@ local function doSlam(z, now)
 	local slam = z.Def.Slam
 	z.Slamming = true
 	z.NextSlam = now + slam.Cooldown * (if z.Enraged then z.Def.Enrage.SlamCooldownMult else 1)
+	z.NextSpecial = now + slam.Windup + (z.Def.SpecialGap or 0)
 	local ground = Vector3.new(z.Root.Position.X, Services.MapService.GroundY + 0.1, z.Root.Position.Z)
 	local ring = Instance.new("Part")
 	ring.Name = "SlamTelegraph"
@@ -460,6 +464,124 @@ local function doSlam(z, now)
 			end
 		end
 	end)
+end
+
+-- red telegraph part flat on the ground (removed by the caller)
+local function telegraph(size, cframe)
+	local p = Instance.new("Part")
+	p.Name = "BossTelegraph"
+	p.Size = size
+	p.CFrame = cframe
+	p.Color = Color3.fromRGB(255, 50, 40)
+	p.Material = Enum.Material.Neon
+	p.Transparency = 0.5
+	p.Anchored = true
+	p.CanCollide = false
+	p.CanQuery = false
+	p.CanTouch = false
+	p.Parent = Services.CombatService.EffectsFolder
+	return p
+end
+
+local function specialCooldown(z, seconds)
+	return seconds * (if z.Enraged then z.Def.Enrage.SlamCooldownMult else 1)
+end
+
+-- players own their characters' physics, so their client applies the shove (BossController)
+local function knock(root, from, power)
+	local player = Players:GetPlayerFromCharacter(root.Parent)
+	local away = Vector3.new(root.Position.X - from.X, 0, root.Position.Z - from.Z)
+	away = if away.Magnitude > 0.1 then away.Unit else Vector3.xAxis
+	if player then
+		Remotes.Effect:FireClient(player, "BossKnock", { Velocity = away * power + Vector3.new(0, power * 0.45, 0) })
+	end
+end
+
+-- Charge: stand still behind a red lane for Windup, then run it at Speed (see _step), hitting
+-- each player in the lane once.
+local function doCharge(z, now, targetPos)
+	local c = z.Def.Charge
+	z.Slamming = true -- busy: no steering or other attacks
+	z.NextCharge = now + specialCooldown(z, c.Cooldown)
+	z.NextSpecial = now + c.Windup + z.Def.SpecialGap
+	local from = z.Root.Position
+	local dir = Vector3.new(targetPos.X - from.X, 0, targetPos.Z - from.Z).Unit
+	z.AO.CFrame = CFrame.lookAt(Vector3.zero, dir)
+	local groundY = Services.MapService.GroundY
+	local lane = telegraph(Vector3.new(c.Width, 0.2, c.Distance), CFrame.lookAt(Vector3.new(from.X, groundY + 0.1, from.Z), Vector3.new(from.X + dir.X, groundY + 0.1, from.Z + dir.Z)) * CFrame.new(0, 0, -c.Distance / 2))
+	Remotes.Effect:FireAllClients("BossCharge", { Position = from })
+	task.delay(c.Windup, function()
+		lane:Destroy()
+		z.Slamming = false
+		if z.Dead then
+			return
+		end
+		z.ChargeDir = dir
+		z.ChargeUntil = os.clock() + c.Distance / c.Speed
+		z.ChargeHit = {}
+	end)
+end
+
+-- Leap: crouch over a red ring at the target's spot, arc through the air onto it, shockwave on landing.
+local function doLeap(z, now, targetPos)
+	local l = z.Def.Leap
+	z.Slamming = true
+	z.NextLeap = now + specialCooldown(z, l.Cooldown)
+	z.NextSpecial = now + l.Windup + l.AirTime + z.Def.SpecialGap
+	local groundY = Services.MapService.GroundY
+	local landing = Vector3.new(targetPos.X, groundY, targetPos.Z)
+	local ring = telegraph(Vector3.new(0.2, l.Radius * 2, l.Radius * 2), CFrame.new(landing + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)))
+	ring.Shape = Enum.PartType.Cylinder
+	Remotes.Effect:FireAllClients("BossLeap", { Position = z.Root.Position, Landing = landing })
+	task.delay(l.Windup, function()
+		local root = z.Root
+		if z.Dead or not root.Parent then
+			ring:Destroy()
+			z.Slamming = false
+			return
+		end
+		local start = root.Position
+		local rootHeight = start.Y - groundY
+		local flat = Vector3.new(landing.X - start.X, 0, landing.Z - start.Z)
+		local face = if flat.Magnitude > 0.1 then flat.Unit else Vector3.zAxis
+		root.Anchored = true
+		local t0 = os.clock()
+		local fly
+		fly = RunService.Heartbeat:Connect(function()
+			local u = math.min((os.clock() - t0) / l.AirTime, 1)
+			local pos = start:Lerp(landing + Vector3.new(0, rootHeight, 0), u) + Vector3.new(0, l.Height * 4 * u * (1 - u), 0)
+			if root.Parent then
+				root.CFrame = CFrame.lookAt(pos, pos + face)
+			end
+			if u < 1 then
+				return
+			end
+			fly:Disconnect()
+			ring:Destroy()
+			z.Slamming = false
+			if z.Dead or not root.Parent then
+				return
+			end
+			root.Anchored = false
+			root:SetNetworkOwner(nil)
+			Remotes.Effect:FireAllClients("Shockwave", { Position = landing, Radius = l.Radius })
+			for _, player in Services.MatchService:GetRunPlayers() do
+				local proot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+				if proot and Util.FlatDistance(proot.Position, landing) <= l.Radius then
+					Services.CombatService:DamagePlayer(player, l.Damage)
+					knock(proot, landing, 55)
+				end
+			end
+		end)
+	end)
+end
+
+-- Keep a zombie standing still (no moves, no attacks) for `seconds` (the boss during its intro)
+function ZombieService:Hold(model, seconds)
+	local z = alive[model]
+	if z then
+		z.StunnedUntil = math.max(z.StunnedUntil, os.clock() + seconds)
+	end
 end
 
 function ZombieService:_step(_dt)
@@ -491,6 +613,24 @@ function ZombieService:_step(_dt)
 		local s = def.Scale or 1
 		local velocity = Vector2.zero
 		local target = z.Target
+		if z.ChargeUntil then -- mid-charge: run the lane, flatten whoever is in it (once each)
+			if now < z.ChargeUntil then
+				local c = def.Charge
+				velocity = Vector2.new(z.ChargeDir.X, z.ChargeDir.Z) * c.Speed
+				for _, player in Services.MatchService:GetRunPlayers() do
+					local proot = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+					if proot and not z.ChargeHit[player] and Util.FlatDistance(proot.Position, root.Position) <= c.Width * 0.5 + 2 then
+						z.ChargeHit[player] = true
+						Services.CombatService:DamagePlayer(player, c.Damage)
+						knock(proot, root.Position, c.Knockback)
+					end
+				end
+				z.LV.Enabled = true
+				z.LV.PlaneVelocity = velocity
+				continue
+			end
+			z.ChargeUntil = nil
+		end
 		if target and target.Parent and now >= z.StunnedUntil and not z.Slamming then
 			local offset = target.Position - root.Position
 			local flat = Vector3.new(offset.X, 0, offset.Z)
@@ -541,8 +681,16 @@ function ZombieService:_step(_dt)
 			if def.Explode and not z.FuseAt and dist <= def.Explode.TriggerRange then
 				startFuse(z)
 			end
-			if def.Slam and now >= z.NextSlam and dist <= def.Slam.TriggerRange then
+			if def.Slam and now >= z.NextSlam and dist <= def.Slam.TriggerRange and now >= (z.NextSpecial or 0) then
 				doSlam(z, now)
+			elseif def.Boss and now >= (z.NextSpecial or 0) then
+				z.NextCharge = z.NextCharge or now + 3
+				z.NextLeap = z.NextLeap or now + 6
+				if def.Charge and now >= z.NextCharge and dist >= def.Charge.MinRange and dist <= def.Charge.MaxRange and z.HasLOS then
+					doCharge(z, now, target.Position)
+				elseif def.Leap and now >= z.NextLeap and dist >= def.Leap.MinRange then
+					doLeap(z, now, target.Position)
+				end
 			end
 		end
 

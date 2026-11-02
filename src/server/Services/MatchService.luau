@@ -361,6 +361,36 @@ function MatchService:_countdown(phase, seconds)
 	GameState:SetAttribute("Timer", 0)
 end
 
+-- Final boss entrance (Zombies def Intro timings). Every run player is anchored and gets the
+-- BossIntro attribute, which hands their camera to Client/Controllers/BossController (CameraController
+-- stands down). The boss claws out of the ground at the BossSpawn marker facing the square, roars
+-- (radio "BossIncoming" + shockwave), then the fight starts. The horde spawns after this returns.
+function MatchService:_bossIntro(playerMult)
+	local typeId = Zombies.BossOrder[1]
+	local intro = Zombies.Types[typeId].Intro
+	local position = Services.MapService:GetBossSpawn()
+	local players = self:GetRunPlayers()
+	local function freeze(on)
+		for _, player in players do
+			player:SetAttribute("BossIntro", if on then true else nil)
+			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			if root then
+				root.Anchored = on
+			end
+		end
+	end
+	freeze(true)
+	Remotes.Effect:FireAllClients("BossIntro", { Position = position, Time = intro.Time, RiseAt = intro.RiseAt, RiseTime = intro.RiseTime, RoarAt = intro.RoarAt })
+	task.wait(intro.RiseAt)
+	local boss = Services.ZombieService:Spawn(typeId, position, playerMult, intro.RiseTime, GameConfig.OurMap.ArenaCenter)
+	Services.ZombieService:Hold(boss, intro.Time - intro.RiseAt)
+	task.wait(intro.RoarAt - intro.RiseAt)
+	self:_radio("BossIncoming")
+	Remotes.Effect:FireAllClients("Shockwave", { Position = position, Radius = 45 })
+	task.wait(intro.Time - intro.RoarAt)
+	freeze(false)
+end
+
 function MatchService:_playWave(wave, isBoss)
 	local cfg = GameConfig.Waves
 	local ZombieService = Services.ZombieService
@@ -374,7 +404,7 @@ function MatchService:_playWave(wave, isBoss)
 	local interval = math.clamp(spawnWindow * burst / math.max(total, 1), cfg.MinSpawnInterval, cfg.SpawnInterval)
 
 	if isBoss then
-		ZombieService:SpawnWarned(Zombies.BossOrder[1], MapService:GetZombieSpawnPosition(true), playerMult)
+		self:_bossIntro(playerMult)
 	end
 
 	local toSpawn = total
@@ -453,7 +483,9 @@ function MatchService:_runMatch()
 		end
 		local isBoss = wave >= cfg.TotalWaves
 		GameState:SetAttribute("Phase", "Wave")
-		self:_radio(if isBoss then "BossIncoming" elseif wave == 1 then "FirstWave" else "WaveStart", { wave = wave })
+		if not isBoss then -- the boss's radio line comes with its roar (_bossIntro)
+			self:_radio(if wave == 1 then "FirstWave" else "WaveStart", { wave = wave })
+		end
 		if not self:_playWave(wave, isBoss) then
 			break
 		end

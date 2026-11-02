@@ -8,7 +8,7 @@
 -- Rules that keep the horde flowing (zombies use Map/NavGrid): the floor is perfectly flat (paint,
 -- no steps), walkable gaps are >= 1 tile wide, every side area has 2+ exits, and decorative bits
 -- (facades, canopies, foliage, wires) are CanCollide = false so only real cover blocks the nav grid.
--- Parts named "PlayerSpawn" / "ZombieSpawn" are read by MapService.
+-- Parts named "PlayerSpawn" / "ZombieSpawn" / "BossSpawn" are read by MapService.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("GameConfig"))
@@ -671,6 +671,8 @@ local function buildMarkers(parent)
 		assert(cell(t[1], t[2]) ~= "#", "ZombieSpawn inside a building")
 		part(m, "ZombieSpawn", Vector3.new(6, 1, 6), CFrame.new(wx(t[1] + 0.5), GROUND_Y + 0.5, wz(t[2] + 0.5)), Color3.fromRGB(200, 40, 40), Enum.Material.SmoothPlastic, { Transparency = 1, CanCollide = false, CanQuery = false, CanTouch = false })
 	end
+	-- the final boss rises here: the open mouth of the south avenue, clear straight into the square
+	part(m, "BossSpawn", Vector3.new(10, 1, 10), at(0, GROUND_Y + 0.5, 46), Color3.fromRGB(120, 255, 230), Enum.Material.SmoothPlastic, { Transparency = 1, CanCollide = false, CanQuery = false, CanTouch = false })
 	for _, s in { -1, 1 } do
 		part(m, "InvisibleWall", Vector3.new(2, 160, N * TILE), at(s * (HALF + 1), GROUND_Y + 80, 0), C.White, Enum.Material.SmoothPlastic, { Transparency = 1, CanQuery = false })
 		part(m, "InvisibleWall", Vector3.new(N * TILE, 160, 2), at(0, GROUND_Y + 80, s * (HALF + 1)), C.White, Enum.Material.SmoothPlastic, { Transparency = 1, CanQuery = false })

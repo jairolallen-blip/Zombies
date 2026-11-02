@@ -70,13 +70,16 @@ local function fire(s, def, opts)
 	s.PlaybackSpeed = (def.Pitch or 1) * (opts.Pitch or 1) * (1 + (math.random() * 2 - 1) * var)
 	s.Volume *= opts.Volume or 1
 	s:Play()
-	task.delay(math.max(s.TimeLength, 0.5) / s.PlaybackSpeed + 0.5, function()
+	-- clean up when it really ends: TimeLength is 0 until the asset loads, which cut first plays short
+	local function cleanup()
 		if s.Parent and s.Parent:IsA("Attachment") then
 			s.Parent:Destroy()
-		else
+		elseif s.Parent then
 			s:Destroy()
 		end
-	end)
+	end
+	s.Ended:Once(cleanup)
+	task.delay(30, cleanup) -- safety net if Ended never fires
 end
 
 -- 2D (non-positional) one-shot
