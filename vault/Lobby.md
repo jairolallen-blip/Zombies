@@ -49,7 +49,8 @@ This is the achievements station, **south of the plaza and facing it**, so playe
 - **Toasts:** a message pops up mid-run when you finish one.
 
 ## Our lobby build
-A fortified safehouse inside a ruined city at **x = 1000** (the old map is at x = 0). Its layout:
+A fortified safehouse inside a ruined city at **x = 1000, z = 380**, on its own island south of the arena city (the old map is at x = 0). Its layout:
+- **Foundation** (2026-11-02): one 184 × 172 slate slab under the whole footprint, top at Y = 0.95 and reaching below the seabed. Terrain water inside it is cleared, so no ocean shows between buildings. Before this, only the 124-stud asphalt floor existed and the ruins and containers hung over water. The lobby also moved from z = 235 to 380, which leaves about 140 studs of sea between it and the city.
 - **North:** ruined towers, and in front of them the **Deploy Zone helipad**, which will be the take-off point for the drop-in cutscene (see [[Match Start]]).
 - **Centre:** a concrete plaza with a flagpole and burning barrels. Players spawn in a ring around it, facing the helipad.
 - **West:** the armory tent (the loadout spot). **East:** a command post behind sandbags.

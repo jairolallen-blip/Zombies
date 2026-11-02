@@ -79,7 +79,7 @@ If any are false, someone overwrote Studio. **Restore from GitHub with §6's imp
   - **Clearing a wave also heals everyone to full.** HP never regenerates otherwise, because `StarterCharacterScripts.Health` is deliberately empty.
   - Gems at the end of a run: 5 per wave cleared, 0.2 per kill, +100 for a victory.
 - **Commander radio** (`Config/Radio`): Sgt. Voss (callsign Overwatch) speaks on deploy, drop, landing, every wave start and clear, boss incoming/enraged/down, victory and overrun.
-- **Map** (`vault/City Map.md`): `Workspace.OurMap`, holding the Lobby (centre 1000, 0, 235) and the Arena city (centre 1000, 0, 0).
+- **Map** (`vault/City Map.md`): `Workspace.OurMap`, holding the Lobby (centre 1000, 0, 380, on its own island with a slate `Foundation` slab) and the Arena city (centre 1000, 0, 0).
   - **Layout:** 23 × 23 tiles of 12 studs, drawn as a text grid in `Server/Map/OurCity`. A big central square, 4 streets, a ring road, and a park, alleys, a parking lot and a market. No dead ends.
   - **Floor:** perfectly flat at Y = 1, which the zombie navigation requires.
   - **Lighting:** the sunset atmosphere is applied **at runtime only** (`MapService:ApplyAtmosphere`). In Edit mode it looks bright, and that's expected.
@@ -191,6 +191,7 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: **lobby island.** The lobby moved from z = 235 to 380 (`GameConfig.OurMap.LobbyCenter`; the baked model was shifted with `PivotTo`, so hand edits are kept). A `Foundation` slab (184 × 172, slate, down to Y ≈ −25) now sits under the whole footprint, and the terrain water inside it is cleared, so the ocean no longer shows between the buildings. Only targeted edits went into `OurLobby.buildGround` and `GameConfig`.
 - 2026-11-02: **boss overhaul + sound fix.**
   - **Boss:** the Grave Titan now spawns at the new `BossSpawn` marker (south avenue, in the open) after a 7s entrance cutscene.
     - **Server:** `MatchService:_bossIntro` freezes players and sets the `BossIntro` player attribute, which makes CameraController stand down.

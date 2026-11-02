@@ -136,6 +136,11 @@ end
 local function buildGround(parent)
 	local ground = model(parent, "Ground")
 	part(ground, "Asphalt", Vector3.new(HALF * 2 + 4, 2, HALF * 2 + 4), at(0, GROUND_Y - 1, 0), C.Asphalt, Enum.Material.Asphalt)
+	-- foundation under the whole footprint (ruins and containers overhang the asphalt), reaching below
+	-- the seabed so no ocean shows between buildings; the terrain water inside it is cleared
+	local footprint, footprintSize = at(0, GROUND_Y - 13.05, 4), Vector3.new(184, 26, 172)
+	part(ground, "Foundation", footprintSize, footprint, C.ConcreteDark, Enum.Material.Slate)
+	workspace.Terrain:FillBlock(footprint, footprintSize, Enum.Material.Air)
 	part(ground, "Plaza", Vector3.new(40, 0.2, 40), at(PLAZA.X, GROUND_Y + 0.1, PLAZA.Z), C.Concrete, Enum.Material.Concrete)
 	part(ground, "PlazaCurb", Vector3.new(42, 0.1, 42), at(PLAZA.X, GROUND_Y + 0.05, PLAZA.Z), C.ConcreteDark, Enum.Material.Concrete)
 	-- faded centre line of the old street running east-west

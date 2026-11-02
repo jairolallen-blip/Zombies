@@ -138,7 +138,7 @@ GameConfig.Keybinds = {
 -- (Arena: "PlayerSpawn" + "ZombieSpawn" parts). Read at runtime by MapService.
 GameConfig.OurMap = {
 	Folder = "OurMap",
-	LobbyCenter = Vector3.new(1000, 0, 235),
+	LobbyCenter = Vector3.new(1000, 0, 380),
 	ArenaCenter = Vector3.new(1000, 0, 0),
 	ArenaHalfSize = 138, -- OurCity: 23 tiles x 12 studs / 2 (zombie nav grid covers this square)
 	NavCellSize = 4, -- zombie NavGrid cell (OurCity's 12-stud tiles are 3 x 3 cells)
