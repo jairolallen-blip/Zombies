@@ -50,8 +50,11 @@ local function overlay()
 	end
 	o.Flash = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(170, 20, 10), BackgroundTransparency = 1, BorderSizePixel = 0, Parent = gui })
 	o.Fade = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(), BackgroundTransparency = 1, BorderSizePixel = 0, ZIndex = 5, Parent = gui })
-	o.Title = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.72), Size = UDim2.fromOffset(900, 70), Text = string.upper(Zombies.Types[Zombies.BossOrder[1]].DisplayName), TextSize = 64, TextColor3 = Color3.fromRGB(255, 70, 50), TextTransparency = 1, ZIndex = 2, Parent = gui })
-	o.Sub = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.8), Size = UDim2.fromOffset(700, 30), Text = "FINAL WAVE  ·  BRING IT DOWN", TextSize = 24, TextTransparency = 1, ZIndex = 2, Parent = gui })
+	-- title card low, over the bottom letterbox bar, so it never covers the boss
+	local text = UIKit.new("Frame", { BackgroundTransparency = 1, ZIndex = 2, Parent = gui })
+	UIKit.AutoScale(text)
+	o.Title = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.86), Size = UDim2.fromOffset(900, 70), Text = string.upper(Zombies.Types[Zombies.BossOrder[1]].DisplayName), TextSize = 60, TextColor3 = Color3.fromRGB(255, 70, 50), TextTransparency = 1, ZIndex = 2, Parent = text })
+	o.Sub = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.945), Size = UDim2.fromOffset(700, 30), Text = "FINAL WAVE  ·  BRING IT DOWN", TextSize = 24, TextTransparency = 1, ZIndex = 2, Parent = text })
 	return o
 end
 
@@ -94,8 +97,8 @@ function BossController:PlayIntro(data)
 			from = P - dir * (27 - 6 * u) + side * (7 - 3 * u) + up * (2.5 + u)
 			look = P + up * (H * 0.65 * rise)
 		else -- close-up on the roar
-			from = P - dir * 15 + side * 2 + up * (H * 0.55)
-			look = P + up * (H * 0.85)
+			from = P - dir * 24 + side * 3 + up * (H * 0.5)
+			look = P + up * (H * 0.7)
 		end
 		local shake = 0.02 * rise + (if t >= data.RoarAt then 0.12 * math.max(0, 1 - (t - data.RoarAt) / 1.4) else 0)
 		camera.CFrame = CFrame.lookAt(from, look)
@@ -118,6 +121,13 @@ function BossController:PlayIntro(data)
 		if t >= data.Time then
 			RunService:UnbindFromRenderStep("SAMZ_BossIntro")
 			camera.FieldOfView = GameConfig.Camera.FieldOfView
+			-- level look at the boss from the head: the default camera resumes from the last CFrame,
+			-- which was pitched up at the boss's chest
+			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			if root then
+				local head = root.Position + Vector3.new(0, 1.5, 0)
+				camera.CFrame = CFrame.lookAt(head, Vector3.new(P.X, head.Y, P.Z))
+			end
 			camera.CameraType = Enum.CameraType.Custom
 			for gui in hidden do
 				gui.Enabled = true

@@ -4,6 +4,7 @@
 --   UIKit.Screen(name)                      -> ScreenGui in PlayerGui
 --   UIKit.Panel(props) / Label(props) / Button(props, onClick)
 --   UIKit.Corner(radius), UIKit.Stroke(color, thickness), UIKit.Padding(px)
+--   UIKit.AutoScale(root)                   -> UIScale that fits a full-screen root to the screen size
 
 local Players = game:GetService("Players")
 
@@ -70,6 +71,22 @@ function UIKit.Screen(name)
 		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 		Parent = Players.LocalPlayer:WaitForChild("PlayerGui"),
 	})
+end
+
+-- Scales a full-screen root Frame (Position 0,0) with the screen height; layouts are designed for an
+-- 800 px tall screen. A UIScale also shrinks the root itself, so the root is sized 1/s to keep covering
+-- the screen. Returns the UIScale: divide screen pixels (mouse positions) by its Scale.
+function UIKit.AutoScale(root)
+	local scale = UIKit.new("UIScale", { Parent = root })
+	local camera = workspace.CurrentCamera
+	local function update()
+		local s = math.clamp(camera.ViewportSize.Y / 800, 0.6, 1.5)
+		scale.Scale = s
+		root.Size = UDim2.fromScale(1 / s, 1 / s)
+	end
+	update()
+	camera:GetPropertyChangedSignal("ViewportSize"):Connect(update)
+	return scale
 end
 
 function UIKit.Panel(props)

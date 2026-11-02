@@ -103,7 +103,7 @@ StarterPlayerScripts/Client/
   Controllers/            Camera (aim = mouse ray), Weapon (fire/recoil/spin-up), HUD, Lobby (lobby chip, Ready, results),
                           Shop (Armory + Barracks shop UIs, opened by ProximityPrompts with attribute Shop), Input,
                           Effects (tracers, explosions, zombie animation, SpawnWarning), Cutscene (deploy), Radio (commander panel)
-  UI/UIKit                UI builder + theme
+  UI/UIKit                UI builder + theme; AutoScale(root) fits a full-screen root to the screen height (800 px design)
 StarterCharacterScripts/Health   empty on purpose (disables regen)
 ```
 - **Server-authoritative:** the client sends `FireWeapon(origin, dirs)`, and the server validates fire rate, ammo, origin distance and pellet count before re-raycasting.
@@ -150,7 +150,7 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
   4. Good shots: t = 0.08 / 0.36 / 0.6 / 0.875 / 0.955.
   - **Screenshots and the MCP link:** several `screen_capture` calls in a row while the cutscene renders can time out and drop the MCP link. Use one capture at a time.
 - **Team Create:** before any repo → Studio push, compare first. Push only the files you changed. A full import overwrote a live GameConfig edit by AnimatedSL on 2026-11-02.
-- **Debug commands:** `game.ServerStorage.SAMZ_Debug:Invoke(cmd, ...)`. Commands: `God`, `GiveCash`, `GiveGems`, `KillAll`, `SkipToWave n` (it applies after the current wave), `Spawn type n`, `NavCheck`, `State`, `ChargeUlt`, `AddStat key n` (achievement progress), `Airdrop` (drop a crate now), `Help`.
+- **Debug commands:** `game.ServerStorage.SAMZ_Debug:Invoke(cmd, ...)`. Commands: `God` (stays on across respawns until `God(false)`), `GiveCash`, `GiveGems`, `KillAll`, `SkipToWave n` (it applies after the current wave), `Spawn type n`, `NavCheck`, `State`, `ChargeUlt`, `AddStat key n` (achievement progress), `Airdrop` (drop a crate now), `Help`.
 - **Fire real shots** from Client: `Remotes.FireWeapon:FireServer(muzzle.WorldPosition, {dir})`, where the muzzle is `Character.Tool.Handle.Muzzle`. Use `Remotes.BuyUpgrade:FireServer("Weapon")` to upgrade.
 - **Balance:** `tools/balance-bot.luau` plays a full no-cheat solo run and logs each wave (instructions are in its header). Baseline from 2026-11-01: it reached wave 10 and got the boss to 9% HP. The owner approved that difficulty.
 - **Screenshots:** `screen_capture` with `camera_position` / `look_at_position` aims the camera in Play mode too. Effects far from the player won't be in view.
@@ -191,6 +191,22 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: **UI + cutscene fix pass (playtest list).**
+  - **UI scales with the screen:** a new `UIKit.AutoScale(root)` (designed for an 800-px-tall screen, clamped 0.6–1.5) is on the HUD, Lobby, Shop, Radio, Airdrop, cutscene captions and boss title. HUD mouse-follow positions are divided by its scale.
+  - **Ghost "RELOADING" text:** `UIKit.Label` outlines now fade with `TextTransparency`.
+  - **Bottom-right HUD redone:**
+    - The weapon card has a level-colour stripe, the gun name with "LV n", a big ammo count with "/ mag", and a mag bar.
+    - Cash is its own chip.
+    - Upgrade buttons have a key plate and a price, and light green when affordable.
+    - The duplicate "SPEND YOUR CASH" buy window was removed.
+  - **Lobby:** the chip scale went from 0.9 to 0.75, and the status bar is 560 wide (no wrap). "NEW BEST" no longer shows on a wave-1 overrun.
+  - **Radio:** the panel is tighter (420×100). It no longer pops back on during the boss intro. It stays on during the drop-in on purpose, since it carries the Deploy/Drop lines.
+  - **Parachute:** the camera faces the body (the canopy is built off the root), and only thin forearms are drawn.
+  - **Boss intro:** the close-up is pulled back to 24 studs, the title sits over the bottom letterbox, and the camera is levelled at the boss on hand-back.
+  - **Debug and HUD fixes:** `God` now carries over to new characters (the `DebugGod` attribute). The HUD teammate row bug (`entry.Frame` was nil) is fixed.
+  - **What was committed:**
+    - Committed: Cutscene, Boss, Radio, Airdrop, DebugService, and `UIKit.AutoScale` only.
+    - Studio-only, as targeted edits on AnimatedSL's live versions: HUDController, LobbyController, ShopController, and the UIKit Label change.
 - 2026-11-02: **lobby island.** The lobby moved from z = 235 to 380 (`GameConfig.OurMap.LobbyCenter`; the baked model was shifted with `PivotTo`, so hand edits are kept). A `Foundation` slab (184 × 172, slate, down to Y ≈ −25) now sits under the whole footprint, and the terrain water inside it is cleared, so the ocean no longer shows between the buildings. Only targeted edits went into `OurLobby.buildGround` and `GameConfig`.
 - 2026-11-02: **boss overhaul + sound fix.**
   - **Boss:** the Grave Titan now spawns at the new `BossSpawn` marker (south avenue, in the open) after a 7s entrance cutscene.

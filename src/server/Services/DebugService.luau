@@ -87,13 +87,29 @@ Commands.ChargeUlt = function(playerName)
 	return "ult charged"
 end
 
--- God(on?) — huge max health for the first player (current character only)
+-- God(on?) — huge max health for the first player; carries over to new characters (lobby -> arena,
+-- respawns) until God(false), since spawning resets MaxHealth
 Commands.God = function(on, playerName)
 	local player = firstPlayer(playerName)
-	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-	if humanoid then
-		humanoid.MaxHealth = if on == false then 100 else 1e6
-		humanoid.Health = humanoid.MaxHealth
+	local wasOn = player:GetAttribute("DebugGod") == true
+	player:SetAttribute("DebugGod", on ~= false)
+	if on ~= false and not wasOn then
+		task.spawn(function()
+			while player.Parent and player:GetAttribute("DebugGod") do
+				local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+				if humanoid and humanoid.MaxHealth < 1e6 then
+					humanoid.MaxHealth = 1e6
+					humanoid.Health = 1e6
+				end
+				task.wait(0.25)
+			end
+		end)
+	elseif on == false then
+		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			humanoid.MaxHealth = 100
+			humanoid.Health = 100
+		end
 	end
 	return "god " .. tostring(on ~= false)
 end

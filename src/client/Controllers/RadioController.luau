@@ -18,7 +18,7 @@ local ui = {}
 local queue = {}
 
 local SHOWN = UDim2.new(0, 20, 0.36, 0)
-local HIDDEN = UDim2.new(0, -480, 0.36, 0)
+local HIDDEN = UDim2.new(0, -450, 0.36, 0)
 local CHARS_PER_SECOND = 45
 
 -- Blocky soldier bust facing -Z. Returns the mouth part so it can be animated.
@@ -68,11 +68,13 @@ function RadioController:Init()
 	local gui = UIKit.Screen("Radio")
 	gui.DisplayOrder = 5
 	ui.Gui = gui
-	ui.Panel = UIKit.Panel({ AnchorPoint = Vector2.new(0, 0.5), Position = HIDDEN, Size = UDim2.fromOffset(450, 118), Parent = gui })
+	local root = UIKit.new("Frame", { BackgroundTransparency = 1, Parent = gui })
+	UIKit.AutoScale(root)
+	ui.Panel = UIKit.Panel({ AnchorPoint = Vector2.new(0, 0.5), Position = HIDDEN, Size = UDim2.fromOffset(420, 100), Parent = root })
 	UIKit.Stroke(T.Accent, 1.5).Parent = ui.Panel
 	local viewport = UIKit.new("ViewportFrame", {
 		Position = UDim2.fromOffset(10, 10),
-		Size = UDim2.fromOffset(98, 98),
+		Size = UDim2.fromOffset(80, 80),
 		BackgroundColor3 = Color3.fromRGB(44, 52, 40),
 		Ambient = Color3.fromRGB(150, 140, 125),
 		LightColor = Color3.fromRGB(255, 225, 190),
@@ -81,12 +83,12 @@ function RadioController:Init()
 	})
 	UIKit.Corner(8).Parent = viewport
 	ui.Mouth = buildPortrait(viewport)
-	UIKit.Label({ Text = Radio.Speaker.Name .. "  ·  " .. Radio.Speaker.Callsign, Position = UDim2.fromOffset(120, 8), Size = UDim2.new(1, -200, 0, 22), TextSize = 18, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = ui.Panel })
+	UIKit.Label({ Text = Radio.Speaker.Name .. "  ·  " .. Radio.Speaker.Callsign, Position = UDim2.fromOffset(100, 8), Size = UDim2.new(1, -180, 0, 22), TextSize = 18, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = ui.Panel })
 	ui.Live = UIKit.Label({ Text = "● LIVE", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 8), Size = UDim2.fromOffset(70, 22), TextSize = 15, TextColor3 = T.Danger, TextXAlignment = Enum.TextXAlignment.Right, Parent = ui.Panel })
 	ui.Text = UIKit.Label({
-		Position = UDim2.fromOffset(120, 34),
-		Size = UDim2.new(1, -132, 0, 76),
-		TextSize = 18,
+		Position = UDim2.fromOffset(100, 32),
+		Size = UDim2.new(1, -112, 0, 62),
+		TextSize = 17,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,
@@ -128,7 +130,9 @@ function RadioController:Start()
 	task.spawn(function()
 		while true do
 			ui.Live.TextTransparency = if ui.Live.TextTransparency == 0 then 0.7 else 0
-			ui.Gui.Enabled = player:GetAttribute("InRun") == true
+			-- off during the boss intro (BossController hides every screen, but this loop would switch it
+			-- back on); it stays on during the drop-in, where it carries the Deploy/Drop briefing
+			ui.Gui.Enabled = player:GetAttribute("InRun") == true and player:GetAttribute("BossIntro") ~= true
 			task.wait(0.5)
 		end
 	end)

@@ -17,6 +17,7 @@ Part of the [[Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and p
    - **Sound + effects:** cabin wind (louder at the door), sea wash and rotor-wash spray while low over the waves, faint radio chatter, an intercom squelch before the pilot, wind streaks past the door, a whoosh, shake and FOV kick on the jump, the chute opening, and falling wind until landing.
    - **The sea** is terrain water baked all round the map. The old `Baseplate` is sunk under it and made invisible.
 2. **Drop.** The commander yells "Green light!" Players fall from the helicopter under parachutes and land around the fountain.
+   - **First-person fall (fixed 2026-11-02):** the camera faces the way the body faces, because the server builds the canopy off the root; facing the door showed it turned sideways. Only thin forearms are drawn, since the whole arm filled the screen sides.
 3. **Intermission (12s).** The commander warns that the noise will draw the horde. The HUD shows "Zombies inbound in Xs". With 3s left: "Movement on every street…"
 4. **Wave 1.** The commander calls contact as the zombies appear.
 5. **Every wave** gets a commander line when it starts and when it's cleared, and there's a sign-off if the squad is overrun.
@@ -25,6 +26,7 @@ Part of the [[Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and p
 - A panel on the **left side of the screen** with a **portrait** of a 3D helmeted soldier that "talks" while the text types out. It shows his name, **SGT. VOSS · OVERWATCH**, and a blinking LIVE light.
 - The lines live in `Shared/Config/Radio` (several variants per event, with `{wave}` placeholders) and are easy to rewrite.
 - The server sends them over the `Radio` remote to run players only.
+- The panel is 420 × 100 and scales with the screen. It hides during the boss intro, but stays on during the drop-in, where it carries the Deploy and Drop lines.
 
 ## Tunables
 `GameConfig.Deploy`: `FlightTime`, `DropHeight` (110), `FreefallTime` (0.5), `FallSpeed` (22), `OceanStart`, `FinalApproach`, `SeaAltitude`, `CruiseHeight`, `Clearance`, `MaxClimbPerSample`. Camera shots are the `CAM_KEYS` table in `CutsceneController`. `GameConfig.Waves.FirstBreakTime` is the intermission.

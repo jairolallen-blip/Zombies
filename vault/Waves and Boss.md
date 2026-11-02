@@ -20,7 +20,8 @@ Part of the [[Roadmap]]. The spawn ramp per wave is in [[Spawning]].
   - **Shots:** letterboxed, with tense drums ("Stalking the Prey"). It starts high over the square pushing down the south avenue, cuts low in front as the Titan claws out of the ground, then goes close up for the **roar**.
   - **The roar:** heavy shake, an FOV punch, a red flash, a shockwave ring, the radio line and the "THE GRAVE TITAN · FINAL WAVE" title card.
   - **Back to the fight:** a fade back to first person, and the boss track ("Vengeful Attack") fades in. It fades out when the Titan dies.
-  - The HUD is hidden during the shot.
+  - The HUD and radio are hidden during the shot.
+  - **Framing (fixed 2026-11-02):** the roar close-up sits 24 studs back, so the whole Titan is in frame. The title card is over the bottom letterbox bar, not over the boss. On hand-back the camera is levelled from your head toward the boss; it used to come back pitched up about 21°.
 - **Spawn:** at the `BossSpawn` marker, the open mouth of the south avenue at (1000, 46), facing the square. It used to spawn on a random zombie pad behind obstacles and get stuck.
 - **Charge:** stops behind a red lane (9 wide, 70 long) for 1.1s, then runs it at 75 studs/s. 40 damage and a big knockback to anyone in it. Cooldown 9s, at 22–85 studs and only with a clear line to you.
 - **Leap:** a red ring lands on a far-away player (32+ studs), then the Titan jumps onto it 1.1s later with a shockwave. 45 damage and knockback. Cooldown 13s.

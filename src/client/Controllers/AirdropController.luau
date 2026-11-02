@@ -17,7 +17,9 @@ local ui = {}
 
 function AirdropController:Init()
 	local gui = UIKit.Screen("Airdrop")
-	ui.Chip = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 92), Size = UDim2.fromOffset(300, 34), Visible = false, Parent = gui })
+	local root = UIKit.new("Frame", { BackgroundTransparency = 1, Parent = gui })
+	UIKit.AutoScale(root)
+	ui.Chip = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 0), Position = UDim2.new(0.5, 0, 0, 92), Size = UDim2.fromOffset(300, 34), Visible = false, Parent = root })
 	ui.Stroke = UIKit.Stroke(Color3.new(1, 1, 1), 2)
 	ui.Stroke.Parent = ui.Chip
 	ui.Text = UIKit.Label({ Size = UDim2.fromScale(1, 1), TextSize = 17, Parent = ui.Chip })

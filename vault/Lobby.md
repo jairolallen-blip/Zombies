@@ -32,7 +32,7 @@ Each class figure has its own pose and kit (`Shared/ClassFigures`, upgraded 2026
 
 **The barracks area** is an open army tent on a plank deck. It has string lights, a sign under the front beam, and pedestals spaced 5 studs apart. Each pedestal has a neon ring, a nameplate and a spotlight in its class colour. Lockers, a weapon rack and crates sit at the back, with sandbags at the front corners. Rebuild only that area with `OurLobby.RebuildBarracks()`, which keeps every other hand edit.
 
-The lobby screen keeps only a small chip (Gems, best wave, class, gun lineup, where the shops are) and the take-off status.
+The lobby screen keeps only a small chip (Gems, best wave, class, gun lineup, where the shops are) and the take-off status. Both scale with the screen height (`UIKit.AutoScale`, 2026-11-02). The chip sits at 0.75 on top of that, and the status bar is 560 wide so the prompt fits on one line.
 
 ## Helipad ready zone (2026-11-02)
 There's no Ready button; **standing on the helipad is being ready.** That way nobody is rushed while shopping.

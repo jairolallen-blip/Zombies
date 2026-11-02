@@ -228,10 +228,12 @@ local function overlay()
 		bar.Name = "Bar"
 	end
 	local o = { Gui = gui }
+	local text = UIKit.new("Frame", { BackgroundTransparency = 1, ZIndex = 2, Parent = gui }) -- the captions scale with the screen
+	UIKit.AutoScale(text)
 	o.Fade = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, ZIndex = 5, Parent = gui })
-	o.Title = UIKit.Label({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 40, 1, -26), Size = UDim2.fromOffset(600, 34), Text = "DROP ZONE — CITY SQUARE", TextSize = 30, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 1, ZIndex = 2, Parent = gui })
-	o.Sub = UIKit.Label({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 40, 1, -60), Size = UDim2.fromOffset(600, 22), Text = "OPERATION LAST LIGHT", TextSize = 18, TextColor3 = UIKit.Theme.Accent, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 1, ZIndex = 2, Parent = gui })
-	o.Line = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0.89, -18), Size = UDim2.fromOffset(700, 30), Text = 'PILOT:  "Good luck down there."', TextSize = 26, TextStrokeTransparency = 0.4, TextTransparency = 1, ZIndex = 2, Parent = gui })
+	o.Title = UIKit.Label({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 40, 1, -26), Size = UDim2.fromOffset(600, 34), Text = "DROP ZONE — CITY SQUARE", TextSize = 30, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 1, ZIndex = 2, Parent = text })
+	o.Sub = UIKit.Label({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 40, 1, -60), Size = UDim2.fromOffset(600, 22), Text = "OPERATION LAST LIGHT", TextSize = 18, TextColor3 = UIKit.Theme.Accent, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 1, ZIndex = 2, Parent = text })
+	o.Line = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0.89, -18), Size = UDim2.fromOffset(700, 30), Text = 'PILOT:  "Good luck down there."', TextSize = 26, TextStrokeTransparency = 0.4, TextTransparency = 1, ZIndex = 2, Parent = text })
 	return o
 end
 
@@ -302,8 +304,8 @@ end
 
 -- Hands in camera space: arms spread in freefall, up on the steering toggles under the canopy
 local HANDS = {
-	{ Shoulder = Vector3.new(-0.7, -1.2, 0.5), Free = Vector3.new(-1, -0.3, -1.1), Toggle = Vector3.new(-0.55, 1.2, -1.1) },
-	{ Shoulder = Vector3.new(0.7, -1.2, 0.5), Free = Vector3.new(1, -0.3, -1.1), Toggle = Vector3.new(0.55, 1.2, -1.1) },
+	{ Shoulder = Vector3.new(-0.9, -1.2, 0.5), Free = Vector3.new(-1.1, -0.3, -1.1), Toggle = Vector3.new(-0.75, 1.2, -1.1) },
+	{ Shoulder = Vector3.new(0.9, -1.2, 0.5), Free = Vector3.new(1.1, -0.3, -1.1), Toggle = Vector3.new(0.75, 1.2, -1.1) },
 }
 
 -- Out of the door until the landing, in first person: freefall looking down at the square, then the
@@ -313,12 +315,12 @@ local HANDS = {
 local function dropView(camera, doorDir, Sound)
 	local character = player.Character
 	local root = character:FindFirstChild("HumanoidRootPart")
-	local facing = (doorDir * Vector3.new(1, 0, 1)).Unit
+	local doorFacing = (doorDir * Vector3.new(1, 0, 1)).Unit
 	local fall = Sound:Loop("FallWind")
 	fall:Play()
 	local arms = {}
 	for i, hand in HANDS do
-		local sleeve = UIKit.new("Part", { Size = Vector3.new(0.4, 0.4, 1), Color = OLIVE, Material = Enum.Material.Fabric, Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, Parent = camera })
+		local sleeve = UIKit.new("Part", { Size = Vector3.new(0.22, 0.22, 1), Color = OLIVE, Material = Enum.Material.Fabric, Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, Parent = camera })
 		local glove = UIKit.new("Part", { Size = Vector3.new(0.34, 0.34, 0.4), Color = DARK, Anchored = true, CanCollide = false, CanQuery = false, CanTouch = false, Parent = camera })
 		arms[i] = { Hand = hand, Sleeve = sleeve, Glove = glove }
 	end
@@ -370,6 +372,10 @@ local function dropView(camera, doorDir, Sound)
 		fall.Volume = Sounds.Library.FallWind.Volume * (1 - 0.6 * open)
 		camera.FieldOfView = 86 - 10 * open
 		local head = root.Position + Vector3.new(0, 1.5 + jolt, 0)
+		-- face where the body faces: the server builds the canopy relative to the root, so looking
+		-- along the door instead showed the canopy turned sideways
+		local flat = root.CFrame.LookVector * Vector3.new(1, 0, 1)
+		local facing = if flat.Magnitude > 0.1 then flat.Unit else doorFacing
 		local camCF = CFrame.lookAt(head, head + facing)
 			* CFrame.Angles(0, math.sin(now * 0.5) * 0.1 * open + math.noise(now * 9, 3) * shake, 0)
 			* CFrame.Angles(pitch + math.noise(now * 9, 4) * shake, 0, math.sin(now * 0.9) * 0.06 * open)
@@ -378,9 +384,10 @@ local function dropView(camera, doorDir, Sound)
 		for _, arm in arms do
 			local hand = camCF * arm.Hand.Free:Lerp(arm.Hand.Toggle, open)
 			local shoulder = camCF * arm.Hand.Shoulder
-			-- whole arm, shoulder to hand: it passes close to the lens and fills the screen edges
-			arm.Sleeve.Size = Vector3.new(0.32, 0.32, (hand - shoulder).Magnitude)
-			arm.Sleeve.CFrame = CFrame.lookAt((hand + shoulder) / 2, hand)
+			-- forearm only (elbow to hand): the whole arm passed close to the lens and filled the screen sides
+			local elbow = shoulder:Lerp(hand, 0.5)
+			arm.Sleeve.Size = Vector3.new(0.22, 0.22, (hand - elbow).Magnitude)
+			arm.Sleeve.CFrame = CFrame.lookAt((hand + elbow) / 2, hand)
 			arm.Glove.CFrame = CFrame.lookAt(hand, hand + (hand - shoulder))
 		end
 	end)
