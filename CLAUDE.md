@@ -206,7 +206,7 @@ From the vault notes:
   - **Debug and HUD fixes:** `God` now carries over to new characters (the `DebugGod` attribute). The HUD teammate row bug (`entry.Frame` was nil) is fixed.
   - **What was committed:**
     - Committed: Cutscene, Boss, Radio, Airdrop, DebugService, and `UIKit.AutoScale` only.
-    - Studio-only, as targeted edits on AnimatedSL's live versions: HUDController, LobbyController, ShopController, and the UIKit Label change.
+    - Committed in `1314d2c` (synced from Studio, so it also carries AnimatedSL's live edits to these four files): HUDController, LobbyController, ShopController, and the UIKit Label change. HUD guards `ViewmodelController:GetAim`/`IsScoped` (Studio-only aim-down-sights WIP).
 - 2026-11-02: **lobby island.** The lobby moved from z = 235 to 380 (`GameConfig.OurMap.LobbyCenter`; the baked model was shifted with `PivotTo`, so hand edits are kept). A `Foundation` slab (184 × 172, slate, down to Y ≈ −25) now sits under the whole footprint, and the terrain water inside it is cleared, so the ocean no longer shows between the buildings. Only targeted edits went into `OurLobby.buildGround` and `GameConfig`.
 - 2026-11-02: **boss overhaul + sound fix.**
   - **Boss:** the Grave Titan now spawns at the new `BossSpawn` marker (south avenue, in the open) after a 7s entrance cutscene.
