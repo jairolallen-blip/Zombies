@@ -1,0 +1,152 @@
+# Survive a Million Zombies: agent handoff guide
+
+> **Keep this file current. It's part of every task.** Before you finish any task that changes the game, update the sections it touched: Status, Content, Architecture, Pitfalls and Changelog. Add a dated line to the Changelog. A new agent should be able to start from this file alone.
+
+## 1. What this is
+A Roblox **horde-survival shooter**. Players queue in a lobby, pick a class and a 4-level gun loadout, get dropped by helicopter into an apocalyptic city, and survive **10 waves** that end in a **boss** (the Grave Titan). The genre reference is *Survive a Million Monkeys*. **Inspiration only:** all names, mechanics and art here are our own, so never copy that game.
+
+- **Owner:** `jairolallen-blip` on GitHub, `ja123asd` on Roblox. They work with a friend, `AnimatedSL`, in the same Team Create place.
+- **Status:** all 7 roadmap phases are done, and a balance pass is done (see §8).
+
+## 2. Where things live (sources of truth)
+| What | Where |
+|---|---|
+| **Live game** | Roblox Studio place "Survive a Million Zombies", **placeId 110463048909417**, in **Team Create** (edits are live for everyone in the session) |
+| **Code + notes, versioned** | GitHub `jairolallen-blip/Zombies` (`main`), cloned at `D:\CLAUDE WORK\Zombies` |
+| **Design notes** | `vault/`, an Obsidian vault in the repo. Start at `vault/Roadmap.md`. One note per system: Lobby, City Map, Match Start, Weapons, Zombies, Spawning, Waves and Boss |
+| **Reference images** | `vault/MAP REFERENCES`, `MODEL REFERENCES`, `UI REFERENCES`, `VISUAL REFERENCES`. Look at these before building art. Use them for inspiration, not copying |
+| **Code search** | Graphify repo `jairolallen-blip/Zombies` (id `d1b46534-fb62-460e-968f-3bb73970c238`). It indexes only **pushed** commits; re-indexing after a push takes a few minutes |
+
+**Studio is the live truth, and the repo is a mirror.** Code is written in Studio (through the Studio MCP), then **exported** to the repo and committed. The repo doesn't sync automatically, so export after every task (§6).
+
+**⚠ Team Create overwrite risk.** On 2026-11-01 the friend synced their own copies of the scripts into the place and silently reverted our work. Before editing, check that our markers are present:
+```lua
+-- execute_luau (Edit): all should be true
+local S = game.ServerScriptService.Server
+return S.Services.MatchService.Source:find("_deploy") ~= nil, S.Services.DataService.Source:find("Loadout") ~= nil,
+       game.ReplicatedStorage.Shared:FindFirstChild("GunModels") ~= nil, S:FindFirstChild("ZombieModels") ~= nil
+```
+If any are false, someone overwrote Studio. **Restore from GitHub with §6's import**, then check whether they added anything worth keeping (diff their scripts against `git show <commit>:src/...`).
+
+## 3. Game content (current numbers live in config; these are summaries)
+**Flow:** Lobby (20s countdown, shorter when everyone is Ready) → **Deploy** (8s helicopter cutscene, parachute drop) → 12s intermission → waves 1–10 with an 8s break between each → **Victory** after wave 10, or **Overrun** if everyone dies → Results → Lobby.
+
+- **Lobby** (`vault/Lobby.md`): a ruined-city safehouse at x = 1000. Classes are on the left; the **Loadout** panel on the right lets you pick one gun per level. The helipad is the Deploy Zone.
+- **Classes** (`Config/Classes`): Survivor (free), Scout 350, Medic 500, Engineer 750, Bruiser 750 Gems. Each has an ability on `E` and an ultimate on `F`.
+- **Guns** (`Config/Weapons`, models in `Shared/GunModels`): 4 levels, upgraded in-run for $500 / $2,500 / $10,000 (key `1` or the HUD button). The first gun of each level is free; the others cost Gems.
+  - **Level 1:** Pistol, Revolver
+  - **Level 2:** SMG, Pump Shotgun
+  - **Level 3:** Assault Rifle, Auto Shotgun, Marksman Rifle
+  - **Level 4:** Minigun (spins up), Laser Rifle (pierces 12), Auto Sniper
+- **Weapon feel:** recoil, per-gun tracer and flash, ejected shells.
+- **Vitality** (key `2`): +20 max HP and a full heal, costing 150 × 1.35^level.
+- **Zombies** (`Config/Zombies`, models in `Server/ZombieModels`):
+
+| Type | HP | Speed | Damage | Cash | From wave | Special |
+|---|---|---|---|---|---|---|
+| Shambler | 60 | 10 | 10 | $15 | 1 | — |
+| Runner | 35 | 19 | 7 | $20 | 3 | lunges |
+| Bloater | 90 | 8 | 0 | $35 | 5 | explodes |
+| Brute | 450 | 7.5 | 28 | $90 | 7 | — |
+| **Grave Titan** (boss) | 18,000 | — | — | — | wave 10 | slam; enrages at 50% (faster, double slams, summons 6 Runners) |
+
+  HP rises 10% per wave. Every zombie is randomised (clothes, wounds, hair). AI: flow-field navigation, surround slots near the player, hit flinch, attack swipe.
+- **Spawning** (`vault/Spawning.md`): random open-street spots 22–75 studs from a living player, any direction. A red warning circle shows for 1.2s, then the zombie rises out of the ground over 0.6s.
+  - **Counts:** wave n has 8 + 6 × (n − 1) zombies (60% of that on the boss wave), ×1.6 per extra player.
+  - **Groups:** 1 + ⌊n/3⌋ zombies at a time, spread over 16 + n seconds. At most 70 alive.
+- **Economy:**
+  - Kill cash goes to the killer, and other living teammates each get 25% of it.
+  - Wave-clear bonus: $100 + $150 × wave.
+  - **Clearing a wave also heals everyone to full.** HP never regenerates otherwise, because `StarterCharacterScripts.Health` is deliberately empty.
+  - Gems at the end of a run: 5 per wave cleared, 0.2 per kill, +100 for a victory.
+- **Commander radio** (`Config/Radio`): Sgt. Voss (callsign Overwatch) speaks on deploy, drop, landing, every wave start and clear, boss incoming/enraged/down, victory and overrun.
+- **Map** (`vault/City Map.md`): `Workspace.OurMap`, holding the Lobby (centre 1000, 0, 235) and the Arena city (centre 1000, 0, 0).
+  - **Layout:** 23 × 23 tiles of 12 studs, drawn as a text grid in `Server/Map/OurCity`. A big central square, 4 streets, a ring road, and a park, alleys, a parking lot and a market. No dead ends.
+  - **Floor:** perfectly flat at Y = 1, which the zombie navigation requires.
+  - **Lighting:** the sunset atmosphere is applied **at runtime only** (`MapService:ApplyAtmosphere`). In Edit mode it looks bright, and that's expected.
+
+## 4. Architecture
+```
+ServerScriptService/Server/
+  Main.server.luau        loads Services/ in ORDER (Data, Map, Economy, Combat, Zombie, Ability, Lobby, Match), then Init() all, Start() all
+  Services/               DataService (DataStore profiles; key "SAMZ_Profile_v1"), MapService (spawn points, nav bounds, atmosphere),
+                          EconomyService (cash/upgrades/wave-clear heal), CombatService (server-validated hitscan),
+                          ZombieService (spawn/AI/damage/boss), AbilityService, LobbyService, MatchService (run loop, deploy, radio),
+                          DebugService (Studio-only commands)
+  Map/                    NavGrid (flow-field pathing), OurLobby + OurCity (map BUILDERS, baked in Edit mode)
+  ZombieModels            zombie bodies
+ReplicatedStorage/Shared/
+  Config/                 GameConfig, Weapons, Classes, Zombies, Radio   <- pure data; tune numbers here
+  GunModels, Util (weapon/upgrade math shared by client+server), Remotes (all RemoteEvents), GameState (replicated attributes)
+StarterPlayerScripts/Client/
+  Main.client.luau        loads Controllers/, Init() then Start()
+  Controllers/            Camera (aim = mouse ray), Weapon (fire/recoil/spin-up), HUD, Lobby (lobby UI + results), Input,
+                          Effects (tracers, explosions, zombie animation, SpawnWarning), Cutscene (deploy), Radio (commander panel)
+  UI/UIKit                UI builder + theme
+StarterCharacterScripts/Health   empty on purpose (disables regen)
+```
+- **Server-authoritative:** the client sends `FireWeapon(origin, dirs)`, and the server validates fire rate, ammo, origin distance and pellet count before re-raycasting.
+- **Remotes:** FireWeapon, Reload, UseAbility, BuyUpgrade, SelectClass, SelectWeapon, UnlockItem, SetReady, Notify, HitConfirm, Effect, RunResults, Radio.
+- **GameState attributes:** Phase (Lobby/Deploy/Break/Wave/Results), Wave, Timer, ZombiesLeft, BossName/Health/MaxHealth, BossEnraged, RunWon, Deploy*.
+- **Player attributes:** InRun, Deploying, Cash, Kills, WeaponId, WeaponTier (= gun level), Ammo, Reloading, VitalityLevel, UltCharge, ClassId, LoadoutJson, OwnedJson, Gems.
+
+## 5. Development workflow (with the Roblox Studio MCP)
+1. **Check the markers** (§2), and read the vault note for the system you're touching.
+2. **Find code** with Graphify (`graphify_find`, `query_graph`, callers and impact), or by grepping `src/`. `src/` mirrors Studio once you've exported.
+3. **Edit in Studio:**
+   - **Small edits:** use `multi_edit`. The `old_string` must match Studio's current source exactly. Studio may differ from `src/` if you haven't exported yet.
+   - **Whole-file rewrites:** use `execute_luau` with `ScriptEditorService:UpdateSourceAsync(script, function() return src end)`. ⚠ A `[==[` long string already drops its first newline, so **don't** also call `:sub(2)` on it (that bug once deleted a character).
+   - **New scripts:** use `multi_edit` with `className`, or create them with `Instance.new`.
+4. **Requiring modules from `execute_luau`:** the command-bar context has its own module cache. A service you `require` there has `Services == nil`. To call service logic, use the `ServerStorage.SAMZ_Debug` BindableFunction, or fire real remotes from the Client context. To run a builder, `require` a **clone**: `local c = m:Clone(); c.Parent = m.Parent; require(c).Build(); c:Destroy()`.
+5. **Map changes:** edit `OurCity`'s `LAYOUT` grid or the builder code, then rebuild. The rebuild replaces `Workspace.OurMap.Arena`, so hand edits are lost. After any map change, run `NavCheck` (§7). Every zombie pad must say ROUTE OK.
+6. **Playtest** (§7), and check `get_console_output` for errors.
+7. **Export, update and commit** (§6). Update this file and the vault note, then commit with a clear message ending in the attribution line, and push.
+
+## 6. Export and import (tools/)
+- **Studio → repo:**
+  1. `Remove-Item src -Recurse`, then start `tools/receiver.ps1` in the background.
+  2. Run `tools/studio-export.luau` in `execute_luau` (Edit). Its "problems" output must be empty.
+  3. `git add -A`, then commit.
+- **Repo → Studio** (restore or roll back):
+  1. `tools/pack-scripts.ps1 -Out <file.json>`, then `tools/serve.ps1 -File <file.json>` in the background.
+  2. Run `tools/studio-import.luau` (Edit). It overwrites scripts and **deletes** any under the four code roots that aren't in the repo.
+- **Scope:** only scripts are in the repo. The baked map (`Workspace.OurMap`) lives only in the place file; rebuild it from the builders if it's ever lost.
+
+## 7. Playtesting
+- `start_stop_play(true)`, then use `execute_luau` with datamodel **Server** or **Client**. In Studio, DataStores run memory-only, and new profiles get 2,500 test Gems.
+- **Start a run quickly:** in Server, set `p:SetAttribute("Ready", true)` for each player. The countdown drops to 3s.
+- **Debug commands:** `game.ServerStorage.SAMZ_Debug:Invoke(cmd, ...)`. Commands: `God`, `GiveCash`, `GiveGems`, `KillAll`, `SkipToWave n` (it applies after the current wave), `Spawn type n`, `NavCheck`, `State`, `ChargeUlt`, `Help`.
+- **Fire real shots** from Client: `Remotes.FireWeapon:FireServer(muzzle.WorldPosition, {dir})`, where the muzzle is `Character.Tool.Handle.Muzzle`. Use `Remotes.BuyUpgrade:FireServer("Weapon")` to upgrade.
+- **Balance:** `tools/balance-bot.luau` plays a full no-cheat solo run and logs each wave (instructions are in its header). Baseline from 2026-11-01: it reached wave 10 and got the boss to 9% HP. The owner approved that difficulty.
+- **Screenshots:** `screen_capture` with `camera_position` / `look_at_position` aims the camera in Play mode too. Effects far from the player won't be in view.
+- ⚠ **Keep every `execute_luau` call under about 60s.** Longer calls time out, and Studio can drop the MCP connection (`list_roblox_studios` comes back empty for a moment). Poll in about 55s chunks instead.
+- ⚠ **Stop play when you're done.** A new run auto-starts after the lobby countdown.
+- **You can't verify feel:** mouse-driven recoil, the minigun spin and the animations play on the user's screen. Ask the user to check them.
+
+## 8. Pitfalls we've hit (read these)
+- **Team Create overwrite:** see §2. Always check the markers first.
+- **Gun specs:** in `GunModels`, the specs mix list entries with named fields (`Muzzle`, `Hub`). Loop over them with `ipairs`, not plain `for ... in`.
+- **Local functions:** they must be defined *above* any function that uses them. `EconomyService` once called `notify` before it was defined, which stalled every run after wave 1.
+- **Delayed spawns:** anything spawned through `SpawnWarned` appears 1.2s later, so react to the actual appearance (attribute-change signals), not the wave start. That's how the boss banner bug happened.
+- **Cylinder axis:** Roblox cylinders run along X. Builders rotate them (`Tube` and `Drum` in GunModels; a 90° Z-roll in the map builders).
+- **Collision and nav:** decorative parts must be `CanCollide = false`, or they block NavGrid cells and zombies route around nothing. The floor must stay flat. Keep props clear of spawn pads; OurCity enforces a 13-stud clearance.
+- **Damage carries over:** HP doesn't regenerate, so any change to damage or waves should be re-checked with the balance bot.
+- **Network ownership:** anchored roots can't change network owner. Rising zombies get `SetNetworkOwner(nil)` *after* they're unanchored.
+
+## 9. Next ideas (not started)
+From the vault notes:
+- a helicopter extraction cutscene on victory
+- endless mode after wave 10
+- **sounds** (none yet: guns, radio, rotor)
+- more city detail (fire escapes, traffic lights, an enterable shop)
+- reload animations
+- group-play balance testing
+
+## 10. Changelog (newest first; one line per task)
+- 2026-11-01: wrote this guide; moved the export/import/bot tools into `tools/`.
+- 2026-11-01: balance pass (spawns spread over a time window, full heal on wave clear). `94efbee`
+- 2026-11-01: phase 7, 10-wave run, Grave Titan boss and victory. `16cf951`
+- 2026-11-01: phase 6, random spawns with red warning circles. `2283f74`
+- 2026-11-01: phase 5, zombie models and AI. `1a3efef`
+- 2026-11-01: phase 4, guns; restored after the Team Create overwrite; deleted the friend's map and the old generator. `115a71b`
+- 2026-11-01: phases 1–3: lobby, city, drop-in and radio. `4840b5c`, `d708bb0`, `8f3eba4`

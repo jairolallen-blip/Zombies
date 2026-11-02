@@ -2,6 +2,8 @@
 
 Source for the Roblox experience *Survive a Million Zombies* (placeId 110463048909417).
 
+**New here? Read [`CLAUDE.md`](CLAUDE.md) first.** It's the always-current handoff guide: game content, architecture, workflow, playtesting and pitfalls. Studio ⇄ repo sync and the balance-test bot live in [`tools/`](tools).
+
 ## Layout
 
 | Folder | Studio location |
