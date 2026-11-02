@@ -18,6 +18,15 @@ Part of the [[Roadmap]]. Built and playtested on 2026-11-01.
 
 The stats are **placeholders** until [[Weapons]] (phase 4). The procedural gun models are also placeholders.
 
+## Shops (2026-11-02)
+The always-on left and right panels were replaced by two **walk-up shops** (press `E` at the prompt):
+- **Armory**, the west tent: level tabs 1–4 and a card per gun with a **rotating 3D model**, stat bars (damage, fire rate, magazine, range), traits, and equip or unlock.
+- **Barracks**, the east sandbags: **5 class mannequins** on pedestals in the lobby, and a shop card per class with a rotating figure, abilities, traits, and equip or unlock.
+
+Each class figure has its own prop: the Survivor has a cap and a grenade, the Scout goggles, the Medic a cross and medkit, the Engineer a hard hat and wrench, and the Bruiser shoulder pads. They're built by `Shared/ClassFigures`.
+
+The lobby screen keeps only a small chip (Gems, best wave, class, gun lineup, where the shops are) and the Ready bar.
+
 ## Our lobby build
 A fortified safehouse inside a ruined city at **x = 1000** (the old map is at x = 0). Its layout:
 - **North:** ruined towers, and in front of them the **Deploy Zone helipad**, which will be the take-off point for the drop-in cutscene (see [[Match Start]]).

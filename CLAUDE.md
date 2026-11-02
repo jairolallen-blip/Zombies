@@ -31,7 +31,10 @@ If any are false, someone overwrote Studio. **Restore from GitHub with §6's imp
 ## 3. Game content (current numbers live in config; these are summaries)
 **Flow:** Lobby (20s countdown, shorter when everyone is Ready) → **Deploy** (8s helicopter cutscene, parachute drop) → 12s intermission → waves 1–10 with an 8s break between each → **Victory** after wave 10, or **Overrun** if everyone dies → Results → Lobby.
 
-- **Lobby** (`vault/Lobby.md`): a ruined-city safehouse at x = 1000. Classes are on the left; the **Loadout** panel on the right lets you pick one gun per level. The helipad is the Deploy Zone.
+- **Lobby** (`vault/Lobby.md`): a ruined-city safehouse at x = 1000. The screen shows only a small chip (Gems, best wave, class, gun lineup, shop locations) and the Ready bar. Choices happen in two **walk-up shops**, opened with `E` at their ProximityPrompt:
+  - **Armory** (west tent): level tabs 1–4, and a card per gun with a rotating 3D model, stat bars, and equip or unlock-with-Gems.
+  - **Barracks** (east): class mannequins on pedestals, and a card per class with a rotating figure, abilities, traits, and equip or unlock.
+  - The shops close with X, by walking away, or when a run starts. The helipad is the Deploy Zone.
 - **Classes** (`Config/Classes`): Survivor (free), Scout 350, Medic 500, Engineer 750, Bruiser 750 Gems. Each has an ability on `E` and an ultimate on `F`.
 - **Guns** (`Config/Weapons`, models in `Shared/GunModels`): 4 levels, upgraded in-run for $500 / $2,500 / $10,000 (key `1` or the HUD button). The first gun of each level is free; the others cost Gems.
   - **Level 1:** Pistol, Revolver
@@ -77,10 +80,12 @@ ServerScriptService/Server/
   ZombieModels            zombie bodies
 ReplicatedStorage/Shared/
   Config/                 GameConfig, Weapons, Classes, Zombies, Radio   <- pure data; tune numbers here
-  GunModels, Util (weapon/upgrade math shared by client+server), Remotes (all RemoteEvents), GameState (replicated attributes)
+  GunModels, ClassFigures (class mannequins/previews), Util (weapon/upgrade math shared by client+server),
+  Remotes (all RemoteEvents), GameState (replicated attributes)
 StarterPlayerScripts/Client/
   Main.client.luau        loads Controllers/, Init() then Start()
-  Controllers/            Camera (aim = mouse ray), Weapon (fire/recoil/spin-up), HUD, Lobby (lobby UI + results), Input,
+  Controllers/            Camera (aim = mouse ray), Weapon (fire/recoil/spin-up), HUD, Lobby (lobby chip, Ready, results),
+                          Shop (Armory + Barracks shop UIs, opened by ProximityPrompts with attribute Shop), Input,
                           Effects (tracers, explosions, zombie animation, SpawnWarning), Cutscene (deploy), Radio (commander panel)
   UI/UIKit                UI builder + theme
 StarterCharacterScripts/Health   empty on purpose (disables regen)
@@ -121,6 +126,7 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
 - **Screenshots:** `screen_capture` with `camera_position` / `look_at_position` aims the camera in Play mode too. Effects far from the player won't be in view.
 - ⚠ **Keep every `execute_luau` call under about 60s.** Longer calls time out, and Studio can drop the MCP connection (`list_roblox_studios` comes back empty for a moment). Poll in about 55s chunks instead.
 - ⚠ **Stop play when you're done.** A new run auto-starts after the lobby countdown.
+- **Clicking UI:** `user_mouse_input` clicks only register by `instance_path` (for example `LocalPlayer.PlayerGui.Shop.Panel.Body.Frame.LevelTab4`), not by screen coordinates, so give testable buttons a Name. Open a shop by pivoting the character next to its prompt and sending `E` with `user_keyboard_input`. The lobby countdown keeps running (overwriting `Timer` doesn't hold it), so test within the 20s window.
 - **You can't verify feel:** mouse-driven recoil, the minigun spin and the animations play on the user's screen. Ask the user to check them.
 
 ## 8. Pitfalls we've hit (read these)
@@ -143,6 +149,7 @@ From the vault notes:
 - group-play balance testing
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: lobby shops. Armory and Barracks are walk-up shops with 3D gun and class previews; the side panels are gone and the screen keeps only the chip and Ready bar. **Friend's work in progress seen in Studio, not committed:** `ViewmodelController` (first-person viewmodel), `Config/Sounds`, plus edits to `Camera`, `Weapon` and `GameConfig`. `WeaponController` calls a `SoundController` that doesn't exist yet, so in Studio it throws `attempt to index nil with 'SetSpin'` every frame until they add it. Coordinate before exporting those files.
 - 2026-11-01: wrote this guide; moved the export/import/bot tools into `tools/`.
 - 2026-11-01: balance pass (spawns spread over a time window, full heal on wave clear). `94efbee`
 - 2026-11-01: phase 7, 10-wave run, Grave Titan boss and victory. `16cf951`

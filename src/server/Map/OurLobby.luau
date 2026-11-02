@@ -6,12 +6,16 @@
 -- Layout (north = -Z):
 --   north   ruined building facades, helipad "deploy zone" in front of them
 --   centre  concrete plaza with a flagpole and burning barrels; LobbySpawn pads ring it
---   west    armory tent (loadout)        east  command post behind sandbags
+--   west    armory tent (gun shop)       east  barracks: class mannequins behind sandbags
+--   both shops have a ProximityPrompt (attribute Shop = "Armory" | "Classes") that opens
+--   their UI on the client (Client/Controllers/ShopController)
 --   sides   stacked shipping containers   south jersey barriers + chain-link fence
 -- Parts named "LobbySpawn" are read by MapService:GetLobbySpawnCFrame().
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("GameConfig"))
+local Classes = require(ReplicatedStorage.Shared.Config.Classes)
+local ClassFigures = require(ReplicatedStorage.Shared.ClassFigures)
 
 local OurLobby = {}
 
@@ -93,6 +97,25 @@ local function sign(p, face, text, background, textColor)
 	label.Font = Enum.Font.GothamBlack
 	label.TextColor3 = textColor or C.White
 	label.Parent = gui
+end
+
+-- Invisible anchor with a "press E" prompt; the client opens the matching shop UI.
+local function shopPrompt(parent, cframe, shop, action)
+	local anchor = part(parent, "ShopPrompt", Vector3.new(1, 1, 1), cframe, C.White, Enum.Material.SmoothPlastic, {
+		Transparency = 1,
+		CanCollide = false,
+		CanQuery = false,
+		CanTouch = false,
+	})
+	local prompt = Instance.new("ProximityPrompt")
+	prompt.ActionText = action
+	prompt.ObjectText = shop:upper()
+	prompt.MaxActivationDistance = 12
+	prompt.RequiresLineOfSight = false
+	prompt.HoldDuration = 0
+	prompt:SetAttribute("Shop", shop)
+	prompt.Parent = anchor
+	return anchor
 end
 
 local function fire(p, size)
@@ -293,21 +316,39 @@ local function buildArmory(parent)
 		part(m, "AmmoCrate", Vector3.new(2.4, 2, 2.4), c * CFrame.new(pos[1], 1 + (if pos[3] then 2 else 0), pos[2]), C.Crate, Enum.Material.WoodPlanks)
 	end
 	local board = part(m, "Sign", Vector3.new(0.3, 3, 12), c * CFrame.new(6.4, 7.4, 0), C.Charred, Enum.Material.Metal)
-	sign(board, Enum.NormalId.Right, "ARMORY · LOADOUT", Color3.fromRGB(30, 34, 28), Color3.fromRGB(150, 255, 90))
+	sign(board, Enum.NormalId.Right, "ARMORY · GUNS", Color3.fromRGB(30, 34, 28), Color3.fromRGB(150, 255, 90))
+	shopPrompt(m, c * CFrame.new(5, 3, 0), "Armory", "Browse guns")
 end
 
-local function buildCommandPost(parent)
-	local m = model(parent, "CommandPost")
+-- Barracks: one mannequin per class on a pedestal, facing the plaza, behind a U of sandbags.
+local function buildBarracks(parent)
+	local m = model(parent, "Barracks")
 	local cx, cz = 30, PLAZA.Z
 	sandbagWall(m, Vector3.new(cx - 7, 0, cz - 8), Vector3.new(cx + 7, 0, cz - 8), 3)
 	sandbagWall(m, Vector3.new(cx + 8, 0, cz - 7), Vector3.new(cx + 8, 0, cz + 7), 3)
 	sandbagWall(m, Vector3.new(cx - 7, 0, cz + 8), Vector3.new(cx + 7, 0, cz + 8), 3)
 	local c = at(cx, GROUND_Y, cz)
-	part(m, "MapTable", Vector3.new(6, 0.5, 4), c * CFrame.new(1, 3.4, 0), C.Wood, Enum.Material.WoodPlanks)
-	part(m, "Map", Vector3.new(5, 0.05, 3.2), c * CFrame.new(1, 3.68, 0), Color3.fromRGB(200, 190, 150), Enum.Material.Fabric)
-	part(m, "TableBase", Vector3.new(5, 3.2, 3), c * CFrame.new(1, 1.6, 0), C.Metal, Enum.Material.Metal)
-	part(m, "Radio", Vector3.new(1.8, 1.4, 1), c * CFrame.new(3, 4.3, 1), C.Crate, Enum.Material.Metal)
-	part(m, "Antenna", Vector3.new(0.1, 4, 0.1), c * CFrame.new(3.6, 7, 1.2), C.Metal, Enum.Material.Metal)
+	local ids = {}
+	for id in Classes.List do
+		table.insert(ids, id)
+	end
+	table.sort(ids, function(a, b)
+		return Classes.List[a].Order < Classes.List[b].Order
+	end)
+	local faceWest = CFrame.Angles(0, math.rad(90), 0) -- figures face -Z; turn them toward the plaza
+	for i, id in ids do
+		local z = (i - (#ids + 1) / 2) * 3.3
+		local base = c * CFrame.new(3.5 + math.abs(z) * 0.25, 0, z)
+		cylinder(m, "Pedestal", 0.8, 2.6, base * CFrame.new(0, 0.4, 0), C.ConcreteDark, Enum.Material.Concrete)
+		part(m, "PedestalTrim", Vector3.new(0.1, 0.3, 2.2), base * CFrame.new(-1.32, 0.4, 0), Classes.List[id].Color, Enum.Material.Neon)
+		local figure = ClassFigures.Build(id)
+		figure:PivotTo(base * CFrame.new(0, 0.8 + 3, 0) * faceWest) -- pivot = torso, 3 studs above the feet
+		figure.Parent = m
+	end
+	local post = part(m, "SignBack", Vector3.new(0.4, 9, 14), c * CFrame.new(9.3, 4.5, 0), C.Metal, Enum.Material.Metal)
+	local board = part(m, "Sign", Vector3.new(0.3, 3, 12), post.CFrame * CFrame.new(-0.4, 2.5, 0), C.Charred, Enum.Material.Metal)
+	sign(board, Enum.NormalId.Left, "BARRACKS · CLASSES", Color3.fromRGB(30, 34, 28), Color3.fromRGB(150, 255, 90))
+	shopPrompt(m, c * CFrame.new(-1, 3, 0), "Classes", "Choose class")
 end
 
 local function buildFloodlight(parent, x, z)
@@ -420,7 +461,7 @@ function OurLobby.Build()
 	buildSouthBarricade(lobby)
 	buildHelipad(lobby)
 	buildArmory(lobby)
-	buildCommandPost(lobby)
+	buildBarracks(lobby)
 	buildFloodlight(lobby, -44, -46)
 	buildFloodlight(lobby, 44, -46)
 	buildPlaza(lobby)
