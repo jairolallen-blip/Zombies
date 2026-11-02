@@ -149,6 +149,14 @@ Handlers.Turret = function(ctx)
 	end
 end
 
+Handlers.Mark = function(ctx)
+	local p = ctx.Params
+	Remotes.Effect:FireAllClients("Marker", { Position = ctx.Root.Position, Radius = p.Radius, Time = 0.6 })
+	for _, entry in Services.ZombieService:GetInRadius(ctx.Root.Position, p.Radius) do
+		Services.ZombieService:Mark(entry.Model, p.Duration, p.Mult)
+	end
+end
+
 Handlers.Stomp = function(ctx)
 	local p = ctx.Params
 	local position = ctx.Root.Position

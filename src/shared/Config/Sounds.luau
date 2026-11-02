@@ -12,7 +12,8 @@ Sounds.Library = {
 	Pistol = { Id = 9114729252, Volume = 0.55, Pitch = 1.15, PitchVar = 0.05, MaxDistance = 300 }, -- Pro Sound Effects, Mini Uzi single
 	Revolver = { Id = 3102797479, Volume = 0.6, Pitch = 1, PitchVar = 0.04, MaxDistance = 350 },
 	SMG = { Id = 9114729298, Volume = 0.45, Pitch = 1.05, PitchVar = 0.06, MaxDistance = 300 }, -- Pro Sound Effects, Mini Uzi single
-	Shotgun = { Id = 82651111765871, Volume = 0.65, Pitch = 1, PitchVar = 0.04, MaxDistance = 350 },
+	Shotgun = { Id = 82651111765871, Volume = 0.65, Pitch = 1, PitchVar = 0.04, MaxDistance = 350 }, -- HM Shotgun Shot
+	ShotgunPump = { Id = 9112913564, Volume = 0.6, PitchVar = 0.04 }, -- PSE, 12 Gauge Shotgun 9 (the pump rack; pump shotgun only)
 	Rifle = { Id = 9114727430, Volume = 0.5, Pitch = 1, PitchVar = 0.05, MaxDistance = 400 }, -- Pro Sound Effects, AK-47 single
 	Marksman = { Id = 9114725473, Volume = 0.6, Pitch = 1, PitchVar = 0.03, MaxDistance = 500 }, -- Pro Sound Effects, gun retort
 	MinigunShot = { Id = 9114727096, Volume = 0.35, Pitch = 1.3, PitchVar = 0.06, MaxDistance = 350 }, -- Pro Sound Effects, AK-47 single
@@ -52,12 +53,12 @@ Sounds.Library = {
 	FallWind = { Id = 6544555787, Volume = 0.35, Looped = true }, -- Fierce howling loud wind (Festivereinhard2), under the chute
 }
 
--- Weapon id (Config/Weapons) -> { library key, pitch multiplier }
+-- Weapon id (Config/Weapons) -> { library key, pitch multiplier, follow-up sound? }
 Sounds.Guns = {
 	Pistol = { "Pistol", 1 },
 	Revolver = { "Revolver", 1 },
 	SMG = { "SMG", 1 },
-	Shotgun = { "Shotgun", 1 },
+	Shotgun = { "Shotgun", 1, "ShotgunPump" }, -- optional 3rd: sound played 0.35s after the shot
 	AssaultRifle = { "Rifle", 1 },
 	AutoShotgun = { "Shotgun", 1.12 },
 	Rifle = { "Marksman", 1 },

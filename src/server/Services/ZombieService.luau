@@ -185,6 +185,9 @@ function ZombieService:Damage(model, amount, attacker)
 	if not z or z.Dead then
 		return false
 	end
+	if z.MarkedUntil and os.clock() < z.MarkedUntil then
+		amount *= z.MarkMult
+	end
 	z.Health -= amount
 	if not z.Def.Boss then
 		z.FlinchUntil = os.clock() + 0.15
@@ -201,6 +204,28 @@ function ZombieService:Damage(model, amount, attacker)
 		self:_enrage(z)
 	end
 	return false
+end
+
+-- Scout's Hunter's Mark: takes `mult` x damage for `duration` seconds, outlined red meanwhile
+-- (shortcut: Roblox draws at most 31 Highlights per client, so a huge horde shows only some outlines)
+function ZombieService:Mark(model, duration, mult)
+	local z = alive[model]
+	if not z or z.Dead then
+		return
+	end
+	local untilTime = os.clock() + duration
+	z.MarkedUntil, z.MarkMult = untilTime, mult
+	local glow = model:FindFirstChild("Marked") or Instance.new("Highlight")
+	glow.Name = "Marked"
+	glow.FillColor = Color3.fromRGB(255, 60, 40)
+	glow.FillTransparency = 0.75
+	glow.OutlineColor = Color3.fromRGB(255, 90, 60)
+	glow.Parent = model
+	task.delay(duration, function()
+		if z.MarkedUntil == untilTime and glow.Parent then
+			glow:Destroy()
+		end
+	end)
 end
 
 -- Boss rage: faster, slams more often, and a ring of summoned zombies rises around it.

@@ -10,6 +10,8 @@
 --   Turret    { Count, Duration, Damage, FireRate, Range }  auto-firing sentries near caster
 --   Stomp     { Radius, Damage, Knockback, InvulnTime? }    damage + knockback around caster
 --   Dash      { Speed, Duration }                           burst of movement (client-applied)
+--   Mark      { Radius, Duration, Mult }                    zombies near the caster glow red and take
+--                                                           Mult x damage from everyone for Duration
 --
 -- Class fields: DisplayName, Description, GemCost (0 = default), Order, Color,
 --   HealthBonus (added max HP), SpeedBonus (added WalkSpeed), DamageTakenMult (1 = normal)
@@ -48,9 +50,9 @@ Classes.List = {
 		DamageTakenMult = 1,
 		Ability = { Name = "Dash", Type = "Dash", Cooldown = 3.5, Params = { Speed = 90, Duration = 0.22 } },
 		Ultimate = {
-			Name = "Flare Barrage",
-			Type = "Airstrike",
-			Params = { Count = 16, Radius = 11, Damage = 200, Spread = 30, Interval = 0.08, Delay = 0.8, Range = 160 },
+			Name = "Hunter's Mark",
+			Type = "Mark",
+			Params = { Radius = 70, Duration = 10, Mult = 1.75 },
 		},
 	},
 	Medic = {

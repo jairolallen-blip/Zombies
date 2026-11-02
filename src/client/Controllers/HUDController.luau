@@ -132,7 +132,7 @@ function HUDController:Init(controllers)
 	ui.UpgradeVitality = upgradeRow("Vitality", 34)
 
 	-- Toasts
-	ui.Toasts = UIKit.new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -20, 0, 20), Size = UDim2.fromOffset(360, 300), BackgroundTransparency = 1, Parent = gui })
+	ui.Toasts = UIKit.new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -20, 0, 68), -- below Roblox's top bar (health, menu) Size = UDim2.fromOffset(360, 300), BackgroundTransparency = 1, Parent = gui })
 	UIKit.new("UIListLayout", { Padding = UDim.new(0, 6), HorizontalAlignment = Enum.HorizontalAlignment.Right, Parent = ui.Toasts })
 
 	-- Damage vignette

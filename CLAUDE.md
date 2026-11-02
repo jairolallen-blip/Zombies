@@ -191,6 +191,13 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: **owner playtest fixes.**
+  - The hand cannon is back to the "Heavy Pistol Gunshot" sound (`3102797479`), and its recoil went from 4 to 2.2.
+  - The hand cannon is held SMG-style, with the left hand under the barrel (`ViewmodelController`, where `pistol` excludes the Revolver).
+  - Both shotguns use "HM Shotgun Shot" again. AnimatedSL's `9112913564` is the pump rack: it's now `ShotgunPump`, played 0.35s after a **pump-shotgun** shot only, through an optional third field in `Sounds.Guns`.
+  - The Scout ultimate is now **Hunter's Mark** (new `Mark` type). Zombies within 70 studs glow red and take ×1.75 damage for 10s (`ZombieService:Mark`).
+  - Toasts moved down to y = 68, below Roblox's top bar.
+  - Edits to AnimatedSL's live Sounds, SoundController, ViewmodelController and HUDController were targeted only.
 - 2026-11-02: **achievements + supply drops.**
   - 22 achievements that pay Gems, claimed at the new Commendations board, south of the plaza.
   - Mid-run supply crates you fight to reach, with timed buffs, ult, cash or gems.

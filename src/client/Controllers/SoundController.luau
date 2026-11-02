@@ -112,6 +112,9 @@ end
 function SoundController:PlayGunshot(weaponId, _position)
 	local map = Sounds.Guns[weaponId] or Sounds.Guns.Pistol
 	self:Play(map[1], { Pitch = map[2] })
+	if map[3] then -- pump action racked after the blast
+		task.delay(0.35, self.Play, self, map[3])
+	end
 end
 
 -- Minigun barrel spin loop: volume + pitch follow the spin-up (0..1)
