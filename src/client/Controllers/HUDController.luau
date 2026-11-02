@@ -202,7 +202,7 @@ function HUDController:Init(controllers)
 	GameState:GetAttributeChangedSignal("Phase"):Connect(function()
 		if GameState:GetAttribute("Phase") == "Wave" then
 			local wave = GameState:GetAttribute("Wave")
-			self:ShowBanner(if wave >= GameConfig.Waves.TotalWaves then "FINAL WAVE" else "WAVE " .. wave, T.Text)
+			self:ShowBanner(if wave >= (GameState:GetAttribute("TotalWaves") or GameConfig.Waves.TotalWaves) then "FINAL WAVE" else "WAVE " .. wave, T.Text)
 		elseif GameState:GetAttribute("Phase") == "Break" and (GameState:GetAttribute("Wave") or 0) > 1 then
 			self:ShowBanner("WAVE CLEARED", T.Cash)
 		end
@@ -285,7 +285,7 @@ function HUDController:_update(dt)
 
 	-- Wave info
 	local phase = GameState:GetAttribute("Phase")
-	ui.Wave.Text = "WAVE " .. (GameState:GetAttribute("Wave") or 0) .. " / " .. GameConfig.Waves.TotalWaves
+	ui.Wave.Text = "WAVE " .. (GameState:GetAttribute("Wave") or 0) .. " / " .. (GameState:GetAttribute("TotalWaves") or GameConfig.Waves.TotalWaves)
 	if phase == "Break" and (GameState:GetAttribute("Wave") or 0) <= 1 then
 		ui.SubInfo.Text = "Zombies inbound in " .. (GameState:GetAttribute("Timer") or 0) .. "s  —  find cover!"
 	elseif phase == "Break" then

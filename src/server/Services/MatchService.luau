@@ -11,12 +11,13 @@
 --   Deploy (helicopter cutscene, players parachute onto the arena spawns; see _deploy)
 --   loop:  Break (countdown, dead teammates respawn) -> Wave (spawn N zombies, wait until cleared)
 --   the last wave (GameConfig.Waves.TotalWaves) is the boss wave; clearing it wins the run
---   (tutorial: GameConfig.Tutorial.Waves, no boss, radio tips from Config/Radio TutorialTips)
+--   (tutorial: Config/Tutorial: fewer waves, a weaker boss, its own Gems reward; TutorialService walks
+--   the player through the mechanics)
 --   ends on victory or when every participant is dead or gone -> Results (Gems, saved) -> lobby
 -- The commander comments on each step over Remotes.Radio (lines in Shared/Config/Radio).
 --
--- Writes GameState attributes (ServerKind, Phase, Wave, Timer, ZombiesLeft, Difficulty, MapId,
--- Tutorial) and player attribute InRun. Wave sizes/timings come from GameConfig.Waves.
+-- Writes GameState attributes (ServerKind, Phase, Wave, TotalWaves, Timer, ZombiesLeft, Difficulty,
+-- MapId, Tutorial) and player attribute InRun. Wave sizes/timings come from GameConfig.Waves.
 --
 -- Public:
 --   MatchService.IsMatchServer
@@ -35,6 +36,7 @@ local Zombies = require(Shared.Config.Zombies)
 local Remotes = require(Shared.Remotes)
 local GameState = require(Shared.GameState)
 local Radio = require(Shared.Config.Radio)
+local Tutorial = require(Shared.Config.Tutorial)
 
 local MatchService = {}
 -- a reserved server is one squad's private match (QueueService teleports squads into one)
@@ -413,7 +415,7 @@ function MatchService:_playWave(wave, isBoss)
 	local interval = math.clamp(spawnWindow * burst / math.max(total, 1), cfg.MinSpawnInterval, cfg.SpawnInterval)
 
 	if isBoss then
-		self:_bossIntro(playerMult)
+		self:_bossIntro(playerMult * (if tutorial then Tutorial.BossHealthMult else 1)) -- the tutorial's "young" Titan
 	end
 
 	local toSpawn = total
@@ -460,7 +462,11 @@ function MatchService:RunMatch(participants, options)
 	GameState:SetAttribute("Difficulty", pick(lobbyCfg.Difficulties, options.Difficulty))
 	GameState:SetAttribute("MapId", pick(lobbyCfg.Maps, options.Map))
 	GameState:SetAttribute("Tutorial", tutorial)
-	local totalWaves = if tutorial then GameConfig.Tutorial.Waves else cfg.TotalWaves
+	if tutorial then
+		task.spawn(Services.TutorialService.Run, Services.TutorialService, participants[1])
+	end
+	local totalWaves = if tutorial then Tutorial.Waves else cfg.TotalWaves
+	GameState:SetAttribute("TotalWaves", totalWaves)
 
 	running = true
 	table.clear(inRun)
@@ -501,18 +507,10 @@ function MatchService:RunMatch(participants, options)
 			end
 			task.wait(0.5)
 		end
-		local isBoss = not tutorial and wave >= totalWaves
+		local isBoss = wave >= totalWaves
 		GameState:SetAttribute("Phase", "Wave")
 		if not isBoss then -- the boss's radio line comes with its roar (_bossIntro)
 			self:_radio(if wave == 1 then "FirstWave" else "WaveStart", { wave = wave })
-		end
-		local tip = tutorial and Radio.TutorialTips[wave]
-		if tip then
-			task.delay(4, function()
-				for player in inRun do
-					Remotes.Radio:FireClient(player, tip, "TutorialTip")
-				end
-			end)
 		end
 		if not self:_playWave(wave, isBoss) then
 			break
@@ -525,6 +523,7 @@ function MatchService:RunMatch(participants, options)
 	end
 	self:_endRun(wave, wavesCleared, wavesCleared >= totalWaves)
 	running, tutorial = false, false
+	GameState:SetAttribute("Tutorial", false)
 	GameState:SetAttribute("Phase", "Lobby")
 	GameState:SetAttribute("Wave", 0)
 	GameState:SetAttribute("ZombiesLeft", 0)
@@ -540,7 +539,7 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 	for player in inRun do
 		if player.Parent then
 			local kills = player:GetAttribute("Kills") or 0
-			local gems = math.floor(wavesCleared * econ.GemsPerWaveCleared + kills * econ.GemsPerKill + (if victory then econ.VictoryGems else 0))
+			local gems = if tutorial then Tutorial.RewardGems else math.floor(wavesCleared * econ.GemsPerWaveCleared + kills * econ.GemsPerKill + (if victory then econ.VictoryGems else 0))
 			local DataService = Services.DataService
 			if tutorial then
 				DataService:Get(player).TutorialDone = true -- even on a loss: never send them through it twice
@@ -548,14 +547,14 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 			local newBest = DataService:RecordRun(player, wave, kills, gems)
 			DataService:AddStat(player, "Runs")
 			DataService:AddStat(player, "BestWave", wave, true)
-			if victory and not tutorial then -- a 3-wave training run isn't a win
+			if victory and not tutorial then -- a training run isn't a win
 				DataService:AddStat(player, "Victories")
 				DataService:AddStat(player, "Wins_" .. (player:GetAttribute("ClassId") or "Survivor"))
 			end
-			Remotes.RunResults:FireClient(player, { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest, Victory = victory })
+			Remotes.RunResults:FireClient(player, { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest, Victory = victory, Tutorial = tutorial })
 		end
 	end
-	task.wait(GameConfig.Match.ResultsTime)
+	task.wait(if tutorial then Tutorial.ResultsTime else GameConfig.Match.ResultsTime)
 	local returning = {}
 	for player in inRun do
 		table.insert(returning, player)

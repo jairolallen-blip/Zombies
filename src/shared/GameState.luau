@@ -7,6 +7,7 @@
 --   DeployPath (JSON [[x,y,z],...]), DeployStart (server time), DeployDuration   drop-in cutscene
 --     (MapService:GetDeployFlight -> CutsceneController)
 --   Wave           current wave number (0 in lobby)
+--   TotalWaves     waves in the current run (GameConfig.Waves.TotalWaves, or Config/Tutorial.Waves)
 --   Timer          seconds left in the Break countdown
 --   ZombiesLeft    zombies still to spawn + alive this wave
 --   RunWon         true when the last run cleared every wave (read during "Results")
@@ -23,6 +24,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local DEFAULTS = {
 	Phase = "Lobby",
 	Wave = 0,
+	TotalWaves = 10,
 	Timer = 0,
 	ZombiesLeft = 0,
 	BossName = "",

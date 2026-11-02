@@ -24,11 +24,6 @@ GameConfig.Lobby = {
 	},
 }
 
--- First-time players (profile TutorialDone = false) start with a short solo run instead of the lobby
-GameConfig.Tutorial = {
-	Waves = 3, -- no boss; Config/Radio TutorialTips teach a key per wave
-}
-
 GameConfig.Match = {
 	ResultsTime = 6, -- seconds the results screen shows before everyone returns to the lobby
 	RespawnDeadOnWaveStart = true, -- dead teammates come back at the start of each wave

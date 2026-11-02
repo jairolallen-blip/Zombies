@@ -42,8 +42,8 @@ function LobbyController:Rebuild()
 end
 
 function LobbyController:ShowResults(results)
-	ui.ResultsTitle.Text = if results.Victory then "VICTORY" elseif results.NewBest and results.Wave > 1 then "NEW BEST!" else "OVERRUN"
-	ui.ResultsTitle.TextColor3 = if results.Victory then T.Cash elseif results.NewBest and results.Wave > 1 then T.Accent else T.Danger
+	ui.ResultsTitle.Text = if results.Tutorial then "TRAINING DONE" elseif results.Victory then "VICTORY" elseif results.NewBest and results.Wave > 1 then "NEW BEST!" else "OVERRUN"
+	ui.ResultsTitle.TextColor3 = if results.Tutorial then T.Accent elseif results.Victory then T.Cash elseif results.NewBest and results.Wave > 1 then T.Accent else T.Danger
 	local reached = if results.Victory then string.format("Survived all %d waves", results.WavesCleared) else string.format("Reached wave %d", results.Wave)
 	ui.ResultsBody.Text = string.format("%s\nZombies killed: %s", reached, Util.FormatNumber(results.Kills))
 	ui.ResultsGems.Text = "+ ◆ " .. Util.FormatNumber(results.Gems) .. " Gems"

@@ -267,7 +267,8 @@ function AirdropService:Start()
 		local phase = GameState:GetAttribute("Phase")
 		if phase == "Wave" then
 			local wave = GameState:GetAttribute("Wave") or 0
-			if wave >= Airdrops.FirstWave and not crate and math.random() < Airdrops.Chance then
+			-- the tutorial drops its one crate on cue (TutorialService)
+			if wave >= Airdrops.FirstWave and not crate and not GameState:GetAttribute("Tutorial") and math.random() < Airdrops.Chance then
 				local token = {}
 				dropToken = token
 				task.delay(Airdrops.Delay[1] + math.random() * (Airdrops.Delay[2] - Airdrops.Delay[1]), function()
