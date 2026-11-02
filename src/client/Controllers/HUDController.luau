@@ -157,15 +157,23 @@ function HUDController:Init(controllers)
 	end)
 	GameState:GetAttributeChangedSignal("Phase"):Connect(function()
 		if GameState:GetAttribute("Phase") == "Wave" then
-			local boss = GameState:GetAttribute("BossName")
-			self:ShowBanner("WAVE " .. GameState:GetAttribute("Wave"), T.Text)
-			if boss ~= "" then
-				task.delay(1.2, function()
-					self:ShowBanner(boss:upper() .. " APPROACHES", T.Danger)
-				end)
-			end
+			local wave = GameState:GetAttribute("Wave")
+			self:ShowBanner(if wave >= GameConfig.Waves.TotalWaves then "FINAL WAVE" else "WAVE " .. wave, T.Text)
 		elseif GameState:GetAttribute("Phase") == "Break" and (GameState:GetAttribute("Wave") or 0) > 1 then
 			self:ShowBanner("WAVE CLEARED", T.Cash)
+		end
+	end)
+
+	-- the boss rises after its warning circle, so announce it when it actually appears
+	GameState:GetAttributeChangedSignal("BossName"):Connect(function()
+		local boss = GameState:GetAttribute("BossName")
+		if boss ~= "" then
+			self:ShowBanner(boss:upper() .. " APPROACHES", T.Danger)
+		end
+	end)
+	GameState:GetAttributeChangedSignal("BossEnraged"):Connect(function()
+		if GameState:GetAttribute("BossEnraged") then
+			self:ShowBanner("THE TITAN IS ENRAGED", T.Danger)
 		end
 	end)
 
@@ -226,7 +234,7 @@ function HUDController:_update(dt)
 
 	-- Wave info
 	local phase = GameState:GetAttribute("Phase")
-	ui.Wave.Text = "WAVE " .. (GameState:GetAttribute("Wave") or 0)
+	ui.Wave.Text = "WAVE " .. (GameState:GetAttribute("Wave") or 0) .. " / " .. GameConfig.Waves.TotalWaves
 	if phase == "Break" and (GameState:GetAttribute("Wave") or 0) <= 1 then
 		ui.SubInfo.Text = "Zombies inbound in " .. (GameState:GetAttribute("Timer") or 0) .. "s  —  find cover!"
 	elseif phase == "Break" then
@@ -234,7 +242,7 @@ function HUDController:_update(dt)
 	elseif phase == "Wave" then
 		ui.SubInfo.Text = (GameState:GetAttribute("ZombiesLeft") or 0) .. " zombies left"
 	elseif phase == "Results" then
-		ui.SubInfo.Text = "Overrun!"
+		ui.SubInfo.Text = if GameState:GetAttribute("RunWon") then "Victory! Extraction inbound" else "Overrun!"
 	end
 	local bossMax = GameState:GetAttribute("BossMaxHealth") or 0
 	ui.Boss.Visible = bossMax > 0

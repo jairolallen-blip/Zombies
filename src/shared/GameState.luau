@@ -8,6 +8,8 @@
 --   Wave           current wave number (0 in lobby)
 --   Timer          seconds left in Lobby countdown or Break
 --   ZombiesLeft    zombies still to spawn + alive this wave
+--   RunWon         true when the last run cleared every wave (read during "Results")
+--   BossEnraged    true once the boss passed its enrage threshold
 --   BossName       "" when no boss alive
 --   BossHealth, BossMaxHealth
 --   PlayerCount, ReadyCount   lobby readiness

@@ -10,7 +10,7 @@ Our take on *Survive a Million Zombies*, built next to the friend's version. Eac
 | 4 | Gun functionality (4 levels) | [[Weapons]] | **Done** (2026-11-01) |
 | 5 | Zombie models and AI | [[Zombies]] | **Done** (2026-11-01) |
 | 6 | Zombie spawns (random, red warning circle) | [[Spawning]] | **Done** (2026-11-01) |
-| 7 | Waves (10 rounds) and final boss | [[Waves and Boss]] | Not started |
+| 7 | Waves (10 rounds) and final boss | [[Waves and Boss]] | **Done** (2026-11-01) |
 
 ## Ground rules
 - The game starts in a **queue lobby**. Players pick a **class** and a **loadout** with one gun per level.

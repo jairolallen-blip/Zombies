@@ -43,8 +43,9 @@ GameConfig.Waves = {
 	RiseTime = 0.6, -- seconds to climb out of the ground
 	MaxAlive = 70, -- hard cap on simultaneous zombies (performance)
 	HealthScalePerWave = 0.10, -- zombie health +10% per wave
-	BossEvery = 10, -- boss joins every Nth wave (0 = never)
-	BossHealthScalePerAppearance = 0.75, -- each later boss appearance gets +75% health
+	-- the run (vault: Waves and Boss.md): clear TotalWaves to win; the last wave is the boss wave
+	TotalWaves = 10,
+	BossWaveHordeMult = 0.6, -- the boss wave's horde is this share of a normal wave's count
 }
 
 GameConfig.Economy = {
@@ -52,6 +53,7 @@ GameConfig.Economy = {
 	TeamShare = 0.25, -- every other living teammate also gets 25% of a kill's Cash
 	GemsPerWaveCleared = 5, -- Gems awarded at end of run
 	GemsPerKill = 0.2,
+	VictoryGems = 100, -- bonus Gems for clearing the final wave
 	-- cash every living run player gets when a wave is cleared: Base + PerWave * wave
 	-- (tuned so solo players reach gun Level 2 ~wave 2, Level 3 ~wave 5, Level 4 ~wave 9; vault: Weapons.md)
 	WaveClearCash = { Base = 100, PerWave = 150 },

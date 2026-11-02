@@ -18,6 +18,8 @@
 --                     on death; if killed by a player, players take Damage * ShotPlayerDamageMult.
 --   Slam = { Radius, Damage, Windup, Cooldown, TriggerRange }
 --                     telegraphed ground slam (red ring) — used by bosses
+--   Enrage = { At, SpeedMult, SlamCooldownMult, Summon, SummonCount, SummonRadius }
+--                     at At (fraction of max HP): faster, slams more often, summons a ring of Summon
 --   Lunge = { Range, SpeedMult, Duration, Cooldown }
 --                     burst of speed when a player is within Range (runners)
 --   Look = { Build, Skin, Eyes, Shirts = {...}, Pants = {...} }
@@ -107,7 +109,7 @@ Zombies.Types = {
 	GraveTitan = {
 		DisplayName = "The Grave Titan",
 		Boss = true,
-		Health = 7000,
+		Health = 18000, -- x (1 + 0.6 per extra player); the final-wave boss (vault: Waves and Boss.md)
 		Speed = 8,
 		Damage = 35,
 		AttackRange = 4,
@@ -115,6 +117,7 @@ Zombies.Types = {
 		Cash = 1500,
 		Scale = 3.4,
 		Slam = { Radius = 20, Damage = 45, Windup = 1.3, Cooldown = 6, TriggerRange = 28 },
+		Enrage = { At = 0.5, SpeedMult = 1.4, SlamCooldownMult = 0.5, Summon = "Runner", SummonCount = 6, SummonRadius = 14 },
 		Look = {
 			Build = "Titan",
 			Skin = Color3.fromRGB(80, 110, 95),
@@ -125,7 +128,7 @@ Zombies.Types = {
 	},
 }
 
--- Boss rotation for boss waves (GameConfig.Waves.BossEvery). Cycles when it runs out.
+-- The final wave's boss is BossOrder[1] (GameConfig.Waves.TotalWaves).
 Zombies.BossOrder = { "GraveTitan" }
 
 return Zombies

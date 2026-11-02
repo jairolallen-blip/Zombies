@@ -38,6 +38,19 @@ Radio.Lines = {
 		"Good work. Catch your breath — there's more coming.",
 		"Area's quiet. Won't last. Upgrade while you can.",
 	},
+	BossIncoming = {
+		"Seismic readings off the chart... something huge is digging up under the square. It's the Titan!",
+		"Final wave. The big one's surfacing — put everything you've got into it!",
+	},
+	BossEnraged = {
+		"It's enraged! It's calling the runners — watch your flanks!",
+	},
+	BossDown = {
+		"The Titan is down! Mop up the rest!",
+	},
+	Victory = {
+		"Area secured. Outstanding work, squad — bird's on its way to pull you out.",
+	},
 	Overrun = {
 		"Squad's gone dark... Overwatch out.",
 		"We lost them. Pull the bird back.",

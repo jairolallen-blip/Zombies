@@ -3,8 +3,9 @@
 --   Lobby  --(countdown; shortened when everyone is Ready)-->  run starts
 --   Deploy (helicopter cutscene, players parachute onto the arena spawns; see _deploy)
 --   loop:  Break (countdown, dead teammates respawn) -> Wave (spawn N zombies, wait until cleared)
+--   the last wave (GameConfig.Waves.TotalWaves) is the boss wave; clearing it wins the run
+--   ends on victory or when every participant is dead or gone -> Results (Gems, saved) -> Lobby
 -- The commander comments on each step over Remotes.Radio (lines in Shared/Config/Radio).
---   ends when every participant is dead or gone -> Results (Gems awarded, saved) -> Lobby
 --
 -- Writes GameState attributes (Phase, Wave, Timer, ZombiesLeft, PlayerCount, ReadyCount)
 -- and player attribute InRun. Wave sizes/timings come from GameConfig.Waves.
@@ -36,6 +37,14 @@ function MatchService:Init(services)
 		inRun[player] = nil
 		dead[player] = nil
 		spawnToken[player] = nil
+	end)
+	Services.ZombieService.BossEnraged:Connect(function()
+		self:_radio("BossEnraged")
+	end)
+	Services.ZombieService.Killed:Connect(function(z)
+		if z.Def.Boss then
+			self:_radio("BossDown")
+		end
 	end)
 	Services.DataService.ProfileLoaded:Connect(function(player)
 		if not inRun[player] then
@@ -318,19 +327,19 @@ function MatchService:_countdown(phase, seconds)
 	GameState:SetAttribute("Timer", 0)
 end
 
-function MatchService:_playWave(wave, bossAppearance)
+function MatchService:_playWave(wave, isBoss)
 	local cfg = GameConfig.Waves
 	local ZombieService = Services.ZombieService
 	local MapService = Services.MapService
 	local players = #self:GetRunPlayers()
-	local total = math.floor((cfg.BaseCount + cfg.CountPerWave * (wave - 1)) * (1 + cfg.ExtraPlayerMultiplier * math.max(0, players - 1)))
+	local playerMult = 1 + cfg.ExtraPlayerMultiplier * math.max(0, players - 1)
+	local total = math.floor((cfg.BaseCount + cfg.CountPerWave * (wave - 1)) * playerMult * (if isBoss then cfg.BossWaveHordeMult else 1))
 	local healthMult = 1 + cfg.HealthScalePerWave * (wave - 1)
 	local interval = math.max(cfg.MinSpawnInterval, cfg.SpawnInterval - cfg.SpawnIntervalDecay * (wave - 1))
 	local burst = 1 + math.floor(wave / cfg.BurstEvery) -- zombies per spawn group (vault: Spawning.md)
 
-	if bossAppearance then
-		local bossId = Zombies.BossOrder[((bossAppearance - 1) % #Zombies.BossOrder) + 1]
-		ZombieService:SpawnWarned(bossId, MapService:GetZombieSpawnPosition(true), 1 + cfg.BossHealthScalePerAppearance * (bossAppearance - 1))
+	if isBoss then
+		ZombieService:SpawnWarned(Zombies.BossOrder[1], MapService:GetZombieSpawnPosition(true), playerMult)
 	end
 
 	local toSpawn = total
@@ -373,8 +382,8 @@ function MatchService:_runMatch()
 	self:_deploy(participants)
 
 	local cfg = GameConfig.Waves
-	local wave, wavesCleared, bossAppearances = 0, 0, 0
-	while next(inRun) ~= nil do
+	local wave, wavesCleared = 0, 0
+	while next(inRun) ~= nil and wavesCleared < cfg.TotalWaves do
 		if self.DebugNextWave then -- set by DebugService:SkipToWave
 			wave = self.DebugNextWave - 1
 			self.DebugNextWave = nil
@@ -402,24 +411,24 @@ function MatchService:_runMatch()
 			end
 			task.wait(0.5)
 		end
-		local isBoss = cfg.BossEvery > 0 and wave % cfg.BossEvery == 0
-		if isBoss then
-			bossAppearances += 1
-		end
+		local isBoss = wave >= cfg.TotalWaves
 		GameState:SetAttribute("Phase", "Wave")
-		self:_radio(if wave == 1 then "FirstWave" else "WaveStart", { wave = wave })
-		if not self:_playWave(wave, if isBoss then bossAppearances else nil) then
+		self:_radio(if isBoss then "BossIncoming" elseif wave == 1 then "FirstWave" else "WaveStart", { wave = wave })
+		if not self:_playWave(wave, isBoss) then
 			break
 		end
 		wavesCleared = wave
 		Services.EconomyService:OnWaveCleared(wave)
-		self:_radio("WaveCleared", { wave = wave })
+		if wavesCleared < cfg.TotalWaves then
+			self:_radio("WaveCleared", { wave = wave })
+		end
 	end
-	self:_endRun(wave, wavesCleared)
+	self:_endRun(wave, wavesCleared, wavesCleared >= cfg.TotalWaves)
 end
 
-function MatchService:_endRun(wave, wavesCleared)
-	self:_radio("Overrun")
+function MatchService:_endRun(wave, wavesCleared, victory)
+	self:_radio(if victory then "Victory" else "Overrun")
+	GameState:SetAttribute("RunWon", victory == true)
 	GameState:SetAttribute("Phase", "Results")
 	Services.ZombieService:ClearAll()
 	Services.AbilityService:Cleanup()
@@ -427,9 +436,9 @@ function MatchService:_endRun(wave, wavesCleared)
 	for player in inRun do
 		if player.Parent then
 			local kills = player:GetAttribute("Kills") or 0
-			local gems = math.floor(wavesCleared * econ.GemsPerWaveCleared + kills * econ.GemsPerKill)
+			local gems = math.floor(wavesCleared * econ.GemsPerWaveCleared + kills * econ.GemsPerKill + (if victory then econ.VictoryGems else 0))
 			local newBest = Services.DataService:RecordRun(player, wave, kills, gems)
-			Remotes.RunResults:FireClient(player, { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest })
+			Remotes.RunResults:FireClient(player, { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest, Victory = victory })
 		end
 	end
 	task.wait(GameConfig.Match.ResultsTime)

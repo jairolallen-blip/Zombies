@@ -22,6 +22,7 @@
 --   ZombieService:PickType(wave) -> typeId (weighted by MinWave/Weight)
 --   ZombieService:GetAliveCount(), ZombieService:ClearAll()
 --   ZombieService.Killed  Signal(state, attacker)
+--   ZombieService.BossEnraged  Signal(state)   boss crossed Def.Enrage.At (see _enrage)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -40,6 +41,7 @@ local ZombieModels = require(script.Parent.Parent:WaitForChild("ZombieModels"))
 
 local ZombieService = {}
 ZombieService.Killed = Util.Signal.new()
+ZombieService.BossEnraged = Util.Signal.new()
 
 local Services
 local folder
@@ -149,6 +151,7 @@ function ZombieService:Spawn(typeId, position, healthMult, riseTime)
 	aliveCount += 1
 
 	if def.Boss then
+		GameState:SetAttribute("BossEnraged", false)
 		GameState:SetAttribute("BossName", def.DisplayName)
 		GameState:SetAttribute("BossMaxHealth", maxHealth)
 		GameState:SetAttribute("BossHealth", maxHealth)
@@ -193,7 +196,30 @@ function ZombieService:Damage(model, amount, attacker)
 		self:Kill(model, attacker)
 		return true
 	end
+	local enrage = z.Def.Enrage
+	if enrage and not z.Enraged and z.Health <= z.MaxHealth * enrage.At then
+		self:_enrage(z)
+	end
 	return false
+end
+
+-- Boss rage: faster, slams more often, and a ring of summoned zombies rises around it.
+function ZombieService:_enrage(z)
+	local enrage = z.Def.Enrage
+	z.Enraged = true
+	z.SpeedMult *= enrage.SpeedMult
+	z.NextSlam = math.min(z.NextSlam, os.clock() + 1)
+	GameState:SetAttribute("BossEnraged", true)
+	local center = z.Root.Position
+	for i = 1, enrage.SummonCount do
+		local angle = i / enrage.SummonCount * math.pi * 2
+		local pos = center + Vector3.new(math.cos(angle), 0, math.sin(angle)) * enrage.SummonRadius
+		if not NavGrid.IsWalkable(pos) then
+			pos = Services.MapService:GetZombieSpawnPosition()
+		end
+		self:SpawnWarned(enrage.Summon, pos)
+	end
+	self.BossEnraged:Fire(z)
 end
 
 function ZombieService:Kill(model, attacker)
@@ -211,6 +237,7 @@ function ZombieService:Kill(model, attacker)
 		Services.EconomyService:OnZombieKilled(attacker, z)
 	end
 	if def.Boss then
+		GameState:SetAttribute("BossEnraged", false)
 		GameState:SetAttribute("BossName", "")
 		GameState:SetAttribute("BossHealth", 0)
 		GameState:SetAttribute("BossMaxHealth", 0)
@@ -379,7 +406,7 @@ end
 local function doSlam(z, now)
 	local slam = z.Def.Slam
 	z.Slamming = true
-	z.NextSlam = now + slam.Cooldown
+	z.NextSlam = now + slam.Cooldown * (if z.Enraged then z.Def.Enrage.SlamCooldownMult else 1)
 	local ground = Vector3.new(z.Root.Position.X, Services.MapService.GroundY + 0.1, z.Root.Position.Z)
 	local ring = Instance.new("Part")
 	ring.Name = "SlamTelegraph"
