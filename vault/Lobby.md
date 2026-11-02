@@ -23,7 +23,14 @@ The always-on left and right panels were replaced by two **walk-up shops** (pres
 - **Armory**, the west tent: level tabs 1–4 and a card per gun with a **rotating 3D model**, stat bars (damage, fire rate, magazine, range), traits, and equip or unlock.
 - **Barracks**, the east sandbags: **5 class mannequins** on pedestals in the lobby, and a shop card per class with a rotating figure, abilities, traits, and equip or unlock.
 
-Each class figure has its own prop: the Survivor has a cap and a grenade, the Scout goggles, the Medic a cross and medkit, the Engineer a hard hat and wrench, and the Bruiser shoulder pads. They're built by `Shared/ClassFigures`.
+Each class figure has its own pose and kit (`Shared/ClassFigures`, upgraded 2026-11-02). All of them have a face, vest, gloves and knee pads.
+- **Survivor:** a cap, bandolier and backpack, with a rifle held across the chest.
+- **Scout:** goggles, a scarf, binoculars and a slung sniper, mid-stride.
+- **Medic:** a cross helmet, armband, medkit and cross backpack.
+- **Engineer:** a hard hat with headlamp, hi-vis vest, tool belt and wrench.
+- **Bruiser:** a visored helmet, armour plates, riot shield and sledgehammer.
+
+**The barracks area** is an open army tent on a plank deck. It has string lights, a sign under the front beam, and pedestals spaced 5 studs apart. Each pedestal has a neon ring, a nameplate and a spotlight in its class colour. Lockers, a weapon rack and crates sit at the back, with sandbags at the front corners. Rebuild only that area with `OurLobby.RebuildBarracks()`, which keeps every other hand edit.
 
 The lobby screen keeps only a small chip (Gems, best wave, class, gun lineup, where the shops are) and the take-off status.
 

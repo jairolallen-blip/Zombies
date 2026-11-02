@@ -164,6 +164,7 @@ From the vault notes:
 - group-play balance testing
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-02: **class figures + barracks upgrade.** `ClassFigures` now gives each class a face, vest, gloves, a pose and class kit. The barracks is a tent on a deck with string lights, class-coloured pedestal rings, nameplates and spotlights. It was rebuilt in place with the new `OurLobby.RebuildBarracks()`. Three debris chunks overlapping the deck were deleted from the baked lobby, and `buildDebris` now skips that area.
 - 2026-11-02: lobby info chip scaled to 0.75 and moved to (16, 68), below Roblox's top-bar buttons.
 - 2026-11-02: parachute follow-up. The full-length arms are back (they fill the screen edges, which the owner prefers). Landing ends the fall at once: the client ends the drop view when the canopy disappears, and `_parachute` clears that player's `Deploying` on touchdown. Before, the fall view lingered about 1s until the shared timer ran out.
 - 2026-11-02: **first-person parachute drop.** Freefall, then a ram-air canopy that opens with a jolt; you look up at it and sway down holding the toggles. Your body and gun are hidden locally during the fall. `DropHeight` 75→110 and `FallSpeed` 30→22, so the chute ride lasts about 4s. Only a targeted line edit went into AnimatedSL's live `GameConfig`.

@@ -320,14 +320,56 @@ local function buildArmory(parent)
 	shopPrompt(m, c * CFrame.new(5, 3, 0), "Armory", "Browse guns")
 end
 
--- Barracks: one mannequin per class on a pedestal, facing the plaza, behind a U of sandbags.
+-- Barracks: an open-front army tent on a plank deck, one class figure per pedestal facing the plaza
+-- (west), each with a lit nameplate and a spotlight in its class colour, string lights along the
+-- front beam, lockers and a weapon rack at the back, sandbags at the front corners.
 local function buildBarracks(parent)
 	local m = model(parent, "Barracks")
 	local cx, cz = 30, PLAZA.Z
-	sandbagWall(m, Vector3.new(cx - 7, 0, cz - 8), Vector3.new(cx + 7, 0, cz - 8), 3)
-	sandbagWall(m, Vector3.new(cx + 8, 0, cz - 7), Vector3.new(cx + 8, 0, cz + 7), 3)
-	sandbagWall(m, Vector3.new(cx - 7, 0, cz + 8), Vector3.new(cx + 7, 0, cz + 8), 3)
-	local c = at(cx, GROUND_Y, cz)
+	local c = at(cx, GROUND_Y, cz) -- deck front edge centre; +X = back of the tent
+	local DECK = 0.6
+	local warm = Color3.fromRGB(255, 200, 120)
+
+	-- deck and step
+	part(m, "Deck", Vector3.new(16, DECK, 27), c * CFrame.new(8, DECK / 2, 0), C.Wood, Enum.Material.WoodPlanks)
+	part(m, "DeckEdge", Vector3.new(0.3, DECK + 0.05, 27.2), c * CFrame.new(0, DECK / 2, 0), C.Metal, Enum.Material.Metal)
+	part(m, "Step", Vector3.new(1.6, DECK / 2, 10), c * CFrame.new(-0.8, DECK / 4, 0), C.Wood, Enum.Material.WoodPlanks)
+
+	-- tent: posts, front beam, two roof slopes, back and side walls
+	for _, corner in { { 0.5, -13 }, { 0.5, 13 }, { 15.5, -13 }, { 15.5, 13 } } do
+		part(m, "Post", Vector3.new(0.6, 10.5, 0.6), c * CFrame.new(corner[1], DECK + 5.25, corner[2]), C.Metal, Enum.Material.Metal)
+	end
+	part(m, "FrontBeam", Vector3.new(0.6, 0.8, 27), c * CFrame.new(0.5, DECK + 10.2, 0), C.Metal, Enum.Material.Metal)
+	for _, s in { -1, 1 } do
+		part(m, "Roof", Vector3.new(8.8, 0.3, 28), c * CFrame.new(8 + s * 4, DECK + 11.6, 0) * CFrame.Angles(0, 0, s * -0.3), C.Canvas, Enum.Material.Fabric)
+	end
+	part(m, "BackWall", Vector3.new(0.3, 10.5, 26.4), c * CFrame.new(15.6, DECK + 5.25, 0), C.Canvas:Lerp(Color3.new(), 0.15), Enum.Material.Fabric)
+	for _, s in { -1, 1 } do
+		part(m, "SideWall", Vector3.new(9, 10.5, 0.3), c * CFrame.new(11, DECK + 5.25, s * 13.1), C.Canvas:Lerp(Color3.new(), 0.1), Enum.Material.Fabric)
+	end
+	for i = 1, 6 do -- camo patches on the back wall
+		part(m, "Camo", Vector3.new(0.1, rng:NextNumber(1.5, 3), rng:NextNumber(2.5, 5)), c * CFrame.new(15.4, DECK + rng:NextNumber(2.5, 8.5), -11 + i * 3.6 + rng:NextNumber(-1, 1)) * CFrame.Angles(rng:NextNumber(-0.4, 0.4), 0, 0), C.Crate:Lerp(Color3.new(), 0.3), Enum.Material.Fabric)
+	end
+
+	-- sign under the front beam
+	local board = part(m, "Sign", Vector3.new(0.3, 2.2, 13), c * CFrame.new(0.3, DECK + 8.7, 0), C.Charred, Enum.Material.Metal)
+	sign(board, Enum.NormalId.Left, "BARRACKS · CLASSES", Color3.fromRGB(30, 34, 28), Color3.fromRGB(150, 255, 90))
+
+	-- string lights sagging along the front beam
+	for i = -6, 6 do
+		local z = i * 2.1
+		local sag = 0.8 * (1 - (z / 13) ^ 2)
+		local bulb = part(m, "Bulb", Vector3.new(0.45, 0.45, 0.45), c * CFrame.new(0.1, DECK + 9.6 - sag, z), warm, Enum.Material.Neon, { Shape = Enum.PartType.Ball, CanCollide = false })
+		if i % 3 == 0 then
+			local light = Instance.new("PointLight")
+			light.Color = warm
+			light.Range = 14
+			light.Brightness = 0.9
+			light.Parent = bulb
+		end
+	end
+
+	-- pedestals: figure, glowing ring, nameplate, spotlight
 	local ids = {}
 	for id in Classes.List do
 		table.insert(ids, id)
@@ -337,18 +379,60 @@ local function buildBarracks(parent)
 	end)
 	local faceWest = CFrame.Angles(0, math.rad(90), 0) -- figures face -Z; turn them toward the plaza
 	for i, id in ids do
-		local z = (i - (#ids + 1) / 2) * 3.3
-		local base = c * CFrame.new(3.5 + math.abs(z) * 0.25, 0, z)
-		cylinder(m, "Pedestal", 0.8, 2.6, base * CFrame.new(0, 0.4, 0), C.ConcreteDark, Enum.Material.Concrete)
-		part(m, "PedestalTrim", Vector3.new(0.1, 0.3, 2.2), base * CFrame.new(-1.32, 0.4, 0), Classes.List[id].Color, Enum.Material.Neon)
+		local class = Classes.List[id]
+		local z = (i - (#ids + 1) / 2) * 5
+		local base = c * CFrame.new(6 + math.abs(z) * 0.12, DECK, z)
+		cylinder(m, "Pedestal", 0.8, 3.2, base * CFrame.new(0, 0.4, 0), C.ConcreteDark, Enum.Material.Concrete)
+		cylinder(m, "PedestalRing", 0.14, 3.35, base * CFrame.new(0, 0.72, 0), class.Color, Enum.Material.Neon)
+		local plate = part(m, "Nameplate", Vector3.new(0.25, 0.7, 2.8), base * CFrame.new(-2.1, 0.45, 0) * CFrame.Angles(0, 0, math.rad(-25)), C.Charred, Enum.Material.Metal)
+		sign(plate, Enum.NormalId.Left, class.DisplayName:upper(), Color3.fromRGB(22, 24, 22), class.Color)
 		local figure = ClassFigures.Build(id)
 		figure:PivotTo(base * CFrame.new(0, 0.8 + 3, 0) * faceWest) -- pivot = torso, 3 studs above the feet
 		figure.Parent = m
+		local lamp = part(m, "Spot", Vector3.new(0.9, 0.6, 0.9), base * CFrame.new(-1, 9.6, 0), C.Metal, Enum.Material.Metal)
+		local spot = Instance.new("SpotLight")
+		spot.Face = Enum.NormalId.Bottom
+		spot.Angle = 45
+		spot.Range = 14
+		spot.Brightness = 2.5
+		spot.Color = class.Color:Lerp(Color3.new(1, 1, 1), 0.45)
+		spot.Parent = lamp
 	end
-	local post = part(m, "SignBack", Vector3.new(0.4, 9, 14), c * CFrame.new(9.3, 4.5, 0), C.Metal, Enum.Material.Metal)
-	local board = part(m, "Sign", Vector3.new(0.3, 3, 12), post.CFrame * CFrame.new(-0.4, 2.5, 0), C.Charred, Enum.Material.Metal)
-	sign(board, Enum.NormalId.Left, "BARRACKS · CLASSES", Color3.fromRGB(30, 34, 28), Color3.fromRGB(150, 255, 90))
-	shopPrompt(m, c * CFrame.new(-1, 3, 0), "Classes", "Choose class")
+
+	-- back of the tent: weapon rack, lockers, footlockers, crates
+	local rack = c * CFrame.new(14.8, DECK, -8)
+	part(m, "RackFrame", Vector3.new(0.8, 4.2, 5.5), rack * CFrame.new(0, 2.1, 0), C.Wood, Enum.Material.WoodPlanks)
+	for k = -2, 2 do
+		part(m, "RackRifle", Vector3.new(0.3, 3.6, 0.4), rack * CFrame.new(-0.5, 2.2, k * 1.05) * CFrame.Angles(math.rad(8), 0, 0), Color3.fromRGB(34, 35, 38), Enum.Material.Metal)
+	end
+	for k = 0, 2 do
+		local locker = part(m, "Locker", Vector3.new(1.4, 6.5, 2.2), c * CFrame.new(14.6, DECK + 3.25, 3.5 + k * 2.3), Color3.fromRGB(72, 84, 70), Enum.Material.Metal)
+		part(m, "LockerVent", Vector3.new(0.05, 0.8, 1.4), locker.CFrame * CFrame.new(-0.72, 2.3, 0), C.Charred, Enum.Material.Metal)
+	end
+	for _, z in { -11.5, 11 } do
+		part(m, "Footlocker", Vector3.new(2.2, 1.2, 3), c * CFrame.new(12.5, DECK + 0.6, z), Color3.fromRGB(70, 78, 52), Enum.Material.Metal)
+	end
+	part(m, "AmmoCrate", Vector3.new(2.2, 1.8, 2.2), c * CFrame.new(13.8, DECK + 0.9, -12) * CFrame.Angles(0, 0.3, 0), C.Crate, Enum.Material.WoodPlanks)
+	part(m, "AmmoCrate", Vector3.new(2, 1.6, 2), c * CFrame.new(13.9, DECK + 2.6, -12.1) * CFrame.Angles(0, -0.2, 0), C.Crate, Enum.Material.WoodPlanks)
+
+	-- sandbags guarding the front corners
+	sandbagWall(m, Vector3.new(cx - 1.5, 0, cz - 13.5), Vector3.new(cx - 1.5, 0, cz - 7), 2)
+	sandbagWall(m, Vector3.new(cx - 1.5, 0, cz + 7), Vector3.new(cx - 1.5, 0, cz + 13.5), 2)
+
+	shopPrompt(m, c * CFrame.new(1.5, 3, 0), "Classes", "Choose class")
+end
+
+-- Rebuilds only the Barracks inside the baked lobby (keeps every other hand edit):
+--   require(<clone of this module>).RebuildBarracks()
+function OurLobby.RebuildBarracks()
+	origin = GameConfig.OurMap.LobbyCenter
+	rng = Random.new(2611)
+	local lobby = workspace[GameConfig.OurMap.Folder].Lobby
+	local old = lobby:FindFirstChild("Barracks")
+	if old then
+		old:Destroy()
+	end
+	buildBarracks(lobby)
 end
 
 local function buildFloodlight(parent, x, z)
@@ -418,7 +502,8 @@ local function buildDebris(parent)
 		local x, z = rng:NextNumber(-HALF + 8, HALF - 8), rng:NextNumber(-HALF + 6, HALF - 6)
 		local nearPlaza = math.abs(x - PLAZA.X) < 26 and math.abs(z - PLAZA.Z) < 26
 		local nearPad = (Vector3.new(x, 0, z) - HELIPAD).Magnitude < 20
-		if not nearPlaza and not nearPad then
+		local inBarracks = x > 27 and x < 48 and math.abs(z - PLAZA.Z) < 16
+		if not nearPlaza and not nearPad and not inBarracks then
 			local s = rng:NextNumber(1, 3.5)
 			part(m, "Chunk", Vector3.new(s * rng:NextNumber(0.8, 1.6), s * 0.7, s), at(x, GROUND_Y + s * 0.3, z) * CFrame.Angles(rng:NextNumber(-0.4, 0.4), rng:NextNumber(0, math.pi), rng:NextNumber(-0.4, 0.4)), C.Concrete:Lerp(C.ConcreteDark, rng:NextNumber()), Enum.Material.Concrete)
 			placed += 1
