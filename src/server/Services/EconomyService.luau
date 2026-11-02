@@ -73,12 +73,15 @@ function EconomyService:OnZombieKilled(player, zombie)
 	end
 end
 
--- Called by MatchService when a wave is cleared: every living participant gets the clear bonus.
+-- Called by MatchService when a wave is cleared: every living participant gets the clear bonus and
+-- is patched up (GameConfig.Match.HealOnWaveClear), since HP never regenerates on its own.
 function EconomyService:OnWaveCleared(wave)
 	local cfg = GameConfig.Economy.WaveClearCash
 	local amount = cfg.Base + cfg.PerWave * wave
 	for _, player in Services.MatchService:GetRunPlayers() do
 		if Services.MatchService:IsAliveInRun(player) then
+			local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+			humanoid.Health = math.min(humanoid.MaxHealth, humanoid.Health + humanoid.MaxHealth * GameConfig.Match.HealOnWaveClear)
 			self:AddCash(player, amount)
 			Remotes.Notify:FireClient(player, "Wave " .. wave .. " cleared: +$" .. Util.FormatNumber(amount), "Good")
 		end

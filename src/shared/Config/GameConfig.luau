@@ -13,6 +13,7 @@ GameConfig.Lobby = {
 GameConfig.Match = {
 	ResultsTime = 6, -- seconds the results screen shows before everyone returns to the lobby
 	RespawnDeadOnWaveStart = true, -- dead teammates come back at the start of each wave
+	HealOnWaveClear = 1, -- living players heal this fraction of max HP when a wave is cleared (no regen otherwise)
 }
 
 -- Drop-in at the start of a run (vault: Match Start.md): helicopter cutscene from the lobby helipad
@@ -32,8 +33,11 @@ GameConfig.Waves = {
 	BaseCount = 8, -- zombies in wave 1 (solo)
 	CountPerWave = 6, -- +zombies each wave (wave 10 = 62)
 	ExtraPlayerMultiplier = 0.6, -- each extra player adds +60% zombies
-	SpawnInterval = 1.4, -- seconds between spawn groups in wave 1
-	SpawnIntervalDecay = 0.12, -- interval shrinks by this each wave (wave 10 = 0.32s)
+	-- a wave's spawns are spread over SpawnSeconds + SpawnSecondsPerWave * wave seconds, so late
+	-- waves are bigger AND longer instead of an instant flood (balance pass: vault Waves and Boss.md)
+	SpawnSeconds = 16,
+	SpawnSecondsPerWave = 1, -- wave 8 = 24s -> ~2 zombies/s solo
+	SpawnInterval = 1.4, -- slowest gap between spawn groups (early waves)
 	MinSpawnInterval = 0.3,
 	BurstEvery = 3, -- zombies per spawn group = 1 + floor(wave / BurstEvery) (wave 10 = 4)
 	-- where and how they appear

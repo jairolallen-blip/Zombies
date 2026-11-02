@@ -335,8 +335,9 @@ function MatchService:_playWave(wave, isBoss)
 	local playerMult = 1 + cfg.ExtraPlayerMultiplier * math.max(0, players - 1)
 	local total = math.floor((cfg.BaseCount + cfg.CountPerWave * (wave - 1)) * playerMult * (if isBoss then cfg.BossWaveHordeMult else 1))
 	local healthMult = 1 + cfg.HealthScalePerWave * (wave - 1)
-	local interval = math.max(cfg.MinSpawnInterval, cfg.SpawnInterval - cfg.SpawnIntervalDecay * (wave - 1))
 	local burst = 1 + math.floor(wave / cfg.BurstEvery) -- zombies per spawn group (vault: Spawning.md)
+	local spawnWindow = cfg.SpawnSeconds + cfg.SpawnSecondsPerWave * wave
+	local interval = math.clamp(spawnWindow * burst / math.max(total, 1), cfg.MinSpawnInterval, cfg.SpawnInterval)
 
 	if isBoss then
 		ZombieService:SpawnWarned(Zombies.BossOrder[1], MapService:GetZombieSpawnPosition(true), playerMult)
