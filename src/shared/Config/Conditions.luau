@@ -3,6 +3,7 @@
 -- MapService:ApplyAtmosphere lays its Atmosphere fields over GameConfig.OurMap.Atmosphere (fields left out
 -- keep the sunset values). Client/Controllers/ConditionsController draws Rain around the camera and puts a
 -- flashlight on every player while Flashlights is set. PostFXController's sunset grade only runs on Sunset.
+-- OFF for now (2026-11-02, the owner prefers the sunset look): every weather but Sunset has Weight 0.
 
 local Conditions = {}
 
@@ -12,7 +13,7 @@ Conditions.List = {
 		Id = "Fog",
 		Name = "HEAVY FOG",
 		Desc = "You won't see them coming. Listen.",
-		Weight = 2,
+		Weight = 0, -- off for now (was 2)
 		Atmosphere = {
 			ClockTime = 16,
 			Brightness = 1.6,
@@ -30,7 +31,7 @@ Conditions.List = {
 		Id = "Night",
 		Name = "NIGHTFALL",
 		Desc = "Flashlights on. Stay together.",
-		Weight = 2,
+		Weight = 0, -- off for now (was 2)
 		Flashlights = true,
 		Atmosphere = {
 			ClockTime = 0.3,
@@ -49,7 +50,7 @@ Conditions.List = {
 		Id = "Rain",
 		Name = "STORM",
 		Desc = "Rain all run. Keep your footing.",
-		Weight = 2,
+		Weight = 0, -- off for now (was 2)
 		Rain = true,
 		Atmosphere = {
 			ClockTime = 14.5,

@@ -510,8 +510,10 @@ function MatchService:RunMatch(participants, options)
 	local condition = if tutorial then Conditions.List[1] else Conditions.Pick()
 	GameState:SetAttribute("Condition", condition.Id)
 	task.delay(0.5, Services.MapService.ApplyAtmosphere, Services.MapService, condition)
-	for _, player in participants do
-		Remotes.Notify:FireClient(player, "CONDITIONS: " .. condition.Name .. ". " .. condition.Desc, "Info")
+	if condition ~= Conditions.List[1] then -- only announce weather that isn't the usual sunset
+		for _, player in participants do
+			Remotes.Notify:FireClient(player, "CONDITIONS: " .. condition.Name .. ". " .. condition.Desc, "Info")
+		end
 	end
 	if tutorial then
 		task.spawn(Services.TutorialService.Run, Services.TutorialService, participants[1])

@@ -62,7 +62,9 @@ The map is a 23 × 23 grid of 12-stud tiles (276 studs across). North is up.
 - `PlayerSpawn` × 8 around the fountain.
 - `ZombieSpawn` × 12 on the ring road and in the side areas, away from the square. These are replaced by random spawns with red warning circles in [[Spawning]] (phase 6).
 
-## Run conditions (2026-11-02)
+## Run conditions (2026-11-02, turned off)
+**Off for now:** the owner prefers the original moody sunset, so every run is Sunset (the others have Weight 0). We may come back to the idea.
+
 Each run rolls its weather ([[Conditions config]], [[ConditionsController]]): Sunset (most often), Heavy Fog, Nightfall (every player gets a flashlight) or Storm (rain). It makes one map feel like several until a second map exists. The tutorial is always Sunset.
 
 ## Code
