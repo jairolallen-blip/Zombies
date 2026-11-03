@@ -44,6 +44,9 @@ Final run 3 progression: level 2 in wave 2, level 3 in wave 5, level 4 at the st
 
 Tunables: `GameConfig.Waves.SpawnSeconds` / `SpawnSecondsPerWave` (spawn window) and `GameConfig.Match.HealOnWaveClear`.
 
+## Bot run after the faster start (2026-11-02)
+One solo run (Fog): every wave up to 9 cleared, then overrun on the boss wave with the Titan at 64% HP. The 2026-11-01 baseline got the boss to 9%. Late wave sizes barely changed, so this may be noise. Run the bot again before changing anything. See [[Spawning]].
+
 ## Later ideas
 - A helicopter extraction cutscene on victory, reusing the drop-in helicopter.
 - Endless mode after wave 10 for high scores.

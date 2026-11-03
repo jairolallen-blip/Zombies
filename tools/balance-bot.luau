@@ -7,7 +7,8 @@
 -- How to run (MCP):
 --   1. start_stop_play(true)
 --   2. execute_luau(Client): paste this file           -> "bot started"
---   3. execute_luau(Server): for _, p in game.Players:GetPlayers() do p:SetAttribute("Ready", true) end
+--   3. get on a pad and fill the squad: execute_luau(Client) require(game.ReplicatedStorage.Shared.Remotes).QuickPlay:FireServer(),
+--      then click LocalPlayer.PlayerGui.Lobby.Frame.Squad.Size1 with user_mouse_input
 --   4. poll every ~55s (keep each execute_luau under ~60s or the MCP call times out and Studio may
 --      drop the connection):
 --        execute_luau(Client): task.wait(55) return game.Players.LocalPlayer:GetAttribute("BotLog")
