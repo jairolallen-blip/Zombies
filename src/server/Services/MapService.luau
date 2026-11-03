@@ -64,7 +64,7 @@ function MapService:Init(services)
 	end
 	bossSpawn = collect(arena, "BossSpawn")[1].Position
 	self:ApplyAtmosphere()
-	if not services.MatchService.IsMatchServer and not RunService:IsStudio() then
+	if not services.MatchService.Reserved and not RunService:IsStudio() then -- (Team Test is Reserved: keeps it)
 		arena:Destroy() -- a live lobby server never runs a match (squads get their own server)
 	end
 end

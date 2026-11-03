@@ -22,7 +22,7 @@
 -- MapId, Tutorial) and player attribute InRun. Wave sizes/timings come from GameConfig.Waves.
 --
 -- Public:
---   MatchService.IsMatchServer
+--   MatchService.IsMatchServer, .LocalRuns, :WaitForKind()   what kind of server this is (see below)
 --   MatchService:RunMatch(players, options), :IsRunning()
 --   MatchService:IsInRun(player), :IsAliveInRun(player), :GetRunPlayers()
 --   MatchService:SpawnInLobby(player), :SpawnInArena(player, cframe?)
@@ -30,6 +30,7 @@
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
+local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -45,7 +46,39 @@ local Levels = require(Shared.Config.Levels)
 
 local MatchService = {}
 -- a reserved server is one squad's private match (QueueService teleports squads into one)
-MatchService.IsMatchServer = game.PrivateServerId ~= "" and game.PrivateServerOwnerId == 0
+-- A reserved server and a Team Test server look the same (a PrivateServerId, no owner), and Team Test's
+-- server isn't IsStudio(). Only our squads arrive with teleport data (QueueService: Squad), so the first
+-- player to join a private server settles it: squad data = a match server; none = Team Test, which plays
+-- like Studio (lobby, runs on this server, no teleports). Public servers are lobbies straight away.
+MatchService.Reserved = game.PrivateServerId ~= "" and game.PrivateServerOwnerId == 0
+MatchService.IsMatchServer = false
+MatchService.LocalRuns = RunService:IsStudio() -- runs play on this server instead of a squad's own (Studio, Team Test)
+local kindSettled = not MatchService.Reserved
+local kindEvent = Instance.new("BindableEvent")
+local function settleKind(player)
+	if kindSettled then
+		return
+	end
+	kindSettled = true
+	local data = player:GetJoinData().TeleportData
+	MatchService.IsMatchServer = type(data) == "table" and data.Squad ~= nil
+	MatchService.LocalRuns = MatchService.LocalRuns or not MatchService.IsMatchServer
+	GameState:SetAttribute("ServerKind", if MatchService.IsMatchServer then "Match" else "Lobby")
+	kindEvent:Fire()
+end
+if MatchService.Reserved then
+	Players.PlayerAdded:Connect(settleKind) -- connected at require, before any service sees the player
+	for _, player in Players:GetPlayers() do
+		settleKind(player)
+	end
+end
+
+-- Yields until the kind of server is known (only a private server waits, for its first player).
+function MatchService:WaitForKind()
+	if not kindSettled then
+		kindEvent.Event:Wait()
+	end
+end
 local Services
 local inRun = {} -- [Player] = true for participants of the current run
 local dead = {} -- [Player] = true if their character died during this run
@@ -93,6 +126,7 @@ function MatchService:Init(services)
 end
 
 function MatchService:Start()
+	self:WaitForKind()
 	if not self.IsMatchServer then
 		return -- lobby server: QueueService runs the pads (and calls :RunMatch in Studio)
 	end

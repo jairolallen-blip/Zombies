@@ -1,6 +1,6 @@
 # MatchService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/MatchService.luau` (723 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/MatchService.luau` (757 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -31,7 +31,7 @@ Writes GameState attributes (ServerKind, Phase, Wave, TotalWaves, Timer, Zombies
 MapId, Tutorial) and player attribute InRun. Wave sizes/timings come from GameConfig.Waves.
 
 Public:
-  MatchService.IsMatchServer
+  MatchService.IsMatchServer, .LocalRuns, :WaitForKind()   what kind of server this is (see below)
   MatchService:RunMatch(players, options), :IsRunning()
   MatchService:IsInRun(player), :IsAliveInRun(player), :GetRunPlayers()
   MatchService:SpawnInLobby(player), :SpawnInArena(player, cframe?)

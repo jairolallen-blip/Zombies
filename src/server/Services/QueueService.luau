@@ -98,17 +98,17 @@ function QueueService:Init(services)
 	Players.PlayerRemoving:Connect(function(player)
 		warnedFull[player] = nil
 	end)
-	if Services.MatchService.IsMatchServer then
-		return
-	end
-	for id, part in Services.MapService:GetPads() do
+	for id, part in Services.MapService:GetPads() do -- (unused on a match server: Start never ticks them)
 		pads[id] = { Id = id, Part = part, Nightmare = part.Parent:GetAttribute("Nightmare") == true, Members = {} }
 		pads[id].Options = defaultOptions(pads[id])
 	end
 	Services.DataService.ProfileLoaded:Connect(function(player, profile)
+		if Services.MatchService.IsMatchServer then
+			return -- settled by now: the player's arrival decides it (MatchService)
+		end
 		if profile.TutorialDone then
 			Services.DataService:Funnel(player, 11, "Reached the lobby")
-		elseif not RunService:IsStudio() then
+		elseif not Services.MatchService.LocalRuns then
 			Remotes.Notify:FireClient(player, "First time here? Overwatch is flying you out for a training drop...", "Info")
 			if not teleport({ player }, { Tutorial = true, Squad = { player.UserId } }, true) then
 				Remotes.Notify:FireClient(player, "Couldn't reach the training drop, so welcome to the safehouse!", "Danger")
@@ -118,6 +118,7 @@ function QueueService:Init(services)
 end
 
 function QueueService:Start()
+	Services.MatchService:WaitForKind()
 	if Services.MatchService.IsMatchServer then
 		return
 	end
@@ -207,7 +208,7 @@ function QueueService:_tick(dt)
 		end
 	end
 	-- countdowns
-	local busy = RunService:IsStudio() and MatchService:IsRunning()
+	local busy = MatchService.LocalRuns and MatchService:IsRunning()
 	for _, pad in pads do
 		if #pad.Members > 0 and not pad.Launching then
 			pad.Timer = pad.Timer or cfg.IntermissionTime
@@ -232,7 +233,7 @@ function QueueService:_launch(pad)
 	local squad = table.clone(pad.Members)
 	local options = table.clone(pad.Options)
 	self:_publish(pad)
-	if RunService:IsStudio() then
+	if Services.MatchService.LocalRuns then -- Studio and Team Test can't teleport: play it here
 		pad.Launching = false
 		Services.MatchService:RunMatch(squad, options) -- members leave the pad as they spawn in the arena
 	else
