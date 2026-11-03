@@ -1,6 +1,6 @@
 # BossController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/BossController.luau` (744 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/BossController.luau` (794 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 

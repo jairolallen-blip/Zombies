@@ -319,8 +319,28 @@ function BossController:PlayDeath(data)
 	local B = data.BurstAt
 	local corpse = data.Corpse
 	local pivot = corpse and corpse.Parent and corpse:GetPivot()
-	local glow, bits = nil, {}
+	local glow, bits, limbs = nil, {}, {}
+	local corpseRoot = corpse and corpse:FindFirstChild("Root")
+	local scale0 = pivot and corpse:GetScale()
 	if pivot then
+		-- the server anchored every part, so the body would hold its walk pose (arms straight out); each frame
+		-- the limbs are placed by hand through their Motor6D (C0 * pose * C1^-1), with the parts welded to them
+		if corpseRoot then
+			for _, n in { "LeftArm", "RightArm", "LeftLeg", "RightLeg" } do
+				local motor = corpseRoot:FindFirstChild(n)
+				local limb = motor and motor:IsA("Motor6D") and motor.Part1
+				if limb then
+					local attached = {}
+					for _, d in corpse:GetDescendants() do
+						local other = if not d:IsA("JointInstance") then nil elseif d.Part0 == limb then d.Part1 elseif d.Part1 == limb then d.Part0 else nil
+						if other and other ~= corpseRoot then
+							table.insert(attached, { Part = other, Offset = limb.CFrame:ToObjectSpace(other.CFrame) })
+						end
+					end
+					limbs[n] = { Motor = motor, Limb = limb, Attached = attached }
+				end
+			end
+		end
 		glow = Instance.new("Highlight")
 		glow.FillColor = POD
 		glow.OutlineColor = Color3.fromRGB(255, 255, 200)
@@ -352,7 +372,8 @@ function BossController:PlayDeath(data)
 		local orbit = Vector3.new(math.cos(angle), 0, math.sin(angle))
 		local from, look
 		if t < B then -- circling as it staggers, sinks and bursts apart
-			from = P + orbit * H * (2.4 - 0.4 * swell) + Vector3.yAxis * H * 0.35
+			local close = smooth((t - B + 1.2) / 1.2) -- pushes in on it for the last moments
+			from = P + orbit * H * (2.4 - 0.4 * swell - 0.5 * close) + Vector3.yAxis * H * 0.35
 			look = P + Vector3.yAxis * H * 0.15
 			while popped < #POPS and t >= POPS[popped + 1] * B do
 				popped += 1
@@ -378,7 +399,36 @@ function BossController:PlayDeath(data)
 				corpse:ScaleTo(1 + 0.3 * swell - 0.12 * squeeze + 0.05 * jolt)
 				corpse:PivotTo(pivot
 					* CFrame.new(sway * 0.35 * s + math.noise(t * 25, 1) * 0.12 * jolt * s, -sink * H * 0.16, math.noise(t * 25, 2) * 0.12 * jolt * s)
-					* CFrame.Angles(0.22 * sink + 0.08 * jolt, 0, 0.12 * sway))
+					* CFrame.Angles(0.22 * sink + 0.08 * jolt - 0.4 * squeeze, 0, 0.12 * sway))
+				-- arms: thrown up flailing at first, then clutching its gut, flung out by every pop, and spread
+				-- wide as it arches back just before it bursts; legs stagger, then the knees give
+				local flail = 1 - smooth((t - B * 0.25) / (B * 0.15))
+				local k = corpse:GetScale() / scale0
+				local function pose(name, rot)
+					local L = limbs[name]
+					if not L then
+						return
+					end
+					local cf = corpseRoot.CFrame * L.Motor.C0 * rot * L.Motor.C1:Inverse()
+					L.Limb.CFrame = cf
+					for _, a in L.Attached do
+						a.Part.CFrame = cf * (a.Offset - a.Offset.Position + a.Offset.Position * k)
+					end
+				end
+				for i, side in { -1, 1 } do
+					local arm = if side < 0 then "LeftArm" else "RightArm"
+					do
+						local x = (1.7 + 0.5 * math.sin(t * 9 + i * 2)) * flail + (-0.5 + 0.25 * math.sin(t * 14 + i)) * (1 - flail)
+						local z = side * (0.5 * flail - 0.6 * (1 - flail))
+						x += jolt * 2.2 * math.noise(popped * 1.3, i)
+						z += jolt * side * 0.5
+						x += (2.3 + 0.15 * math.sin(t * 30) - x) * squeeze
+						z += (side * 1 - z) * squeeze
+						pose(arm, CFrame.Angles(x, 0, z))
+					end
+					local step = 0.35 * math.sin(t * 2.3) * side * (1 - sink)
+					pose(if side < 0 then "LeftLeg" else "RightLeg", CFrame.Angles(step + 1.1 * sink * (1 - 0.5 * squeeze), 0, side * 0.15 * sink))
+				end
 				glow.FillTransparency = math.clamp(0.85 - 0.5 * swell + 0.12 * math.sin(t * (6 + 24 * swell)) - 0.15 * jolt, 0.3, 1) -- never a flat silhouette
 			end
 		else -- pull back and follow the spores up into the clearing sky
