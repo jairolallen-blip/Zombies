@@ -26,6 +26,7 @@ Each spec also has Muzzle (Vector3) and optionally Hub (Vector3) for spinning ba
 ## Used by
 
 - [[CombatService]]
+- [[OurLobby]]
 - [[ShopController]]
 - [[ViewmodelController]]
 

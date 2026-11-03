@@ -30,6 +30,8 @@ Each class figure has its own pose and kit (`Shared/ClassFigures`, upgraded 2026
 - **Engineer:** a hard hat with headlamp, hi-vis vest, tool belt and wrench.
 - **Bruiser:** a visored helmet, armour plates, riot shield and sledgehammer.
 
+**The armory area** (revamped 2026-11-03) is the barracks' twin across the plaza: the same plank deck and tent, a hazard-striped front beam, an amber neon-framed sign and string lights. Its back wall is a gun wall: every gun hangs on pegs in a column per Level, under a LEVEL n header with neon strips and a spotlight in that Level's colour. A new gun in `Config/Weapons` shows up there on the next rebuild. A waist-high gunsmith's bench at the front holds two guns in cases and a box of rounds; a shot-up target hangs on the north wall. Rebuild only that area with `OurLobby.Rebuild("Armory")`.
+
 **The barracks area** is an open army tent on a plank deck. It has string lights, a sign under the front beam, and pedestals spaced 5 studs apart. Each pedestal has a neon ring, a nameplate and a spotlight in its class colour. Lockers, a weapon rack and crates sit at the back, with sandbags at the front corners. Rebuild only that area with `OurLobby.RebuildBarracks()`, which keeps every other hand edit.
 
 The lobby screen keeps only a small chip (Gems, best wave, class, gun lineup, where the shops are) and the take-off status. Both scale with the screen height (`UIKit.AutoScale`, 2026-11-02). The chip sits at 0.75 on top of that, and the status bar is 560 wide so the prompt fits on one line.

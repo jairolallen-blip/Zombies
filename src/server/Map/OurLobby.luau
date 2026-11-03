@@ -17,6 +17,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("Config"):WaitForChild("GameConfig"))
 local Classes = require(ReplicatedStorage.Shared.Config.Classes)
 local ClassFigures = require(ReplicatedStorage.Shared.ClassFigures)
+local GunModels = require(ReplicatedStorage.Shared.GunModels)
+local Util = require(ReplicatedStorage.Shared.Util)
+local Weapons = require(ReplicatedStorage.Shared.Config.Weapons)
 
 local OurLobby = {}
 
@@ -305,28 +308,157 @@ local function buildHelipad(parent)
 	sign(board, Enum.NormalId.Back, "DEPLOY ZONE", C.Line, Color3.fromRGB(25, 25, 25))
 end
 
+-- Gun on display: a GunModels gun as anchored parts, scaled to fit maxLength and centred on cframe
+-- (cframe gives its facing in gun space: the gun points along -Z, +Y up).
+local function displayGun(parent, id, level, cframe, maxLength)
+	local tool = GunModels.BuildTool(Util.GetWeaponStats(id, level))
+	local gun = Instance.new("Model")
+	gun.Name = id
+	for _, child in tool:GetChildren() do
+		if child:IsA("BasePart") then
+			child.Anchored = true
+			child.Parent = gun
+		end
+	end
+	tool:Destroy()
+	gun.PrimaryPart = gun:FindFirstChild("Handle")
+	local _, size = gun:GetBoundingBox()
+	gun:ScaleTo(math.min(1.25, maxLength / size.Z))
+	gun:PivotTo(cframe)
+	local box = gun:GetBoundingBox()
+	gun:PivotTo(gun:GetPivot() + (cframe.Position - box.Position)) -- centre the gun, not its grip
+	gun.Parent = parent
+	return gun
+end
+
+-- Armory: the barracks' twin across the plaza (revamped 2026-11-03), an open-front tent on a plank
+-- deck facing the plaza (east). The back is a gun wall with every gun (the real GunModels) in a column
+-- per Level under a header, neon strips and a spotlight in the Level colour. A gunsmith's bench at the
+-- front holds two guns in cases; amber-lit sign, hazard-striped beam, string lights, a shot-up
+-- target, crates and sandbags at the front corners.
 local function buildArmory(parent)
 	local m = model(parent, "Armory")
-	local c = at(-30, GROUND_Y, PLAZA.Z)
-	for _, corner in { { -6, -8 }, { 6, -8 }, { -6, 8 }, { 6, 8 } } do
-		part(m, "Post", Vector3.new(0.6, 9, 0.6), c * CFrame.new(corner[1], 4.5, corner[2]), C.Metal, Enum.Material.Metal)
+	local cx, cz = -30, PLAZA.Z
+	local c = at(cx, GROUND_Y, cz) * CFrame.Angles(0, math.pi, 0) -- deck front edge centre; +X = back of the tent (west)
+	local DECK = 0.6
+	local warm = Color3.fromRGB(255, 200, 120)
+	local amber = Color3.fromRGB(255, 190, 40)
+	local side = CFrame.fromMatrix(Vector3.zero, Vector3.new(-1, 0, 0), Vector3.new(0, 1, 0)) -- gun on its side, right side to the plaza
+	local flat = CFrame.fromMatrix(Vector3.zero, Vector3.new(0, 1, 0), Vector3.new(-1, 0, 0)) -- gun lying flat
+
+	-- deck, step and tent: the same frame as the barracks, so the two read as a pair
+	part(m, "Deck", Vector3.new(16, DECK, 27), c * CFrame.new(8, DECK / 2, 0), C.Wood, Enum.Material.WoodPlanks)
+	part(m, "DeckEdge", Vector3.new(0.3, DECK + 0.05, 27.2), c * CFrame.new(0, DECK / 2, 0), C.Metal, Enum.Material.Metal)
+	part(m, "Step", Vector3.new(1.6, DECK / 2, 10), c * CFrame.new(-0.8, DECK / 4, 0), C.Wood, Enum.Material.WoodPlanks)
+	for _, corner in { { 0.5, -13 }, { 0.5, 13 }, { 15.5, -13 }, { 15.5, 13 } } do
+		part(m, "Post", Vector3.new(0.6, 10.5, 0.6), c * CFrame.new(corner[1], DECK + 5.25, corner[2]), C.Metal, Enum.Material.Metal)
+	end
+	part(m, "FrontBeam", Vector3.new(0.6, 0.8, 27), c * CFrame.new(0.5, DECK + 10.2, 0), C.Metal, Enum.Material.Metal)
+	for i = -12, 12 do -- hazard stripes along the beam
+		part(m, "Hazard", Vector3.new(0.05, 0.6, 0.35), c * CFrame.new(0.18, DECK + 10.2, i * 1.05) * CFrame.Angles(math.rad(35), 0, 0), amber, Enum.Material.SmoothPlastic, { CanCollide = false })
 	end
 	for _, s in { -1, 1 } do
-		part(m, "Canvas", Vector3.new(7.4, 0.3, 18), c * CFrame.new(s * 3.3, 10.2, 0) * CFrame.Angles(0, 0, s * math.rad(-22)), C.Canvas, Enum.Material.Fabric)
+		part(m, "Roof", Vector3.new(8.8, 0.3, 28), c * CFrame.new(8 + s * 4, DECK + 11.6, 0) * CFrame.Angles(0, 0, s * -0.3), C.Canvas, Enum.Material.Fabric)
 	end
-	part(m, "Table", Vector3.new(4, 0.5, 12), c * CFrame.new(2, 3.6, 0), C.Wood, Enum.Material.WoodPlanks)
-	for _, dz in { -5, 5 } do
-		part(m, "Leg", Vector3.new(3.6, 3.4, 0.4), c * CFrame.new(2, 1.7, dz), C.Metal, Enum.Material.Metal)
+	part(m, "BackWall", Vector3.new(0.3, 10.5, 26.4), c * CFrame.new(15.6, DECK + 5.25, 0), C.Canvas:Lerp(Color3.new(), 0.15), Enum.Material.Fabric)
+	for _, s in { -1, 1 } do
+		part(m, "SideWall", Vector3.new(9, 10.5, 0.3), c * CFrame.new(11, DECK + 5.25, s * 13.1), C.Canvas:Lerp(Color3.new(), 0.1), Enum.Material.Fabric)
 	end
-	for i = -2, 2 do
-		part(m, "GunCase", Vector3.new(1.4, 0.7, 1.9), c * CFrame.new(2, 4.2, i * 2.3) * CFrame.Angles(0, rng:NextNumber(-0.2, 0.2), 0), C.Crate, Enum.Material.Metal)
+
+	-- sign under the front beam, framed in amber neon
+	local board = part(m, "Sign", Vector3.new(0.3, 2.2, 13), c * CFrame.new(0.3, DECK + 8.7, 0), C.Charred, Enum.Material.Metal)
+	sign(board, Enum.NormalId.Left, "ARMORY · GUNS", Color3.fromRGB(30, 28, 22), amber)
+	for _, y in { -1.16, 1.16 } do
+		part(m, "SignFrame", Vector3.new(0.12, 0.12, 13.2), c * CFrame.new(0.12, DECK + 8.7 + y, 0), amber, Enum.Material.Neon, { CanCollide = false })
 	end
-	for _, pos in { { -3, -5 }, { -3, -2.5 }, { -3.2, -3.8, 2 }, { -3, 5 } } do
-		part(m, "AmmoCrate", Vector3.new(2.4, 2, 2.4), c * CFrame.new(pos[1], 1 + (if pos[3] then 2 else 0), pos[2]), C.Crate, Enum.Material.WoodPlanks)
+	for _, z in { -6.6, 6.6 } do
+		part(m, "SignFrame", Vector3.new(0.12, 2.44, 0.12), c * CFrame.new(0.12, DECK + 8.7, z), amber, Enum.Material.Neon, { CanCollide = false })
 	end
-	local board = part(m, "Sign", Vector3.new(0.3, 3, 12), c * CFrame.new(6.4, 7.4, 0), C.Charred, Enum.Material.Metal)
-	sign(board, Enum.NormalId.Right, "ARMORY · GUNS", Color3.fromRGB(30, 34, 28), Color3.fromRGB(150, 255, 90))
-	shopPrompt(m, c * CFrame.new(5, 3, 0), "Armory", "Browse guns")
+
+	-- string lights sagging along the front beam
+	for i = -6, 6 do
+		local z = i * 2.1
+		local sag = 0.8 * (1 - (z / 13) ^ 2)
+		local bulb = part(m, "Bulb", Vector3.new(0.45, 0.45, 0.45), c * CFrame.new(0.1, DECK + 9.6 - sag, z), warm, Enum.Material.Neon, { Shape = Enum.PartType.Ball, CanCollide = false })
+		if i % 3 == 0 then
+			local light = Instance.new("PointLight")
+			light.Color = warm
+			light.Range = 14
+			light.Brightness = 0.9
+			light.Parent = bulb
+		end
+	end
+
+	-- gun wall: a column per Level, every gun of that Level hung on pegs, a spotlight in the Level colour
+	part(m, "GunWall", Vector3.new(0.3, 7.8, 25), c * CFrame.new(15.25, DECK + 5.3, 0), Color3.fromRGB(96, 86, 70), Enum.Material.WoodPlanks)
+	for level = 1, Weapons.Levels do
+		local color = GameConfig.WeaponTiers[level].Color
+		local z = (level - (Weapons.Levels + 1) / 2) * 6.2
+		local header = part(m, "LevelHeader", Vector3.new(0.25, 1, 5.4), c * CFrame.new(15, DECK + 8.3, z), C.Charred, Enum.Material.Metal)
+		sign(header, Enum.NormalId.Left, "LEVEL " .. level, Color3.fromRGB(22, 24, 22), color)
+		for _, y in { 7.7, 1.8 } do
+			part(m, "LevelStrip", Vector3.new(0.12, 0.14, 5.4), c * CFrame.new(14.98, DECK + y, z), color, Enum.Material.Neon, { CanCollide = false })
+		end
+		for i, id in Weapons.ForLevel(level) do
+			local y = DECK + 8.4 - i * 1.6
+			displayGun(m, id, level, c * CFrame.new(14.7, y, z) * side, 4.4)
+			for _, dz in { -1.3, 1.3 } do
+				part(m, "Peg", Vector3.new(0.6, 0.12, 0.12), c * CFrame.new(14.85, y - 0.5, z + dz), C.Metal, Enum.Material.Metal, { CanCollide = false })
+			end
+		end
+		local lampAt = c * CFrame.new(11.5, DECK + 9.6, z)
+		local lamp = part(m, "WallLamp", Vector3.new(0.9, 0.6, 0.9), CFrame.lookAt(lampAt.Position, (c * CFrame.new(15, DECK + 4.5, z)).Position), C.Metal, Enum.Material.Metal, { CanCollide = false })
+		local spot = Instance.new("SpotLight")
+		spot.Face = Enum.NormalId.Front
+		spot.Angle = 60
+		spot.Range = 14
+		spot.Brightness = 3.5
+		spot.Color = color:Lerp(Color3.new(1, 1, 1), 0.5)
+		spot.Parent = lamp
+	end
+
+	-- gunsmith's bench: two guns in cases, a box of rounds between them
+	local bench = c * CFrame.new(7, DECK - 0.6, 0) -- waist high, so the wall shows over it
+	part(m, "BenchTop", Vector3.new(2.6, 0.35, 12), bench * CFrame.new(0, 3.3, 0), C.Wood, Enum.Material.WoodPlanks)
+	part(m, "BenchFront", Vector3.new(0.3, 3.1, 12), bench * CFrame.new(-1.15, 1.55, 0), C.Metal, Enum.Material.Metal)
+	part(m, "BenchTrim", Vector3.new(0.12, 0.14, 12.1), bench * CFrame.new(-1.32, 3.05, 0), amber, Enum.Material.Neon, { CanCollide = false })
+	for _, dz in { -5.85, 5.85 } do
+		part(m, "BenchSide", Vector3.new(2.4, 3.1, 0.3), bench * CFrame.new(0, 1.55, dz), C.Metal, Enum.Material.Metal)
+	end
+	for k, id in { "Shotgun", "AssaultRifle" } do
+		local z = if k == 1 then -3 else 3
+		part(m, "GunCase", Vector3.new(1.8, 0.35, 4.6), bench * CFrame.new(0, 3.65, z), C.Charred, Enum.Material.Metal)
+		part(m, "CaseFoam", Vector3.new(1.6, 0.05, 4.4), bench * CFrame.new(0, 3.84, z), Color3.fromRGB(40, 40, 46), Enum.Material.Fabric)
+		displayGun(m, id, Weapons.List[id].Level, bench * CFrame.new(0, 4.15, z) * flat, 4.2)
+	end
+	local box = part(m, "AmmoBox", Vector3.new(1, 0.6, 1.2), bench * CFrame.new(0, 3.78, 0), C.Crate, Enum.Material.Metal)
+	for k = -1, 1 do
+		cylinder(m, "Round", 0.5, 0.18, box.CFrame * CFrame.new(k * 0.25, 0.55, k * 0.2), C.Line, Enum.Material.Metal, { CanCollide = false })
+	end
+
+	-- shot-up target on the north wall, crates at the back corners, a drum by the front
+	local target = c * CFrame.new(9, DECK + 5.6, -12.9) * CFrame.Angles(0, math.rad(90), 0)
+	for k, d in { 3.2, 2.4, 1.6, 0.8 } do
+		local ring = part(m, "Target", Vector3.new(0.05, d, d), target * CFrame.new(-0.03 * k, 0, 0), if k % 2 == 1 then C.White else Color3.fromRGB(190, 40, 34), Enum.Material.SmoothPlastic, { CanCollide = false })
+		ring.Shape = Enum.PartType.Cylinder
+	end
+	for _ = 1, 6 do
+		local r, a = rng:NextNumber(0, 1.4), rng:NextNumber(0, math.pi * 2)
+		local hole = part(m, "BulletHole", Vector3.new(0.05, 0.16, 0.16), target * CFrame.new(-0.15, math.sin(a) * r, math.cos(a) * r), C.Charred, Enum.Material.SmoothPlastic, { CanCollide = false })
+		hole.Shape = Enum.PartType.Cylinder
+	end
+	for _, z in { -11.5, 11.5 } do
+		part(m, "AmmoCrate", Vector3.new(2.2, 1.8, 2.2), c * CFrame.new(13.6, DECK + 0.9, z) * CFrame.Angles(0, 0.3, 0), C.Crate, Enum.Material.WoodPlanks)
+		part(m, "AmmoCrate", Vector3.new(2, 1.6, 2), c * CFrame.new(13.7, DECK + 2.6, z) * CFrame.Angles(0, -0.2, 0), C.Crate, Enum.Material.WoodPlanks)
+		part(m, "GunCrate", Vector3.new(4, 1.1, 1.3), c * CFrame.new(9.5, DECK + 0.55, z), C.Crate:Lerp(Color3.new(), 0.2), Enum.Material.Metal)
+	end
+	cylinder(m, "Drum", 3, 2, c * CFrame.new(2.2, DECK + 1.5, 11), C.Rust, Enum.Material.Metal)
+
+	-- sandbags guarding the front corners
+	sandbagWall(m, Vector3.new(cx + 1.5, 0, cz - 13.5), Vector3.new(cx + 1.5, 0, cz - 7), 2)
+	sandbagWall(m, Vector3.new(cx + 1.5, 0, cz + 7), Vector3.new(cx + 1.5, 0, cz + 13.5), 2)
+
+	shopPrompt(m, c * CFrame.new(1.5, 3, 0), "Armory", "Browse guns")
 end
 
 -- Barracks: an open-front army tent on a plank deck, one class figure per pedestal facing the plaza
@@ -489,8 +621,8 @@ local function buildCommendations(parent)
 end
 
 -- Rebuilds one area inside the baked lobby (keeps every other hand edit):
---   require(<clone of this module>).Rebuild("Barracks")   -- or "Commendations"
-local AREAS = { Barracks = buildBarracks, Commendations = buildCommendations }
+--   require(<clone of this module>).Rebuild("Barracks")   -- or "Armory", "Commendations"
+local AREAS = { Armory = buildArmory, Barracks = buildBarracks, Commendations = buildCommendations }
 function OurLobby.Rebuild(name)
 	origin = GameConfig.OurMap.LobbyCenter
 	rng = Random.new(2611)
@@ -575,7 +707,7 @@ local function buildDebris(parent)
 		local x, z = rng:NextNumber(-HALF + 8, HALF - 8), rng:NextNumber(-HALF + 6, HALF - 6)
 		local nearPlaza = math.abs(x - PLAZA.X) < 26 and math.abs(z - PLAZA.Z) < 26
 		local nearPad = (Vector3.new(x, 0, z) - HELIPAD).Magnitude < 20
-		local inBarracks = x > 27 and x < 48 and math.abs(z - PLAZA.Z) < 16
+		local inBarracks = math.abs(x) > 27 and math.abs(x) < 48 and math.abs(z - PLAZA.Z) < 16 -- and the armory
 		local atBoard = math.abs(x) < 16 and z > 33 and z < 52
 		if not nearPlaza and not nearPad and not inBarracks and not atBoard then
 			local s = rng:NextNumber(1, 3.5)

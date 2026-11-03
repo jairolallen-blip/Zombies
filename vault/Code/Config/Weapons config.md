@@ -48,6 +48,7 @@ Fields:
 - [[HUDController]]
 - [[LobbyController]]
 - [[LobbyService]]
+- [[OurLobby]]
 - [[ShopController]]
 - [[Util]]
 

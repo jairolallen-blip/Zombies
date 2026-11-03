@@ -23,6 +23,7 @@ Formulas here are used by BOTH server (authoritative) and client (UI), so they a
 - [[EconomyService]]
 - [[HUDController]]
 - [[LobbyController]]
+- [[OurLobby]]
 - [[ShopController]]
 - [[StoreController]]
 - [[ViewmodelController]]
