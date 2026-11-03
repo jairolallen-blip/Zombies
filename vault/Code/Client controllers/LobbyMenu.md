@@ -13,7 +13,7 @@ Built by LobbyController:Init into its root; LobbyController keeps the squad pan
   top left     profile card: level badge, name, rank, XP bar, Gems (+ opens the Gem packs), best wave,
                class, and the four loadout guns as chips in their Level colours
   right        menu tiles: SHOP, WEAPONS, CLASSES, BOUNTIES, INVITE (shops open in place, no walk needed)
-  bottom       a big pulsing QUICK PLAY over the deploy hint strip
+  bottom       the deploy hint strip over a wide pulsing QUICK PLAY
 menu:Refresh() re-reads the player's attributes; menu:Enter() slides everything in (each time the lobby shows).
 ```
 

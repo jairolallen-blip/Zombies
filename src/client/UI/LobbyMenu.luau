@@ -4,7 +4,7 @@
 --   top left     profile card: level badge, name, rank, XP bar, Gems (+ opens the Gem packs), best wave,
 --                class, and the four loadout guns as chips in their Level colours
 --   right        menu tiles: SHOP, WEAPONS, CLASSES, BOUNTIES, INVITE (shops open in place, no walk needed)
---   bottom       a big pulsing QUICK PLAY over the deploy hint strip
+--   bottom       the deploy hint strip over a wide pulsing QUICK PLAY
 -- menu:Refresh() re-reads the player's attributes; menu:Enter() slides everything in (each time the lobby shows).
 
 local Players = game:GetService("Players")
@@ -91,7 +91,7 @@ function LobbyMenu.new(root)
 
 	-- profile card
 	local card = panel({ Name = "Profile", Position = UDim2.fromOffset(16, 64), Size = UDim2.fromOffset(404, 216), Parent = root })
-	new("UIScale", { Scale = 0.8, Parent = card }) -- owner: smaller
+	new("UIScale", { Scale = 0.88, Parent = card }) -- owner: smaller
 	table.insert(self.Slides, { card, UDim2.fromOffset(-440, 64) })
 	local badge = new("Frame", { Position = UDim2.fromOffset(12, 12), Size = UDim2.fromOffset(64, 64), BackgroundColor3 = AMBER, BorderSizePixel = 0, Parent = card })
 	UIKit.Stroke(Color3.fromRGB(255, 226, 160), 2).Parent = badge
@@ -180,13 +180,13 @@ function LobbyMenu.new(root)
 		table.insert(self.Slides, { tile, UDim2.new(1, 280, 0, y), 0.05 * i })
 	end
 
-	-- deploy: hint strip (LobbyController writes its text) under a big pulsing QUICK PLAY
-	self.StatusBar = panel({ Name = "StatusBar", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -20), Size = UDim2.fromOffset(560, 52), Parent = root })
+	-- deploy: a wide pulsing QUICK PLAY at the bottom, the hint strip (LobbyController writes its text) above it
+	self.StatusBar = panel({ Name = "StatusBar", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -82), Size = UDim2.fromOffset(560, 52), Parent = root })
 	new("Frame", { Size = UDim2.new(0, 4, 1, 0), BackgroundColor3 = AMBER, BorderSizePixel = 0, Parent = self.StatusBar })
 	self.Status = text({ Position = UDim2.fromOffset(16, 0), Size = UDim2.new(1, -28, 1, 0), TextSize = 16, TextWrapped = true, TextColor3 = Color3.fromRGB(226, 228, 232), TextXAlignment = Enum.TextXAlignment.Center, Parent = self.StatusBar })
 	table.insert(self.Slides, { self.StatusBar, UDim2.new(0.5, 0, 1, 80) })
 
-	local play = new("TextButton", { Name = "QuickPlay", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -82), Size = UDim2.fromOffset(460, 52), Text = "", AutoButtonColor = false, BackgroundColor3 = PLAY, BorderSizePixel = 0, ClipsDescendants = true, Parent = root })
+	local play = new("TextButton", { Name = "QuickPlay", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -20), Size = UDim2.fromOffset(460, 52), Text = "", AutoButtonColor = false, BackgroundColor3 = PLAY, BorderSizePixel = 0, ClipsDescendants = true, Parent = root })
 	self.QuickPlay = play
 	self.PlayStroke = new("UIStroke", { Color = Color3.fromRGB(220, 255, 200), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = play })
 	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 190, 160)), Parent = play })
