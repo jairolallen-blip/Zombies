@@ -97,7 +97,7 @@ function MatchService:Start()
 	end
 	local players, options = self:_awaitSquad()
 	self:RunMatch(players, options)
-	Services.QueueService:ReturnToLobby(Players:GetPlayers())
+	Services.QueueService:ReturnToLobby(Players:GetPlayers(), { Results = self.LastResults }) -- the lobby's run report (WelcomeController)
 end
 
 -- Match server: the squad's teleport data (set by QueueService) lists who's coming. Start once all of
@@ -656,6 +656,7 @@ function MatchService:RunMatch(participants, options)
 end
 
 function MatchService:_endRun(wave, wavesCleared, victory)
+	self.LastResults = {} -- [tostring(UserId)] = this run's results, carried back to the lobby server (Start)
 	self:_radio(if victory then "Victory" else "Overrun")
 	GameState:SetAttribute("RunWon", victory == true)
 	GameState:SetAttribute("Phase", "Results")
@@ -692,7 +693,9 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 					DataService:AddStat(player, "NightmareWins")
 				end
 			end
-			Remotes.RunResults:FireClient(player, { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest, Victory = victory, Tutorial = tutorial, Nightmare = nightmare })
+			local results = { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest, Victory = victory, Tutorial = tutorial, Nightmare = nightmare }
+			self.LastResults[tostring(player.UserId)] = results
+			Remotes.RunResults:FireClient(player, results)
 		end
 	end
 	task.wait(if tutorial then Tutorial.ResultsTime else GameConfig.Match.ResultsTime)

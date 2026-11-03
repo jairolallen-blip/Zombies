@@ -66,6 +66,7 @@ Server -> Client
 - [[TouchController]]
 - [[TutorialService]]
 - [[WeaponController]]
+- [[WelcomeController]]
 - [[ZombieService]]
 
 ## Mentions

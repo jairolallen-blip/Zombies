@@ -279,7 +279,8 @@ end
 
 -- Match server, run over: everyone goes back to a lobby server together. Retries a few times; anyone
 -- still here after that is kicked with a message rather than stranded on an empty match server.
-function QueueService:ReturnToLobby(players)
+-- data: teleport data for the lobby server (MatchService passes each player's run results)
+function QueueService:ReturnToLobby(players, data)
 	for attempt = 1, 3 do
 		local here = {}
 		for _, player in players do
@@ -290,7 +291,7 @@ function QueueService:ReturnToLobby(players)
 		if #here == 0 then
 			return
 		end
-		teleport(here, nil, false)
+		teleport(here, data, false)
 		task.wait(15)
 	end
 	for _, player in players do

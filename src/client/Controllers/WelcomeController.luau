@@ -5,16 +5,22 @@
 -- ZombieService) running past right to left. ViewportFrames draw no particles or lights, so fire, smoke and
 -- embers are neon / translucent parts animated each frame, and distance is faked by fading colours toward
 -- the sky. On the right: your stats, the tracked bounty, and ENTER SAFEHOUSE (also Enter / gamepad A).
+-- Run report (2026-11-03): after every run the same screen comes back as a report once you're at the
+-- safehouse: VICTORY / OVERRUN / TRAINING DONE and that run's wave, kills, Gems and waves cleared. The
+-- results come from Remotes.RunResults when the run played on this server (Studio), or from the teleport
+-- data a match server sends back (MatchService.LastResults via QueueService:ReturnToLobby).
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameState = require(Shared.GameState)
+local Remotes = require(Shared.Remotes)
 local Zombies = require(Shared.Config.Zombies)
 local Bounties = require(Shared.Config.Bounties)
 local Survivors = require(Shared.Config.Survivors)
@@ -271,7 +277,8 @@ local function tile(parent, label, value, color, order)
 	return f
 end
 
-function WelcomeController:Show()
+-- results: a finished run's RunResults (the run report), or nil for the plain welcome
+function WelcomeController:Show(results)
 	local gui = UIKit.Screen("Welcome")
 	gui.DisplayOrder = 60
 	local step = buildScene(gui)
@@ -299,9 +306,22 @@ function WelcomeController:Show()
 		table.insert(fade, l)
 		return l
 	end
-	text({ Text = "SAFEHOUSE  //  PORT HARROW", Size = UDim2.new(1, 0, 0, 18), Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(255, 170, 90) })
-	text({ Text = "WELCOME BACK,", Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 30), Font = Enum.Font.GothamBold, TextSize = 26, TextColor3 = Color3.fromRGB(230, 220, 210) })
-	text({ Text = string.upper(player.DisplayName), Position = UDim2.fromOffset(0, 56), Size = UDim2.new(1, 0, 0, 62), Font = Enum.Font.GothamBlack, TextScaled = true, TextColor3 = Color3.fromRGB(255, 255, 255) })
+	if results then -- run report: the outcome is the headline, your name goes on the line above it
+		local mode = if results.Tutorial then "TRAINING" elseif results.Nightmare then "NIGHTMARE" else "PORT HARROW"
+		local outcome, color = "OVERRUN", T.Danger
+		if results.Tutorial then
+			outcome, color = "TRAINING DONE", T.Accent
+		elseif results.Victory then
+			outcome, color = if results.Nightmare then "NIGHTMARE CLEARED" else "VICTORY", T.Cash
+		end
+		text({ Text = "RUN REPORT  //  " .. mode, Size = UDim2.new(1, 0, 0, 18), Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(255, 170, 90) })
+		text({ Text = "WELCOME BACK, " .. string.upper(player.DisplayName), Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 30), Font = Enum.Font.GothamBold, TextScaled = true, TextColor3 = Color3.fromRGB(230, 220, 210) })
+		text({ Text = outcome, Position = UDim2.fromOffset(0, 56), Size = UDim2.new(1, 0, 0, 62), Font = Enum.Font.GothamBlack, TextScaled = true, TextColor3 = color })
+	else
+		text({ Text = "SAFEHOUSE  //  PORT HARROW", Size = UDim2.new(1, 0, 0, 18), Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(255, 170, 90) })
+		text({ Text = "WELCOME BACK,", Position = UDim2.fromOffset(0, 26), Size = UDim2.new(1, 0, 0, 30), Font = Enum.Font.GothamBold, TextSize = 26, TextColor3 = Color3.fromRGB(230, 220, 210) })
+		text({ Text = string.upper(player.DisplayName), Position = UDim2.fromOffset(0, 56), Size = UDim2.new(1, 0, 0, 62), Font = Enum.Font.GothamBlack, TextScaled = true, TextColor3 = Color3.fromRGB(255, 255, 255) })
+	end
 	UIKit.new("Frame", { Position = UDim2.fromOffset(0, 124), Size = UDim2.fromOffset(90, 4), BackgroundColor3 = T.Cash, BorderSizePixel = 0, Parent = panel })
 
 	-- stats
@@ -315,7 +335,14 @@ function WelcomeController:Show()
 			studied += if (s["Kills_" .. id] or 0) > 0 then 1 else 0
 		end
 	end
-	local tiles = {
+	local tiles = if results then {
+		tile(grid, if results.NewBest and not results.Tutorial then "WAVE REACHED · NEW BEST" else "WAVE REACHED", tostring(results.Wave or 0), Color3.fromRGB(255, 170, 70), 1),
+		tile(grid, "ZOMBIES KILLED", Util.FormatNumber(results.Kills or 0), Color3.fromRGB(255, 90, 80), 2),
+		tile(grid, "GEMS EARNED", if results.Nightmare and not results.Victory and not results.Tutorial then "NONE" else "+◆ " .. Util.FormatNumber(results.Gems or 0), T.Gem, 3),
+		tile(grid, "WAVES CLEARED", tostring(results.WavesCleared or 0), T.Cash, 4),
+		tile(grid, "GEMS", "◆ " .. Util.FormatNumber(player:GetAttribute("Gems") or 0), T.Gem, 5),
+		tile(grid, "ENEMIES STUDIED", studied .. " / " .. total, Color3.fromRGB(150, 255, 110), 6),
+	} else {
 		tile(grid, "GEMS", "◆ " .. Util.FormatNumber(player:GetAttribute("Gems") or 0), T.Gem, 1),
 		tile(grid, "BEST WAVE", tostring(player:GetAttribute("BestWave") or 0), Color3.fromRGB(255, 170, 70), 2),
 		tile(grid, "RUNS", Util.FormatNumber(s.Runs or 0), Color3.fromRGB(110, 170, 255), 3),
@@ -399,18 +426,32 @@ function WelcomeController:Start()
 	if GameState:GetAttribute("ServerKind") == "Match" then
 		return
 	end
+	-- a run played on this server (Studio): the report once you're back at the safehouse
+	Remotes.RunResults.OnClientEvent:Connect(function(results)
+		while player:GetAttribute("InRun") do
+			task.wait(0.3)
+		end
+		if not player.Character then
+			player.CharacterAdded:Wait()
+		end
+		task.wait(0.8) -- the character is placed and dressed in the lobby
+		self:Show(results)
+	end)
+	-- just back from a match server: its report rides on the teleport data
+	local ok, data = pcall(TeleportService.GetLocalPlayerTeleportData, TeleportService)
+	local report = ok and type(data) == "table" and type(data.Results) == "table" and data.Results[tostring(player.UserId)] or nil
 	local started = os.clock()
 	while not player:GetAttribute("AchievementsJson") and os.clock() - started < 15 do
 		task.wait(0.2)
 	end
-	if ((decode("AchievementsJson").Stats or {}).Runs or 0) < 1 or player:GetAttribute("InRun") then
+	if (not report and ((decode("AchievementsJson").Stats or {}).Runs or 0) < 1) or player:GetAttribute("InRun") then
 		return
 	end
 	if not player.Character then
 		player.CharacterAdded:Wait()
 	end
 	task.wait(0.5) -- let the avatar's clothes and accessories load
-	self:Show()
+	self:Show(if type(report) == "table" then report else nil)
 end
 
 return WelcomeController
