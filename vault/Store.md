@@ -20,5 +20,8 @@ Create each Developer Product and Game Pass on the Creator Dashboard (Monetizati
 ## How purchases stay safe
 Each receipt pays once: its id is saved in the profile with the reward, and Roblox only hears "granted" after that save succeeds. If the save fails, Roblox retries later and nothing is paid twice. See [[DataService]] and [[Servers and Teleports]] (session lock).
 
-## Later
-Gifting a purchase to another player; a "Get more Gems" link where an unlock is too expensive.
+## Gifting
+Every Gem pack has a 🎁 button. Pick someone in your server, buy as usual, and the Gems go to them (both of you get a message). If they leave before it goes through, the buyer keeps it. Passes and the Starter Pack can't be gifted.
+
+## Get more Gems
+In the Armory and the Barracks, an unlock you can't afford now opens the store on the Gem packs.

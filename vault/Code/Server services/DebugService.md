@@ -1,6 +1,6 @@
 # DebugService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/DebugService.luau` (203 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/DebugService.luau` (217 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -23,6 +23,7 @@ Not created in live servers. Add a command by adding a function to Commands.
 - [[MapService]]
 - [[MatchService]]
 - [[NavGrid]]
+- [[Store config]]
 - [[StoreService]]
 - [[ZombieService]]
 - [[Zombies config]]

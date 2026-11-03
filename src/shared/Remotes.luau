@@ -15,6 +15,7 @@
 --   SkipCutscene()                        vote to skip the deploy ride / boss intro (players with CanSkip)
 --   QuickPlay()                           lobby: put me on the fullest pad that has room (QueueService)
 --   ClaimIndex(typeId: string)              lobby: claim the Gems for a discovered zombie (DataService)
+--   SetGift(userId: number?)                the next Gem pack I buy goes to this player (StoreService)
 --   TrackBounty(id: string)                 lobby: track one of today's bounties (DataService)
 -- Server -> Client
 --   Notify(text: string, kind: "Info" | "Good" | "Danger")     toast message
@@ -40,6 +41,7 @@ local NAMES = {
 	"QuickPlay",
 	"ClaimIndex",
 	"TrackBounty",
+	"SetGift",
 	"Notify",
 	"HitConfirm",
 	"Effect",

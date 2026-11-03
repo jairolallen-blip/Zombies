@@ -133,10 +133,12 @@ local function actionButton(parent, isEquipped, isOwned, gemCost, onEquip, onUnl
 		button.Activated:Connect(onEquip)
 	else
 		local affordable = (player:GetAttribute("Gems") or 0) >= gemCost
-		button.Text = "◆ " .. Util.FormatNumber(gemCost) .. "  UNLOCK"
+		button.Text = "◆ " .. Util.FormatNumber(gemCost) .. (if affordable then "  UNLOCK" else "  GET GEMS")
 		button.BackgroundColor3 = if affordable then T.Gem else T.Disabled
 		button.TextColor3 = T.Text
-		button.Activated:Connect(onUnlock)
+		button.Activated:Connect(if affordable then onUnlock else function()
+			require(script.Parent.StoreController):Open("GEMS") -- too few Gems: straight to the Gem packs
+		end)
 	end
 end
 

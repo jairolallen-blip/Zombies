@@ -1,6 +1,6 @@
 # StoreController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/StoreController.luau` (303 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/StoreController.luau` (348 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -15,17 +15,20 @@ TRADER stall's prompt (attribute Store, built by Server/Map/FieldStations). Tabs
   PASSES    the game passes
 Buy buttons call Roblox's purchase prompts; prices come from Roblox (GetProductInfo), with Config/Store's
 Price as the fallback. An id of 0 (not created on the dashboard yet) shows SOON.
+Gem packs also have a gift button: pick a player in this server (Remotes.SetGift), then buy; StoreService
+pays them instead of you.
 ```
 
 ## Uses
 
+- [[Remotes]]
 - [[Store config]]
 - [[UIKit]]
 - [[Util]]
 
 ## Used by
 
-- (none)
+- [[ShopController]]
 
 ## Mentions
 

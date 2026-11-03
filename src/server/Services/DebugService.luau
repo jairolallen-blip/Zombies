@@ -75,6 +75,20 @@ Commands.Grant = function(id, receiptId, playerName)
 	return tostring(ok) .. " gems = " .. player:GetAttribute("Gems")
 end
 
+-- Receipt("Gems500", "r-1", buyerName?) — run a fake receipt through the real ProcessReceipt path (gifts too:
+-- the buyer's picked friend gets it). Works before the product has a real id.
+Commands.Receipt = function(id, receiptId, playerName)
+	local player = firstPlayer(playerName)
+	local entry = require(game:GetService("ReplicatedStorage").Shared.Config.Store).ById[id]
+	local real = entry.ProductId
+	if real == 0 then
+		entry.ProductId = -1 -- a stand-in id so the lookup finds it
+	end
+	local decision = Services.StoreService:_processReceipt({ PlayerId = player.UserId, ProductId = entry.ProductId, PurchaseId = receiptId or ("debug-" .. os.clock()) })
+	entry.ProductId = real
+	return tostring(decision) .. " gems = " .. player:GetAttribute("Gems")
+end
+
 -- AddStat("Kills", 100) — achievement progress for the first player
 Commands.AddStat = function(key, amount, playerName)
 	local player = firstPlayer(playerName)

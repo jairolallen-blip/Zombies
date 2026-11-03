@@ -6,6 +6,8 @@
 --   PASSES    the game passes
 -- Buy buttons call Roblox's purchase prompts; prices come from Roblox (GetProductInfo), with Config/Store's
 -- Price as the fallback. An id of 0 (not created on the dashboard yet) shows SOON.
+-- Gem packs also have a gift button: pick a player in this server (Remotes.SetGift), then buy; StoreService
+-- pays them instead of you.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -17,6 +19,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Store = require(Shared.Config.Store)
 local Util = require(Shared.Util)
+local Remotes = require(Shared.Remotes)
 local UIKit = require(script.Parent.Parent.UI.UIKit)
 
 local player = Players.LocalPlayer
@@ -176,6 +179,13 @@ function StoreController:_gems(body)
 			UIKit.Corner(4).Parent = tag
 		end
 		buyButton(c, entry, UDim2.new(1, -20, 1, -20), UDim2.fromOffset(190, 60))
+		local gift = UIKit.new("TextButton", { Name = "Gift_" .. entry.Id, AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -222, 1, -20), Size = UDim2.fromOffset(60, 60), Text = "🎁", TextSize = 32, Font = Enum.Font.GothamBlack, BackgroundColor3 = if entry.ProductId ~= 0 then Color3.fromRGB(150, 70, 220) else Color3.fromRGB(40, 38, 46), AutoButtonColor = entry.ProductId ~= 0, Parent = c })
+		UIKit.Corner(6).Parent = gift
+		gift.Activated:Connect(function()
+			if entry.ProductId ~= 0 then
+				self:_pickFriend(entry)
+			end
+		end)
 	end
 end
 
@@ -231,6 +241,40 @@ function StoreController:Open(which)
 	end)
 end
 
+-- gift picker: everyone else in this server; picking one tells the server, then opens the purchase
+function StoreController:_pickFriend(entry)
+	local old = ui.Panel:FindFirstChild("Picker")
+	if old then
+		old:Destroy()
+	end
+	local picker = UIKit.new("Frame", { Name = "Picker", Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(10, 8, 12), BackgroundTransparency = 0.08, Active = true, ZIndex = 10, Parent = ui.Panel })
+	UIKit.Corner(10).Parent = picker
+	label({ Text = "GIFT " .. entry.Name .. " TO...", Position = UDim2.fromOffset(28, 24), Size = UDim2.new(1, -56, 0, 40), TextSize = 32, TextColor3 = PINK, ZIndex = 11, Parent = picker })
+	local list = UIKit.new("ScrollingFrame", { Position = UDim2.fromOffset(28, 84), Size = UDim2.new(1, -56, 1, -170), BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 6, AutomaticCanvasSize = Enum.AutomaticSize.Y, CanvasSize = UDim2.new(), ZIndex = 11, Parent = picker })
+	UIKit.new("UIGridLayout", { CellSize = UDim2.fromOffset(300, 56), CellPadding = UDim2.fromOffset(12, 12), Parent = list })
+	local others = 0
+	for _, other in Players:GetPlayers() do
+		if other ~= player then
+			others += 1
+			local b = UIKit.new("TextButton", { Text = other.DisplayName, Font = Enum.Font.GothamBlack, TextSize = 22, TextColor3 = Color3.new(1, 1, 1), BackgroundColor3 = Color3.fromRGB(150, 70, 220), ZIndex = 12, Parent = list })
+			UIKit.Corner(6).Parent = b
+			b.Activated:Connect(function()
+				picker:Destroy()
+				Remotes.SetGift:FireServer(other.UserId)
+				MarketplaceService:PromptProductPurchase(player, entry.ProductId)
+			end)
+		end
+	end
+	if others == 0 then
+		label({ Text = "Nobody else is here yet. Invite a friend, then gift them!", Position = UDim2.fromOffset(28, 90), Size = UDim2.new(1, -56, 0, 30), TextSize = 22, Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(200, 190, 205), ZIndex = 11, Parent = picker })
+	end
+	local cancel = UIKit.new("TextButton", { Name = "Cancel", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(200, 50), Text = "CANCEL", Font = Enum.Font.GothamBlack, TextSize = 22, TextColor3 = Color3.new(1, 1, 1), BackgroundColor3 = Color3.fromRGB(60, 58, 66), ZIndex = 11, Parent = picker })
+	UIKit.Corner(6).Parent = cancel
+	cancel.Activated:Connect(function()
+		picker:Destroy()
+	end)
+end
+
 function StoreController:Close()
 	ui.Gui.Enabled = false
 end
@@ -249,6 +293,7 @@ function StoreController:Init()
 	UIKit.Corner(10).Parent = panel
 	UIKit.Stroke(PINK, 2).Parent = panel
 	ui.Scale = UIKit.new("UIScale", { Parent = panel })
+	ui.Panel = panel
 	label({ Text = "THE TRADER", Position = UDim2.fromOffset(28, 18), Size = UDim2.fromOffset(400, 40), TextSize = 36, TextColor3 = PINK, Parent = panel })
 	label({ Text = "Gems, bundles and passes. Every purchase helps keep the safehouse running.", Position = UDim2.fromOffset(28, 58), Size = UDim2.fromOffset(600, 20), TextSize = 15, Font = Enum.Font.GothamBold, TextColor3 = Color3.fromRGB(180, 170, 185), Parent = panel })
 	ui.Gems = label({ AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -86, 0, 24), Size = UDim2.fromOffset(240, 32), TextSize = 26, TextColor3 = PINK, TextXAlignment = Enum.TextXAlignment.Right, Parent = panel })

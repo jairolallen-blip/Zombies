@@ -1,6 +1,6 @@
 # ShopController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/ShopController.luau` (581 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/ShopController.luau` (583 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -28,6 +28,7 @@ LobbyService validates (SelectWeapon / SelectClass / UnlockItem).
 - [[GameConfig]]
 - [[GunModels]]
 - [[Remotes]]
+- [[StoreController]]
 - [[UIKit]]
 - [[Util]]
 - [[Weapons config]]
