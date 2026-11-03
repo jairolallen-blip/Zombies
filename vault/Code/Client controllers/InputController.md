@@ -19,4 +19,4 @@ Keys come from GameConfig.Keybinds. (Shooting/reload input lives in WeaponContro
 
 ## Used by
 
-- (none)
+- [[TouchController]]

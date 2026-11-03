@@ -50,7 +50,7 @@ local function saveAll(players)
 	local left = #players
 	for _, player in players do
 		task.spawn(function()
-			Services.DataService:Save(player)
+			Services.DataService:Save(player, true)
 			left -= 1
 		end)
 	end
@@ -85,6 +85,9 @@ function QueueService:Init(services)
 	Remotes.SetPadOptions.OnServerEvent:Connect(function(player, options)
 		self:SetOptions(player, options)
 	end)
+	Remotes.QuickPlay.OnServerEvent:Connect(function(player)
+		self:QuickPlay(player)
+	end)
 	TeleportService.TeleportInitFailed:Connect(function(player, result, message)
 		warn("[QueueService] teleport of", player.Name, "failed:", result, message)
 		Remotes.Notify:FireClient(player, "Take-off failed (" .. tostring(result) .. "). Try again in a moment.", "Danger")
@@ -99,7 +102,9 @@ function QueueService:Init(services)
 		pads[id] = { Id = id, Part = part, Members = {}, Options = defaultOptions() }
 	end
 	Services.DataService.ProfileLoaded:Connect(function(player, profile)
-		if not profile.TutorialDone and not RunService:IsStudio() then
+		if profile.TutorialDone then
+			Services.DataService:Funnel(player, 11, "Reached the lobby")
+		elseif not RunService:IsStudio() then
 			Remotes.Notify:FireClient(player, "First time here? Overwatch is flying you out for a training drop...", "Info")
 			if not teleport({ player }, { Tutorial = true, Squad = { player.UserId } }, true) then
 				Remotes.Notify:FireClient(player, "Couldn't reach the training drop, so welcome to the safehouse!", "Danger")
@@ -138,6 +143,27 @@ function QueueService:SetOptions(player, options)
 		pad.Options.Map = options.Map
 	end
 	self:_publish(pad)
+end
+
+-- QUICK PLAY button (LobbyController): move the player onto the fullest pad that still has room and isn't
+-- taking off, so solo players find a squad; an empty pad if none has players. _tick boards them as usual.
+function QueueService:QuickPlay(player)
+	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+	if not root or (player:GetAttribute("PadId") or 0) ~= 0 or Services.MatchService:IsInRun(player) then
+		return
+	end
+	local best
+	for _, pad in pads do
+		local room = not pad.Launching and #pad.Members < pad.Options.Size
+		if room and (not best or #pad.Members > #best.Members or (#pad.Members == #best.Members and pad.Id < best.Id)) then
+			best = pad
+		end
+	end
+	if not best then
+		return Remotes.Notify:FireClient(player, "Every pad is full or taking off. Try again in a moment!", "Danger")
+	end
+	local offset = Vector3.new(math.random(-4, 4), best.Part.Size.Y / 2 + 3, math.random(-4, 4))
+	player.Character:PivotTo(CFrame.new(best.Part.Position + offset))
 end
 
 function QueueService:_tick(dt)

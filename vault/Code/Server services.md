@@ -10,6 +10,7 @@ Back to [[Home]].
 - [[AirdropService]]: mid-run supply drops (tunables + rewards: Shared/Config/Airdrops).
 - [[CombatService]]: weapons (server-validated hitscan), reloads, explosions, and damage to players.
 - [[CommonsService]]: the things to do in the safehouse's Commons (vault: Lobby.md; built by Server/Map/Commons).
+- [[DailyService]]: the DAILY RATIONS cache by the lobby flag (vault: Lobby.md; built by Server/Map/DailyCache).
 - [[DataService]]: persistent player profiles (Gems, unlocks, equipped class, gun loadout, best wave).
 - [[DebugService]]: STUDIO-ONLY test commands, exposed as ServerStorage.SAMZ_Debug (BindableFunction).
 - [[EconomyService]]: per-run Cash, kills, Ultimate charge and the in-run upgrades (Weapon tier, Vitality).

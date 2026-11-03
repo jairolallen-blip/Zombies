@@ -1,6 +1,6 @@
 # MatchService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/MatchService.luau` (576 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/MatchService.luau` (633 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -40,6 +40,7 @@ Public:
 
 - [[AbilityService]]
 - [[CombatService]]
+- [[Conditions config]]
 - [[DataService]]
 - [[EconomyService]]
 - [[GameConfig]]
@@ -58,6 +59,7 @@ Public:
 - [[AbilityService]]
 - [[AirdropService]]
 - [[CombatService]]
+- [[DailyService]]
 - [[DebugService]]
 - [[EconomyService]]
 - [[LobbyService]]
@@ -68,6 +70,7 @@ Public:
 ## Mentions
 
 - [[BossController]]
+- [[SkipController]]
 
 ## Design notes
 

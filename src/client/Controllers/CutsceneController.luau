@@ -464,6 +464,7 @@ function CutsceneController:Play()
 
 	RunService:BindToRenderStep("SAMZ_Cutscene", Enum.RenderPriority.Camera.Value + 2, function()
 		local now = workspace:GetServerTimeNow()
+		start = GameState:GetAttribute("DeployStart") or start -- a squad skip moves it back (MatchService:_skippableWait)
 		local t = math.clamp((now - start) / duration, 0, 1)
 		if t >= 1 or player:GetAttribute("InRun") ~= true or player:GetAttribute("Deploying") ~= true then
 			finish()

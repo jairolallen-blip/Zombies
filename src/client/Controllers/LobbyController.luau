@@ -130,6 +130,17 @@ function LobbyController:Init()
 	ui.StatusBar = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(560, 64), Parent = ui.Root })
 	ui.Status = UIKit.Label({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), TextSize = 21, TextWrapped = true, Parent = ui.StatusBar })
 	self:_buildSquadPanel()
+	-- QUICK PLAY: onto the fullest pad with room (QueueService:QuickPlay); INVITE: Roblox's invite prompt
+	ui.QuickPlay = UIKit.Button({ Name = "QuickPlay", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -98), Size = UDim2.fromOffset(220, 44), Text = "QUICK PLAY", TextSize = 22, Parent = ui.Root }, function()
+		Remotes.QuickPlay:FireServer()
+	end)
+	ui.Invite = UIKit.Button({ Name = "Invite", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -24, 1, -24), Size = UDim2.fromOffset(200, 44), Text = "INVITE FRIENDS", TextSize = 19, Parent = ui.Root }, function()
+		local SocialService = game:GetService("SocialService")
+		local ok, can = pcall(SocialService.CanSendGameInviteAsync, SocialService, player)
+		if ok and can then
+			pcall(SocialService.PromptGameInvite, SocialService, player)
+		end
+	end)
 
 	-- match server: cover the empty world until the drop starts
 	ui.Waiting = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(10, 10, 12), Visible = false, ZIndex = 10, Parent = gui })
@@ -171,6 +182,7 @@ function LobbyController:Start()
 			local onPad = padId ~= 0 and ok and type(pad) == "table"
 			ui.Squad.Visible = onPad
 			ui.StatusBar.Visible = not onPad
+			ui.QuickPlay.Visible = not onPad
 			if onPad then
 				self:_showSquad(padId, pad)
 			elseif GameState:GetAttribute("Phase") ~= "Lobby" then -- Studio: a run plays in this server

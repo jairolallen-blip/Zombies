@@ -631,6 +631,7 @@ function OurLobby.Build()
 	require(script.Parent.FlightLine).Build(lobby) -- the 4-pad take-off deck north of the courtyard
 	require(script.Parent.Commons).Build(lobby) -- the hangout area south of the courtyard
 	require(script.Parent.Survivors).Build(lobby) -- the safehouse's people (Config/Survivors)
+	require(script.Parent.DailyCache).Build(lobby) -- DAILY RATIONS by the flag (Services/DailyService)
 	return lobby
 end
 

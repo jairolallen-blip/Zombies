@@ -1,6 +1,6 @@
 # LobbyService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/LobbyService.luau` (94 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/LobbyService.luau` (133 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 

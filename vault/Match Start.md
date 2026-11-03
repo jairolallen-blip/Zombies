@@ -35,6 +35,9 @@ Part of the [[Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and p
 - A real voice line for the pilot (it's a subtitle plus a squelch for now).
 - Players who respawn mid-run skip the cutscene and appear normally.
 
+## Skipping (2026-11-02)
+Players who have finished a run can hold Space (gamepad X, or the on-screen button) to vote to skip the deploy ride and the boss intro ([[SkipController]]). It skips once everyone in the run has voted, so a first-timer in the squad always sees it in full. A skipped ride jumps to the door, then the jump and parachute play as usual.
+
 ## Code
 [[MatchService]] runs the deploy, [[CutsceneController]] plays it, and [[RadioController]] shows [[Radio config]] lines. Sound: [[SoundController]] and [[Sounds config]].
 

@@ -29,6 +29,9 @@ Part of the [[Roadmap]]. Zombies come from the [[Zombies]] phase, and the map is
 There are +60% zombies per extra player, at most 70 alive at once, and zombie HP rises 10% per wave.
 - Tunables live in `GameConfig.Waves`.
 
+## Faster start (2026-11-02)
+Wave 1 now has 14 zombies (was 8) and each wave adds 5 (was 6), so wave 10 has 59 (was 62). The first intermission is 8s (was 12). The $500 gun upgrade now lands around the end of wave 1. Not yet rechecked with the balance bot.
+
 ## Code
 [[MapService]] picks the spot, [[ZombieService]] raises the zombie, and [[EffectsController]] draws the warning circle.
 

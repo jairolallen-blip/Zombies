@@ -49,11 +49,11 @@ GameConfig.Deploy = {
 }
 
 GameConfig.Waves = {
-	FirstBreakTime = 12, -- intermission after the drop, before wave 1
+	FirstBreakTime = 8, -- intermission after the drop, before wave 1 (was 12: a faster start)
 	BreakTime = 8, -- countdown between waves
 	-- intensity ramp over the 10 rounds (vault: Spawning.md)
-	BaseCount = 8, -- zombies in wave 1 (solo)
-	CountPerWave = 6, -- +zombies each wave (wave 10 = 62)
+	BaseCount = 14, -- zombies in wave 1 (solo); was 8, raised so the run starts busy and the $500 gun upgrade comes after wave 1
+	CountPerWave = 5, -- +zombies each wave (wave 10 = 59, close to the old 62)
 	ExtraPlayerMultiplier = 0.6, -- each extra player adds +60% zombies
 	-- a wave's spawns are spread over SpawnSeconds + SpawnSecondsPerWave * wave seconds, so late
 	-- waves are bigger AND longer instead of an instant flood (balance pass: vault Waves and Boss.md)

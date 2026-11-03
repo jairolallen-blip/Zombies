@@ -1,6 +1,6 @@
 # OurLobby
 
-> Made by `tools/vault-code-notes.js` from `src/server/Map/OurLobby.luau` (638 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Map/OurLobby.luau` (639 lines). Don't edit it here: rerun the script.
 
 Part of [[Map builders]].
 
@@ -28,6 +28,7 @@ Parts named "LobbySpawn" are read by MapService:GetLobbySpawnCFrame().
 - [[ClassFigures]]
 - [[Classes config]]
 - [[Commons]]
+- [[DailyCache]]
 - [[FlightLine]]
 - [[GameConfig]]
 - [[Survivors map]]

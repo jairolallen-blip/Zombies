@@ -31,5 +31,6 @@ Public (used by WeaponController, InputController, HUDController, ViewmodelContr
 - [[HUDController]]
 - [[InputController]]
 - [[ThrowController]]
+- [[TouchController]]
 - [[ViewmodelController]]
 - [[WeaponController]]

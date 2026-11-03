@@ -10,6 +10,7 @@ Back to [[Home]].
 - [[BossController]]: the client side of the final boss (vault: Waves and Boss.md).
 - [[CameraController]]: FIRST-PERSON run camera + the single source of truth for AIMING.
 - [[Client Main]]: Client entry point. Requires every ModuleScript in Controllers, then calls
+- [[ConditionsController]]: the client side of a run's weather (Shared/Config/Conditions, GameState Condition).
 - [[CutsceneController]]: the first-person drop-in at the start of a run (vault: Match Start.md).
 - [[EffectsController]]: all client-side visuals. Parts go in Workspace.ClientEffects (non-queryable).
 - [[HUDController]]: the in-run HUD. Visible only while the player attribute InRun is true.
@@ -18,9 +19,11 @@ Back to [[Home]].
 - [[LobbyController]]: lobby screen (visible while InRun is false) and the end-of-run results card.
 - [[RadioController]]: the commander's radio panel on the left side of the screen (vault: Match Start.md).
 - [[ShopController]]: the lobby's two shops (vault: Lobby.md), opened by walking up to them and pressing
+- [[SkipController]]: "hold to skip" for the deploy ride and the boss intro (Server/Services/MatchService
 - [[SoundController]]: all game audio, client-side (ids + volumes in Shared/Config/Sounds).
 - [[SurvivorController]]: the safehouse people talk (Server/Map/Survivors places them; lines in
 - [[ThrowController]]: the grenade throw animation (server sends Remotes.Effect "Throw" from
+- [[TouchController]]: run controls for phones and gamepads (keyboard + mouse live in WeaponController and
 - [[TutorialController]]: the objective card during a first-time player's training run (left side,
 - [[UIKit]]: tiny helpers for building UI in code with one consistent theme.
 - [[ViewmodelController]]: the first-person gun + arms you see while CameraController:IsActive().

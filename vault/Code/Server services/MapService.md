@@ -1,6 +1,6 @@
 # MapService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/MapService.luau` (257 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/MapService.luau` (260 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -25,7 +25,7 @@ Public:
   MapService:GetPads() -> {[PadId] = Pad part}   Flight Line pads (QueueService)
   MapService:GetPadAt(player) -> PadId?      the pad the player stands on (its take-off zone)
   MapService:GetDeployFlight() -> {Vector3}   helicopter path, ocean -> above the square
-  MapService:ApplyAtmosphere()
+  MapService:ApplyAtmosphere(condition?)   sunset, or a run's weather (Config/Conditions)
 ```
 
 ## Uses
@@ -45,6 +45,7 @@ Public:
 
 ## Mentions
 
+- [[Conditions config]]
 - [[OurCity]]
 - [[OurLobby]]
 

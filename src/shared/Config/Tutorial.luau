@@ -16,7 +16,7 @@ local Tutorial = {}
 
 Tutorial.Waves = 5 -- the last one is the boss wave
 Tutorial.BossHealthMult = 0.25 -- the "young" Titan: a quarter of the real one's health
-Tutorial.RewardGems = 250 -- paid instead of the normal end-of-run Gems, win or lose
+Tutorial.RewardGems = 350 -- enough for the cheapest class (Scout) right away; paid instead of the normal end-of-run Gems, win or lose
 Tutorial.ResultsTime = 12 -- seconds on the results screen (time for the last radio line) before the lobby
 
 Tutorial.Steps = {

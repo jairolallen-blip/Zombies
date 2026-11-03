@@ -1,6 +1,6 @@
 # Remotes
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Remotes.luau` (66 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Remotes.luau` (70 lines). Don't edit it here: rerun the script.
 
 Part of [[Shared modules]].
 
@@ -21,6 +21,8 @@ Client -> Server
   UnlockItem(kind: "Class" | "Weapon", id: string)   spend Gems, lobby only
   ClaimAchievement(id: string)            pay a completed achievement's Gems once (DataService)
   SetPadOptions({Size?, Difficulty?, Map?})   pad host picks the mission (QueueService; GameConfig.Lobby)
+  SkipCutscene()                        vote to skip the deploy ride / boss intro (players with CanSkip)
+  QuickPlay()                           lobby: put me on the fullest pad that has room (QueueService)
 Server -> Client
   Notify(text: string, kind: "Info" | "Good" | "Danger")     toast message
   HitConfirm(hits: {{Position, Damage, Headshot, Killed}})   shooter-only hit feedback
@@ -40,6 +42,7 @@ Server -> Client
 - [[BossController]]
 - [[CombatService]]
 - [[CommonsService]]
+- [[DailyService]]
 - [[DataService]]
 - [[EconomyService]]
 - [[EffectsController]]
@@ -51,7 +54,9 @@ Server -> Client
 - [[QueueService]]
 - [[RadioController]]
 - [[ShopController]]
+- [[SkipController]]
 - [[SoundController]]
+- [[TouchController]]
 - [[TutorialService]]
 - [[WeaponController]]
 - [[ZombieService]]

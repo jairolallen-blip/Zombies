@@ -26,6 +26,7 @@ See [[Roadmap]] for status.
 - [[Supply Drops]]: mid-run crates and buffs
 - [[Achievements]]: the Commendations board
 - [[Lore]]: Port Harrow, the Bloom, Overwatch and the safehouse people
+- [[Phones and Gamepads]]: touch buttons and controller mapping
 
 ## Code
 - [[Server services]]: the server's game systems

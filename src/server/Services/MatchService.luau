@@ -33,6 +33,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Zombies = require(Shared.Config.Zombies)
+local Conditions = require(Shared.Config.Conditions)
 local Remotes = require(Shared.Remotes)
 local GameState = require(Shared.GameState)
 local Radio = require(Shared.Config.Radio)
@@ -48,8 +49,15 @@ local spawnToken = {} -- [Player] = latest spawn request (ignore stale Died hand
 local running = false
 local tutorial = false -- the current run is a first-time player's tutorial
 
+local skipVotes = {} -- [Player] = true: voted to skip the cutscene that's playing
+
 function MatchService:Init(services)
 	Services = services
+	Remotes.SkipCutscene.OnServerEvent:Connect(function(player)
+		if GameState:GetAttribute("SkipOpen") and player:GetAttribute("CanSkip") and inRun[player] then
+			skipVotes[player] = true
+		end
+	end)
 	Players.PlayerRemoving:Connect(function(player)
 		inRun[player] = nil
 		dead[player] = nil
@@ -305,6 +313,32 @@ end
 
 -- Run start: helicopter cutscene (client CutsceneController reads the Deploy* GameState attributes),
 -- players wait anchored above their spawn pads, then parachute down together.
+-- Cutscene skips (Client/Controllers/SkipController): players who have finished a run before get the
+-- CanSkip attribute and can vote while GameState SkipOpen is set. Once every player in the run has voted
+-- (so a first-timer in the squad always sees it all), the cutscene ends early.
+-- Waits up to `seconds`; returns true when skipped.
+function MatchService:_skippableWait(seconds, kind)
+	table.clear(skipVotes)
+	GameState:SetAttribute("SkipOpen", kind)
+	local ends = os.clock() + seconds
+	local skipped = false
+	while os.clock() < ends do
+		local players, votes = self:GetRunPlayers(), 0
+		for _, player in players do
+			votes += if skipVotes[player] then 1 else 0
+		end
+		GameState:SetAttribute("SkipVotes", votes .. "/" .. #players)
+		if #players > 0 and votes == #players then
+			skipped = true
+			Remotes.Effect:FireAllClients("CutsceneSkip", { Kind = kind })
+			break
+		end
+		task.wait(0.1)
+	end
+	GameState:SetAttribute("SkipOpen", nil)
+	return skipped
+end
+
 function MatchService:_deploy(participants)
 	local cfg = GameConfig.Deploy
 	if not cfg.Enabled then
@@ -334,7 +368,10 @@ function MatchService:_deploy(participants)
 		end)
 	end
 	self:_radio("Deploy")
-	task.wait(cfg.FlightTime - 1.5)
+	if self:_skippableWait(cfg.FlightTime - 1.5, "Deploy") then
+		-- jump the ride to the door: CutsceneController follows DeployStart
+		GameState:SetAttribute("DeployStart", workspace:GetServerTimeNow() - (cfg.FlightTime - 1.5))
+	end
 	self:_radio("Drop")
 	task.wait(1.5)
 	for _, player in participants do
@@ -392,13 +429,15 @@ function MatchService:_bossIntro(playerMult)
 	end
 	freeze(true)
 	Remotes.Effect:FireAllClients("BossIntro", { Position = position, Time = intro.Time, RiseAt = intro.RiseAt, RiseTime = intro.RiseTime, RoarAt = intro.RoarAt })
-	task.wait(intro.RiseAt)
+	local skipped = self:_skippableWait(intro.RiseAt, "BossIntro")
 	local boss = Services.ZombieService:Spawn(typeId, position, playerMult, intro.RiseTime, GameConfig.OurMap.ArenaCenter)
-	Services.ZombieService:Hold(boss, intro.Time - intro.RiseAt)
-	task.wait(intro.RoarAt - intro.RiseAt)
+	Services.ZombieService:Hold(boss, if skipped then intro.RiseTime else intro.Time - intro.RiseAt)
+	skipped = skipped or self:_skippableWait(intro.RoarAt - intro.RiseAt, "BossIntro")
 	self:_radio("BossIncoming")
 	Remotes.Effect:FireAllClients("Shockwave", { Position = position, Radius = 45 })
-	task.wait(intro.Time - intro.RoarAt)
+	if not skipped then
+		self:_skippableWait(intro.Time - intro.RoarAt, "BossIntro")
+	end
 	freeze(false)
 end
 
@@ -451,6 +490,10 @@ function MatchService:RunMatch(participants, options)
 	local lobbyCfg = GameConfig.Lobby
 	local profile = #participants == 1 and Services.DataService:Get(participants[1])
 	tutorial = options.Tutorial == true and profile and not profile.TutorialDone or false
+	for _, player in participants do
+		local p = Services.DataService:Get(player)
+		player:SetAttribute("CanSkip", p ~= nil and p.RunsPlayed > 0) -- the cutscenes play in full the first time
+	end
 	local function pick(list, id)
 		for _, entry in list do
 			if entry.Id == id and not entry.Locked then
@@ -462,6 +505,14 @@ function MatchService:RunMatch(participants, options)
 	GameState:SetAttribute("Difficulty", pick(lobbyCfg.Difficulties, options.Difficulty))
 	GameState:SetAttribute("MapId", pick(lobbyCfg.Maps, options.Map))
 	GameState:SetAttribute("Tutorial", tutorial)
+	-- this run's weather (Config/Conditions). The attribute goes first so PostFXController steps aside
+	-- before the new lighting arrives.
+	local condition = if tutorial then Conditions.List[1] else Conditions.Pick()
+	GameState:SetAttribute("Condition", condition.Id)
+	task.delay(0.5, Services.MapService.ApplyAtmosphere, Services.MapService, condition)
+	for _, player in participants do
+		Remotes.Notify:FireClient(player, "CONDITIONS: " .. condition.Name .. ". " .. condition.Desc, "Info")
+	end
 	if tutorial then
 		task.spawn(Services.TutorialService.Run, Services.TutorialService, participants[1])
 	end
@@ -533,6 +584,8 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 	self:_radio(if victory then "Victory" else "Overrun")
 	GameState:SetAttribute("RunWon", victory == true)
 	GameState:SetAttribute("Phase", "Results")
+	Services.MapService:ApplyAtmosphere() -- back to sunset; the attribute clears after it so PostFX regrades it
+	task.delay(0.5, GameState.SetAttribute, GameState, "Condition", nil)
 	Services.ZombieService:ClearAll()
 	Services.AbilityService:Cleanup()
 	local econ = GameConfig.Economy
@@ -543,6 +596,10 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 			local DataService = Services.DataService
 			if tutorial then
 				DataService:Get(player).TutorialDone = true -- even on a loss: never send them through it twice
+				DataService:Funnel(player, 10, "Finished the tutorial")
+			else
+				DataService:Funnel(player, 12, "Finished a squad run")
+				DataService:LogWave(player, wave)
 			end
 			local newBest = DataService:RecordRun(player, wave, kills, gems)
 			DataService:AddStat(player, "Runs")

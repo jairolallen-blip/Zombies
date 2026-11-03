@@ -26,6 +26,8 @@ Read by both server and client (ReplicatedStorage.Shared.Config.GameConfig).
 - [[CommonsService]]
 - [[Commons]]
 - [[CutsceneController]]
+- [[DailyCache]]
+- [[DailyService]]
 - [[DataService]]
 - [[EconomyService]]
 - [[FlightLine]]

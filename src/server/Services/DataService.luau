@@ -26,6 +26,34 @@ local Util = require(Shared.Util)
 local Remotes = require(Shared.Remotes)
 local Achievements = require(Shared.Config.Achievements)
 
+-- Session lock: a run moves players between servers (QueueService), so two servers can hold the same
+-- profile for a moment. Each saved profile carries _Lock = {JobId, Time}: a server only loads a profile
+-- no other live server holds, and never saves over one another server took. Autosaves refresh it.
+local LOCK_TTL = 120 -- a claim older than this (its server crashed) can be taken over
+local LOCK_WAIT = 30 -- longest a joining server waits for the old one to let go, then takes over
+local AUTOSAVE = 45 -- seconds between autosaves (also refreshes the lock)
+
+-- UpdateAsync transforms, pure so they can be checked from the command bar (DataService.Lock)
+local Lock = {}
+function Lock.claim(old, jobId, now, waited)
+	local lock = old and old._Lock
+	if lock and lock.JobId ~= jobId and now - lock.Time < LOCK_TTL and waited < LOCK_WAIT then
+		return nil, true -- held by another server: leave it as it is and try again soon
+	end
+	local value = old or {}
+	value._Lock = { JobId = jobId, Time = now }
+	return value, false
+end
+function Lock.stamp(old, data, jobId, now, release)
+	local lock = old and old._Lock
+	if lock and lock.JobId ~= jobId then
+		return nil, true -- another server took this profile over: never write over its newer data
+	end
+	local value = table.clone(data)
+	value._Lock = if release then nil else { JobId = jobId, Time = now }
+	return value, false
+end
+
 local function freeWeapons()
 	local owned = {}
 	for id, def in Weapons.List do
@@ -120,15 +148,31 @@ function DataService:Start()
 		self:ClaimAchievement(player, id)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
-		self:Save(player)
+		self:Save(player, true)
 		profiles[player] = nil
 		noSave[player] = nil
 	end)
-	game:BindToClose(function()
-		for _, player in Players:GetPlayers() do
-			task.spawn(self.Save, self, player)
+	task.spawn(function()
+		while true do
+			task.wait(AUTOSAVE)
+			for player in profiles do
+				task.spawn(self.Save, self, player)
+			end
 		end
-		task.wait(2)
+	end)
+	game:BindToClose(function()
+		local pending = 0
+		for _, player in Players:GetPlayers() do
+			pending += 1
+			task.spawn(function()
+				self:Save(player, true)
+				pending -= 1
+			end)
+		end
+		local started = os.clock()
+		while pending > 0 and os.clock() - started < 25 do -- Roblox allows 30s
+			task.wait(0.2)
+		end
 	end)
 end
 
@@ -136,20 +180,38 @@ function DataService:Load(player)
 	local data = nil
 	local loaded = store == nil
 	if store then
-		for attempt = 1, 3 do
-			local ok, result = pcall(store.GetAsync, store, keyFor(player))
-			if ok then
+		local failures, waited = 0, 0
+		while player.Parent do
+			local locked = false
+			local ok, result = pcall(store.UpdateAsync, store, keyFor(player), function(old)
+				local value
+				value, locked = Lock.claim(old, game.JobId, os.time(), waited)
+				return value, if value then { player.UserId } else nil
+			end)
+			if ok and not locked then
 				data = result
+				data._Lock = nil
+				if next(data) == nil then
+					data = nil -- a brand-new profile (only the lock was written)
+				end
 				loaded = true
 				break
 			end
-			if isAccessError(result) then
+			if ok then
+				task.wait(2) -- another server is still saving this player (a teleport): wait for it
+				waited += 2
+			elseif isAccessError(result) then
 				warn("[DataService] No DataStore access (enable 'Studio Access to API Services' to persist). Memory-only.")
 				store = nil
 				loaded = true
 				break
+			else
+				failures += 1
+				if failures >= 3 then
+					break
+				end
+				task.wait(failures)
 			end
-			task.wait(attempt)
 		end
 	end
 	if not loaded then
@@ -205,14 +267,23 @@ function DataService:Load(player)
 	self.ProfileLoaded:Fire(player, data)
 end
 
-function DataService:Save(player)
+-- release = true lets go of the session lock (leaving, teleporting, shutting down)
+function DataService:Save(player, release)
 	local data = profiles[player]
 	if not data or not store or noSave[player] then
 		return
 	end
 	for attempt = 1, 3 do
-		local ok, err = pcall(store.SetAsync, store, keyFor(player), data, { player.UserId })
+		local lost = false
+		local ok, err = pcall(store.UpdateAsync, store, keyFor(player), function(old)
+			local value
+			value, lost = Lock.stamp(old, data, game.JobId, os.time(), release)
+			return value, if value then { player.UserId } else nil
+		end)
 		if ok then
+			if lost then
+				warn("[DataService] Another server holds", player.Name, "'s profile; not saving over it.")
+			end
 			return
 		end
 		warn("[DataService] Save failed for", player.Name, err)
@@ -324,5 +395,7 @@ function DataService:GetTopBestWaves(count)
 	end
 	return top
 end
+
+DataService.Lock = Lock
 
 return DataService

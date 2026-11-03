@@ -13,6 +13,6 @@ The first-time player's training run (added 2026-11-02). Back to [[Home]]. Part 
   6. the ultimate with F (bar filled on wave 4)
   7. the boss
   8. Gems and the shops
-- **Reward:** a flat 250 Gems, win or lose. It isn't counted as a win, and it's marked done even on a loss.
+- **Reward:** a flat 350 Gems (enough for the Scout right away), win or lose. It isn't counted as a win, and it's marked done even on a loss.
 - **Test in Studio:** `game.ServerStorage.SAMZ_Debug:Invoke("Tutorial")` ([[DebugService]]).
 - **Still open:** point out the shops when a new player first reaches the lobby.

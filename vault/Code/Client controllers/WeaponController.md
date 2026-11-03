@@ -1,6 +1,6 @@
 # WeaponController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WeaponController.luau` (221 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WeaponController.luau` (229 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -33,6 +33,7 @@ Public: WeaponController:GetState() -> { Stats, Ammo, Reloading }, :Reload()
 ## Used by
 
 - [[HUDController]]
+- [[TouchController]]
 
 ## Design notes
 

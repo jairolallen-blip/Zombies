@@ -238,6 +238,7 @@ function AirdropService:Drop(wave)
 		prompt.ObjectText = "SUPPLY DROP"
 		prompt.HoldDuration = Airdrops.OpenTime
 		prompt.KeyboardKeyCode = Enum.KeyCode.G -- E is the class ability during a run
+		prompt.GamepadKeyCode = Enum.KeyCode.ButtonY -- X is reload on a gamepad (TouchController)
 		prompt.MaxActivationDistance = 10
 		prompt.RequiresLineOfSight = false
 		prompt.Parent = box

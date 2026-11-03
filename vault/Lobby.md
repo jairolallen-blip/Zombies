@@ -109,6 +109,11 @@ A fortified safehouse inside a ruined city at **x = 1000, z = 1000** (moved from
 ## Notes for later
 - **Shared code:** the loadout and upgrade changes also apply to the friend's version.
 
+## Launch prep (2026-11-02)
+- **Arrival:** you spawn facing the Flight Line gate. Every player in the lobby has a gold "BEST WAVE n" tag ("NEW SURVIVOR" at 0).
+- **QUICK PLAY** puts you on the fullest pad that has room; **INVITE FRIENDS** opens Roblox's invite prompt. See [[Servers and Teleports]].
+- **Daily Rations** ([[DailyCache]], [[DailyService]]): a pallet of crates under a sign on the south edge of the plaza, by the flag (the plaza was bare). Hold "Claim" once per UTC day. A streak pays 40, 60, 80, 100, 125, 150, then 250 Gems on day 7, then starts over; missing a day resets it.
+
 ## Code
 [[OurLobby]], [[FlightLine]], [[Commons]] and [[Survivors map]] build it. [[LobbyService]], [[QueueService]] and [[CommonsService]] run it. [[ShopController]], [[LobbyController]], [[LobbyAudioController]] and [[SurvivorController]] are the client. See also [[Servers and Teleports]], [[Tutorial]], [[Achievements]] and [[Lore]].
 

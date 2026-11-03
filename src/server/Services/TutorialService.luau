@@ -128,6 +128,7 @@ function TutorialService:Run(player)
 			task.delay(upcoming.Delay or 0, function()
 				if index == shown and player.Parent and GameState:GetAttribute("Tutorial") then
 					player:SetAttribute("TutorialStep", shown)
+					Services.DataService:Funnel(player, 1 + shown, "Tutorial step " .. shown)
 					player:SetAttribute("TutorialObjective", upcoming.Objective)
 					player:SetAttribute("TutorialObjectiveDone", false)
 					Remotes.Radio:FireClient(player, upcoming.Say, "Tutorial")

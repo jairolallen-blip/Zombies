@@ -16,7 +16,7 @@
 --   MapService:GetPads() -> {[PadId] = Pad part}   Flight Line pads (QueueService)
 --   MapService:GetPadAt(player) -> PadId?      the pad the player stands on (its take-off zone)
 --   MapService:GetDeployFlight() -> {Vector3}   helicopter path, ocean -> above the square
---   MapService:ApplyAtmosphere()
+--   MapService:ApplyAtmosphere(condition?)   sunset, or a run's weather (Config/Conditions)
 
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
@@ -67,8 +67,9 @@ function MapService:Init(services)
 end
 
 -- Warm, hazy sunset (GameConfig.OurMap.Atmosphere). Runtime only; Edit-mode Lighting is untouched.
-function MapService:ApplyAtmosphere()
-	local a = OUR.Atmosphere
+-- condition (Config/Conditions entry, optional): its Atmosphere fields replace the sunset ones
+function MapService:ApplyAtmosphere(condition)
+	local a = setmetatable(table.clone(condition and condition.Atmosphere or {}), { __index = OUR.Atmosphere })
 	Lighting.ClockTime = a.ClockTime
 	Lighting.Brightness = a.Brightness
 	Lighting.Ambient = a.Ambient
@@ -106,7 +107,9 @@ end
 function MapService:GetLobbySpawnCFrame()
 	local pad = lobbySpawns[math.random(1, #lobbySpawns)]
 	local offset = Vector3.new(math.random(-3, 3), pad.Size.Y / 2 + 3, math.random(-3, 3))
-	return CFrame.new(pad.Position + offset) * pad.CFrame.Rotation
+	local pos = pad.Position + offset
+	local gate = GameConfig.OurMap.LobbyCenter + Vector3.new(0, 0, -62) -- the Flight Line gate (Map/FlightLine NEAR)
+	return CFrame.lookAt(pos, Vector3.new(gate.X, pos.Y, gate.Z)) -- face it, so new players see where to go
 end
 
 function MapService:GetArenaSpawnCFrame(index)

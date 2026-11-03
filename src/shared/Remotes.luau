@@ -12,6 +12,8 @@
 --   UnlockItem(kind: "Class" | "Weapon", id: string)   spend Gems, lobby only
 --   ClaimAchievement(id: string)            pay a completed achievement's Gems once (DataService)
 --   SetPadOptions({Size?, Difficulty?, Map?})   pad host picks the mission (QueueService; GameConfig.Lobby)
+--   SkipCutscene()                        vote to skip the deploy ride / boss intro (players with CanSkip)
+--   QuickPlay()                           lobby: put me on the fullest pad that has room (QueueService)
 -- Server -> Client
 --   Notify(text: string, kind: "Info" | "Good" | "Danger")     toast message
 --   HitConfirm(hits: {{Position, Damage, Headshot, Killed}})   shooter-only hit feedback
@@ -32,6 +34,8 @@ local NAMES = {
 	"UnlockItem",
 	"ClaimAchievement",
 	"SetPadOptions",
+	"SkipCutscene",
+	"QuickPlay",
 	"Notify",
 	"HitConfirm",
 	"Effect",

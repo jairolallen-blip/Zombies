@@ -145,6 +145,14 @@ function WeaponController:TryFire()
 	end
 end
 
+-- the trigger for touch buttons and gamepads (Client/Controllers/TouchController)
+function WeaponController:SetTrigger(on)
+	firing = on
+	if on then
+		self:TryFire()
+	end
+end
+
 function WeaponController:Init(controllers)
 	Controllers = controllers
 	player:GetAttributeChangedSignal("WeaponId"):Connect(refreshStats)

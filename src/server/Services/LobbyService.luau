@@ -29,9 +29,48 @@ end
 local function notify(player, text, kind)
 	Remotes.Notify:FireClient(player, text, kind or "Info")
 end
+-- "BEST WAVE n" over every player's head while they're in the lobby, so strong players stand out
+local function bestWaveTag(player, character)
+	local head = character:WaitForChild("Head", 10)
+	if not head then
+		return
+	end
+	local gui = Instance.new("BillboardGui")
+	gui.Name = "BestWaveTag"
+	gui.Size = UDim2.fromScale(4, 0.7) -- studs
+	gui.StudsOffset = Vector3.new(0, 3.2, 0) -- above Roblox's own name
+	gui.MaxDistance = 60
+	local label = Instance.new("TextLabel")
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.GothamBlack
+	label.TextScaled = true
+	label.TextColor3 = Color3.fromRGB(255, 200, 70)
+	label.TextStrokeTransparency = 0.4
+	label.Parent = gui
+	local function refresh()
+		local best = player:GetAttribute("BestWave") or 0
+		label.Text = if best > 0 then "BEST WAVE " .. best else "NEW SURVIVOR"
+		gui.Enabled = not player:GetAttribute("InRun")
+	end
+	refresh()
+	gui.Parent = head
+	local a = player:GetAttributeChangedSignal("InRun"):Connect(refresh)
+	local b = player:GetAttributeChangedSignal("BestWave"):Connect(refresh)
+	gui.Destroying:Connect(function()
+		a:Disconnect()
+		b:Disconnect()
+	end)
+end
 
 function LobbyService:Init(services)
 	Services = services
+	local Players = game:GetService("Players")
+	Players.PlayerAdded:Connect(function(player)
+		player.CharacterAdded:Connect(function(character)
+			bestWaveTag(player, character)
+		end)
+	end)
 	Remotes.SelectClass.OnServerEvent:Connect(function(player, id)
 		self:Equip(player, "Class", id)
 	end)

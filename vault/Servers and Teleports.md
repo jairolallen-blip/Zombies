@@ -15,5 +15,11 @@ Added 2026-11-02 so a real playerbase doesn't cram into one city. Back to [[Home
 ## First-time players
 Profiles with `TutorialDone = false` skip the lobby and go straight into a solo [[Tutorial]] run.
 
+## Saves stay safe across servers (2026-11-02)
+Every saved profile carries a session lock ([[DataService]]). A server loads a profile only when no other live server holds it: it waits up to 30s for the old server to let go after a teleport, and takes over a lock older than 120s (a crashed server). It never writes over a profile another server took, autosaves every 45s, and lets go on leaving, teleporting and shutdown.
+
+## Where players stop
+The onboarding funnel (Creator Dashboard > Analytics > Funnels) logs: 1 Joined, 2-9 tutorial steps, 10 Finished the tutorial, 11 Reached the lobby, 12 Finished a squad run. A WaveReached custom event shows how far squad runs get.
+
 ## In Studio
 Studio can't teleport, so a take-off plays the run inside the lobby server, one pad at a time. The teleports have only been tested in the published game.

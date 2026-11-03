@@ -58,6 +58,8 @@ local function overlay()
 	return o
 end
 
+local skipIntro = nil -- set while an intro plays
+
 function BossController:PlayIntro(data)
 	local camera = workspace.CurrentCamera
 	local Sound = Controllers.SoundController
@@ -81,6 +83,9 @@ function BossController:PlayIntro(data)
 	local up = Vector3.yAxis
 	local H = 5.5 * (Zombies.Types[Zombies.BossOrder[1]].Scale or 1) -- boss height
 	local start = os.clock()
+	skipIntro = function() -- the squad skipped it: jump to the fade-out
+		start = math.min(start, os.clock() - (data.Time - 0.4))
+	end
 	camera.CameraType = Enum.CameraType.Scriptable
 	local roared = false
 
@@ -148,6 +153,8 @@ function BossController:Init(controllers)
 		end
 		if kind == "BossIntro" then
 			task.spawn(self.PlayIntro, self, data)
+		elseif kind == "CutsceneSkip" and data.Kind == "BossIntro" and skipIntro then
+			skipIntro()
 		elseif kind == "BossCharge" or kind == "BossLeap" then
 			Controllers.SoundController:PlayAt("BossRoar", data.Position, { Pitch = if kind == "BossLeap" then 1.15 else 1 })
 		elseif kind == "BossKnock" then
