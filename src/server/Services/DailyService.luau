@@ -52,6 +52,9 @@ function DailyService:Claim(player)
 		local left = (today + 1) * DAY - now
 		return Remotes.Notify:FireClient(player, string.format("Already claimed today. Fresh rations in %dh %dm.", left // 3600, left % 3600 // 60), "Info")
 	end
+	if player:GetAttribute("Pass_VIP") then
+		gems = math.floor(gems * 1.5) -- VIP game pass (StoreService)
+	end
 	profile.DailyStreak = streak
 	profile.DailyDay = today
 	Services.DataService:AddGems(player, gems)

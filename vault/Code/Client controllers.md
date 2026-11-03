@@ -21,6 +21,7 @@ Back to [[Home]].
 - [[ShopController]]: the lobby's two shops (vault: Lobby.md), opened by walking up to them and pressing
 - [[SkipController]]: "hold to skip" for the deploy ride and the boss intro (Server/Services/MatchService
 - [[SoundController]]: all game audio, client-side (ids + volumes in Shared/Config/Sounds).
+- [[StoreController]]: the Robux shop (vault: Store.md; catalogue in Shared/Config/Store, purchases granted by
 - [[SurvivorController]]: the safehouse people talk (Server/Map/Survivors places them; lines in
 - [[ThrowController]]: the grenade throw animation (server sends Remotes.Effect "Throw" from
 - [[TouchController]]: run controls for phones and gamepads (keyboard + mouse live in WeaponController and

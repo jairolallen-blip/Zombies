@@ -14,6 +14,7 @@ Back to [[Home]].
 - [[GameConfig]]: global tunables for match flow, waves, economy, upgrades, player, camera, map.
 - [[Radio config]]: the commander's lines (vault: Match Start.md). PURE DATA.
 - [[Sounds config]]: every sound in the game (pure data; played by Client/Controllers/SoundController).
+- [[Store config]]: what the Robux shop sells (vault: Store.md). PURE DATA. Server/Services/StoreService grants it,
 - [[Survivors config]]: the people living in the safehouse (vault: Lobby.md). PURE DATA.
 - [[Tutorial config]]: the first-time player's training run (vault: Lobby.md). PURE DATA.
 - [[Weapons config]]: every gun, grouped into 4 upgrade Levels (vault: Weapons.md, Lobby.md).

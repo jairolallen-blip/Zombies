@@ -58,6 +58,7 @@ Server -> Client
 - [[ShopController]]
 - [[SkipController]]
 - [[SoundController]]
+- [[StoreService]]
 - [[TouchController]]
 - [[TutorialService]]
 - [[WeaponController]]

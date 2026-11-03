@@ -24,6 +24,7 @@ Formulas here are used by BOTH server (authoritative) and client (UI), so they a
 - [[HUDController]]
 - [[LobbyController]]
 - [[ShopController]]
+- [[StoreController]]
 - [[ViewmodelController]]
 - [[WeaponController]]
 - [[WelcomeController]]

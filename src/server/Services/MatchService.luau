@@ -595,6 +595,9 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 		if player.Parent then
 			local kills = player:GetAttribute("Kills") or 0
 			local gems = if tutorial then Tutorial.RewardGems else math.floor(wavesCleared * econ.GemsPerWaveCleared + kills * econ.GemsPerKill + (if victory then econ.VictoryGems else 0))
+			if not tutorial and player:GetAttribute("Pass_DoubleGems") then
+				gems *= 2 -- 2x GEMS game pass (StoreService)
+			end
 			local DataService = Services.DataService
 			if tutorial then
 				DataService:Get(player).TutorialDone = true -- even on a loss: never send them through it twice

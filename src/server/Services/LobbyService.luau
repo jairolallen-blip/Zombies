@@ -50,16 +50,18 @@ local function bestWaveTag(player, character)
 	label.Parent = gui
 	local function refresh()
 		local best = player:GetAttribute("BestWave") or 0
-		label.Text = if best > 0 then "BEST WAVE " .. best else "NEW SURVIVOR"
+		label.Text = (if player:GetAttribute("Pass_VIP") then "VIP  ·  " else "") .. (if best > 0 then "BEST WAVE " .. best else "NEW SURVIVOR")
 		gui.Enabled = not player:GetAttribute("InRun")
 	end
 	refresh()
 	gui.Parent = head
 	local a = player:GetAttributeChangedSignal("InRun"):Connect(refresh)
 	local b = player:GetAttributeChangedSignal("BestWave"):Connect(refresh)
+	local c = player:GetAttributeChangedSignal("Pass_VIP"):Connect(refresh)
 	gui.Destroying:Connect(function()
 		a:Disconnect()
 		b:Disconnect()
+		c:Disconnect()
 	end)
 end
 

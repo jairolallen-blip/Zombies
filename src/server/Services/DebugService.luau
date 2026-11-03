@@ -68,6 +68,13 @@ Commands.GiveGems = function(amount, playerName)
 	return player.Name .. " gems = " .. player:GetAttribute("Gems")
 end
 
+-- Grant("Gems500", "receipt-1") — pay a store product as if a receipt arrived (same id twice = paid once)
+Commands.Grant = function(id, receiptId, playerName)
+	local player = firstPlayer(playerName)
+	local ok = Services.StoreService:Grant(player, id, receiptId or ("debug-" .. os.clock()))
+	return tostring(ok) .. " gems = " .. player:GetAttribute("Gems")
+end
+
 -- AddStat("Kills", 100) — achievement progress for the first player
 Commands.AddStat = function(key, amount, playerName)
 	local player = firstPlayer(playerName)

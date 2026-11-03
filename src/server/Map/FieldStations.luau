@@ -1,8 +1,10 @@
--- FieldStations: two lobby stations between the plaza and the Flight Line gate (vault: Lobby.md).
+-- FieldStations: three lobby stations around the plaza (vault: Lobby.md).
 --   north-east  FIELD RESEARCH: a tarp over a specimen table; its prompt (attribute Shop = "Index") opens
 --               the enemy index (Client ShopController "Index", rewards in Config/Zombies Index)
 --   north-west  BOUNTY BOARD: a cork board with today's notices; its prompt (Shop = "Bounties") opens the
 --               daily bounties (Config/Bounties)
+--   south-east  THE TRADER: a market stall under a striped awning; its prompt (attribute Store) opens the
+--               Robux shop (Client StoreController, Config/Store)
 -- Debris chunks inside either footprint are removed. OurLobby.Build calls this last. Safe to re-run.
 --   local m = game.ServerScriptService.Server.Map.FieldStations
 --   local c = m:Clone(); c.Parent = m.Parent; require(c).Build(workspace.OurMap.Lobby); c:Destroy()
@@ -15,6 +17,7 @@ local FieldStations = {}
 local GROUND_Y = 1
 local INDEX_SPOT = Vector2.new(42, -30) -- lobby-relative x, z; faces west
 local BOUNTY_SPOT = Vector2.new(-42, -38) -- faces east
+local TRADER_SPOT = Vector2.new(25, 46) -- faces west, onto the path to the Commons
 
 local WOOD = Color3.fromRGB(122, 92, 60)
 local DARK = Color3.fromRGB(40, 44, 34)
@@ -133,6 +136,43 @@ local function buildBounties(model, base)
 	prompt(board, "View bounties", "Bounty Board", "Bounties")
 end
 
+local function buildTrader(model, base)
+	local pink = Color3.fromRGB(255, 90, 200)
+	-- counter with a gem crate on it
+	local counter = part(model, "Counter", Vector3.new(8, 3, 2.4), base * CFrame.new(0, 1.5, -0.5), WOOD, Enum.Material.WoodPlanks)
+	part(model, "CounterTop", Vector3.new(8.4, 0.3, 2.8), base * CFrame.new(0, 3.15, -0.5), DARK, Enum.Material.Metal)
+	local crate = part(model, "GemCrate", Vector3.new(2.2, 1.2, 1.6), base * CFrame.new(-2, 3.9, -0.4), OLIVE, Enum.Material.Metal)
+	for i, x in { -2.5, -2, -1.5 } do
+		part(model, "Gem", Vector3.new(0.6, 0.6, 0.6), base * CFrame.new(x, 4.7, -0.4) * CFrame.Angles(math.rad(45), math.rad(i * 30), math.rad(45)), pink, Enum.Material.Neon)
+	end
+	local glow = Instance.new("PointLight")
+	glow.Color = pink
+	glow.Range = 12
+	glow.Brightness = 1.2
+	glow.Parent = crate
+	-- back wall of stacked crates, and a striped awning on four posts
+	for i = -1, 1 do
+		part(model, "StockCrate", Vector3.new(2.6, 2.6, 2), base * CFrame.new(i * 2.8, 1.3, 2.6), if i == 0 then OLIVE else WOOD, Enum.Material.WoodPlanks)
+	end
+	for _, x in { -4.4, 4.4 } do
+		for _, z in { -1.9, 3.4 } do
+			part(model, "Post", Vector3.new(0.3, 7, 0.3), base * CFrame.new(x, 3.5, z), DARK, Enum.Material.Metal)
+		end
+	end
+	for i = 0, 7 do
+		part(model, "Awning", Vector3.new(1.15, 0.15, 6.2), base * CFrame.new(-4.03 + i * 1.15, 7.1, 0.75) * CFrame.Angles(math.rad(10), 0, 0), if i % 2 == 0 then pink else Color3.fromRGB(235, 230, 225), Enum.Material.Fabric)
+	end
+	local board = part(model, "Sign", Vector3.new(7, 1.6, 0.25), base * CFrame.new(0, 8.2, -1.9), Color3.fromRGB(30, 33, 38), Enum.Material.Metal)
+	sign(board, "THE TRADER", "Gems, bundles and passes", pink)
+	local p = Instance.new("ProximityPrompt")
+	p.ActionText = "Browse"
+	p.ObjectText = "The Trader"
+	p.MaxActivationDistance = 10
+	p.RequiresLineOfSight = false
+	p:SetAttribute("Store", true)
+	p.Parent = counter
+end
+
 function FieldStations.Build(lobby)
 	local old = lobby:FindFirstChild("FieldStations")
 	if old then
@@ -145,9 +185,12 @@ function FieldStations.Build(lobby)
 	local bounty = Vector3.new(origin.X + BOUNTY_SPOT.X, GROUND_Y, origin.Z + BOUNTY_SPOT.Y)
 	clearDebris(lobby, index, Vector2.new(7, 6))
 	clearDebris(lobby, bounty, Vector2.new(7, 4))
+	local trader = Vector3.new(origin.X + TRADER_SPOT.X, GROUND_Y, origin.Z + TRADER_SPOT.Y)
+	clearDebris(lobby, trader, Vector2.new(6, 6))
 	-- front (-Z of the base) faces the plaza side: west for the index, east for the board
 	buildIndex(model, CFrame.lookAt(index, index + Vector3.new(-1, 0, 0)))
 	buildBounties(model, CFrame.lookAt(bounty, bounty + Vector3.new(1, 0, 0)))
+	buildTrader(model, CFrame.lookAt(trader, trader + Vector3.new(-1, 0, 0)))
 	model.Parent = lobby
 	return model
 end

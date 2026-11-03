@@ -19,6 +19,7 @@ Back to [[Home]].
 - [[MatchService]]: the game loop. Owns who is in the run, spawning characters, waves, and results.
 - [[QueueService]]: the Flight Line pads of a lobby server (vault: Lobby.md, map: Server/Map/FlightLine).
 - [[Server Main]]: Server entry point. Requires every ModuleScript in Services, then calls
+- [[StoreService]]: Robux purchases (vault: Store.md; catalogue in Shared/Config/Store).
 - [[TutorialService]]: walks a first-time player through the game during their training run
 - [[ZombieModels]]: blocky R6-style zombie bodies with per-zombie variation (vault: Zombies.md; style from
 - [[ZombieService]]: spawns zombies (models from Server/ZombieModels), runs their AI every Heartbeat,

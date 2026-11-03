@@ -26,6 +26,7 @@ See [[Roadmap]] for status.
 - [[Supply Drops]]: mid-run crates and buffs
 - [[Achievements]]: the Commendations board
 - [[Bounties]]: daily tasks, one tracked at a time
+- [[Store]]: the Robux shop and game passes
 - [[Lore]]: Port Harrow, the Bloom, Overwatch and the safehouse people
 - [[Phones and Gamepads]]: touch buttons and controller mapping
 

@@ -90,6 +90,8 @@ local DEFAULT_PROFILE = {
 	TutorialDone = false, -- first-time players get a solo training run before the lobby (QueueService)
 	DailyStreak = 0, -- days in a row the daily rations were claimed (DailyService)
 	DailyDay = 0, -- UTC day number of the last claim
+	Receipts = {}, -- PurchaseIds of Robux products already paid (StoreService)
+	StarterPack = false, -- bought the one-time Starter Pack
 	Bounty = { Day = 0, Progress = {}, Done = {} }, -- today's bounties (Config/Bounties); Tracked = id or nil
 }
 
@@ -282,11 +284,15 @@ function DataService:Load(player)
 	self.ProfileLoaded:Fire(player, data)
 end
 
--- release = true lets go of the session lock (leaving, teleporting, shutting down)
+-- release = true lets go of the session lock (leaving, teleporting, shutting down).
+-- Returns true once the profile is safely stored (always true in memory-only mode); StoreService relies on it.
 function DataService:Save(player, release)
 	local data = profiles[player]
-	if not data or not store or noSave[player] then
-		return
+	if not data or noSave[player] then
+		return false
+	end
+	if not store then
+		return true
 	end
 	for attempt = 1, 3 do
 		local lost = false
@@ -299,11 +305,12 @@ function DataService:Save(player, release)
 			if lost then
 				warn("[DataService] Another server holds", player.Name, "'s profile; not saving over it.")
 			end
-			return
+			return not lost
 		end
 		warn("[DataService] Save failed for", player.Name, err)
 		task.wait(attempt)
 	end
+	return false
 end
 
 function DataService:Get(player)
