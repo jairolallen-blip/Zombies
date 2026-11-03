@@ -110,6 +110,20 @@ local function excludeList()
 	return list
 end
 
+-- true when a ray from `start` along `dir` hits one of the zombie's head parts within 12 studs
+local function hitsHead(model, start, dir)
+	local heads = {}
+	for _, p in model:GetChildren() do
+		if p:IsA("BasePart") and (p.Name:sub(1, 4) == "Head" or p.Name == "Eye") then
+			table.insert(heads, p)
+		end
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = heads
+	return workspace:Raycast(start, dir * 12, params) ~= nil
+end
+
 -- One ray with pierce. Appends hit records to `hits`; returns the end point.
 function CombatService:_traceShot(player, origin, dir, stats, hits)
 	local params = RaycastParams.new()
@@ -128,7 +142,9 @@ function CombatService:_traceShot(player, origin, dir, stats, hits)
 			return result.Position
 		end
 		local partName = result.Instance.Name
-		local headshot = partName:sub(1, 4) == "Head" or partName == "Eye" -- Head + face details (ZombieModels)
+		-- the invisible Root hitbox wraps most of the head, so the ray usually stops on it first: it's a headshot
+		-- when the same ray goes on through any head part (Head, Head* details, Eye) of that zombie (2026-11-03)
+		local headshot = partName:sub(1, 4) == "Head" or partName == "Eye" or hitsHead(model, result.Position - dir * 0.05, dir)
 		local damage = stats.Damage * (if headshot then stats.HeadshotMultiplier else 1) * Services.AirdropService:DamageMult(player)
 		local killed = ZombieService:Damage(model, damage, player)
 		if killed and headshot then

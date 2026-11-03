@@ -382,6 +382,24 @@ local function animateZombies(zombieFolder, dt)
 		if motors.RightArm then
 			motors.RightArm.Transform = CFrame.Angles(-bob + swipe - swing * 0.15, 0, 0)
 		end
+		-- server-stamped poses (ZombieService; model attributes Pose + PoseAt) take over the arms: "Rise" reaches
+		-- up and claws out of the ground, "Burrow" digs down into it, "Scream" (Wailer) flings them up, shaking
+		local pose = model:GetAttribute("Pose")
+		if pose and motors.LeftArm and motors.RightArm then
+			local age = serverNow - (model:GetAttribute("PoseAt") or serverNow)
+			local claw = math.sin(age * 16) * 0.45
+			if pose == "Rise" then
+				motors.LeftArm.Transform = CFrame.Angles(1.9 + claw, 0, 0)
+				motors.RightArm.Transform = CFrame.Angles(1.9 - claw, 0, 0)
+			elseif pose == "Burrow" then
+				motors.LeftArm.Transform = CFrame.Angles(-0.9 + claw, 0, 0)
+				motors.RightArm.Transform = CFrame.Angles(-0.9 - claw, 0, 0)
+			elseif pose == "Scream" then
+				local shake = math.sin(age * 45) * 0.08
+				motors.LeftArm.Transform = CFrame.Angles(1.4 + shake, 0, -0.45)
+				motors.RightArm.Transform = CFrame.Angles(1.4 - shake, 0, 0.45)
+			end
+		end
 	end
 end
 

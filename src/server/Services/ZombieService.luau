@@ -124,9 +124,12 @@ function ZombieService:Spawn(typeId, position, healthMult, riseTime, faceTowards
 		cf = CFrame.lookAt(cf.Position, Vector3.new(faceTowards.X, cf.Position.Y, faceTowards.Z))
 	end
 	local model, root, lv, ao = ZombieModels.Build(typeId, def, cf)
-	if riseTime then -- start buried; _rise lifts it out, then hands it to physics
+	if riseTime then -- start buried and hunched forward: it claws its way up and straightens (the client's "Rise"
+		-- pose; GroundFxController churns up the dirt)
 		root.Anchored = true
-		root.CFrame = cf - Vector3.new(0, 5 * s, 0)
+		root.CFrame = (cf - Vector3.new(0, 5 * s, 0)) * CFrame.Angles(-0.7, 0, 0)
+		model:SetAttribute("Pose", "Rise")
+		model:SetAttribute("PoseAt", workspace:GetServerTimeNow())
 	end
 	nextId += 1
 	model:SetAttribute("ZombieId", nextId)
@@ -170,6 +173,7 @@ function ZombieService:Spawn(typeId, position, healthMult, riseTime, faceTowards
 		local tween = TweenService:Create(root, TweenInfo.new(riseTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { CFrame = cf })
 		tween.Completed:Connect(function()
 			if root.Parent then
+				model:SetAttribute("Pose", nil)
 				root.Anchored = false
 				root:SetNetworkOwner(nil)
 			end
@@ -412,6 +416,31 @@ local function rotateFlat(v, angle)
 	return Vector3.new(v.X * c - v.Z * s, 0, v.X * s + v.Z * c)
 end
 
+-- Surround slot around `target` for a zombie arriving from angle `approach`: the least-taken of 8 sides
+-- (preferring its own), so a chasing pack spreads around the player instead of piling onto one side. One
+-- zombie per side in the inner ring; later arrivals take the rings behind it (SlotRing 1, 2: 4 and 8 studs
+-- further out) and wait their turn.
+local function pickSlot(z, target, approach)
+	local best, bestScore, bestTaken = approach, math.huge, 0
+	for k = -3, 4 do
+		local a = approach + k * math.pi / 4
+		local taken = 0
+		for _, other in alive do
+			if other ~= z and other.Target == target and other.Slot then
+				if math.abs((other.Slot - a + math.pi) % (2 * math.pi) - math.pi) < math.pi / 6 then
+					taken += 1
+				end
+			end
+		end
+		local score = taken + math.abs(k) * 0.3
+		if score < bestScore then
+			best, bestScore, bestTaken = a, score, taken
+		end
+	end
+	z.SlotRing = math.min(bestTaken, 2)
+	return best + (math.random() - 0.5) * 0.3
+end
+
 local function navigate(z, dir, dist, targetPos, now)
 	local root = z.Root
 	local s = z.Def.Scale or 1
@@ -432,6 +461,31 @@ local function navigate(z, dir, dist, targetPos, now)
 			z.StuckCount = 0
 		end
 		z.LastPos = root.Position
+		-- crowd check: a push away from zombies right next to it (Sep, added to its steering in _step), and one
+		-- of a clump of 3+ swings wide to come at the player from another side (Flank); Skitters burrow instead
+		-- and the boss stays itself
+		if not z.Def.Burrow and not z.Def.Boss then
+			local crowd, sep = 0, Vector3.zero
+			for _, other in alive do
+				if other ~= z then
+					local off = root.Position - other.Root.Position
+					off = Vector3.new(off.X, 0, off.Z)
+					local d = off.Magnitude
+					if d < 5 * s then
+						crowd += 1
+					end
+					if d > 0.05 and d < 4 * s then
+						sep += off / d * (1 - d / (4 * s))
+					end
+				end
+			end
+			z.Sep = sep
+			if crowd >= 3 then
+				z.Flank = z.Flank or (if math.random() < 0.5 then -1 else 1) * (0.7 + math.random() * 0.6)
+			elseif crowd == 0 then
+				z.Flank = nil
+			end
+		end
 	end
 	local move = dir
 	if not z.HasLOS then
@@ -623,8 +677,11 @@ function ZombieService:_burrow(z)
 	z.StunnedUntil = math.huge -- no moves or attacks while it travels underground
 	z.LV.Enabled = false
 	root.Anchored = true
-	Remotes.Effect:FireAllClients("Shockwave", { Position = Vector3.new(root.Position.X, groundY, root.Position.Z), Radius = 4 })
-	TweenService:Create(root, TweenInfo.new(b.Down, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = root.CFrame - Vector3.new(0, 5 * s, 0) }):Play()
+	-- it pitches head first into the street, digging (the client's "Burrow" pose; GroundFxController throws the dirt)
+	Remotes.Effect:FireAllClients("Burrow", { Position = Vector3.new(root.Position.X, groundY, root.Position.Z), Radius = 2.4 * s })
+	z.Model:SetAttribute("Pose", "Burrow")
+	z.Model:SetAttribute("PoseAt", workspace:GetServerTimeNow())
+	TweenService:Create(root, TweenInfo.new(b.Down, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = (root.CFrame - Vector3.new(0, 5 * s, 0)) * CFrame.Angles(-0.9, 0, 0) }):Play()
 	task.delay(b.Down + b.Under, function()
 		if z.Dead then
 			return
@@ -651,13 +708,16 @@ function ZombieService:_burrow(z)
 			if prey and prey.Parent then
 				up = CFrame.lookAt(up.Position, Vector3.new(prey.Position.X, up.Position.Y, prey.Position.Z))
 			end
-			root.CFrame = up - Vector3.new(0, 5 * s, 0)
+			root.CFrame = (up - Vector3.new(0, 5 * s, 0)) * CFrame.Angles(-0.7, 0, 0)
+			z.Model:SetAttribute("Pose", "Rise")
+			z.Model:SetAttribute("PoseAt", workspace:GetServerTimeNow())
 			local rise = TweenService:Create(root, TweenInfo.new(W.RiseTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { CFrame = up })
 			rise.Completed:Connect(function()
 				if root.Parent and not z.Dead then
 					root.Anchored = false
 					root:SetNetworkOwner(nil)
 					z.Burrowed = false
+					z.Model:SetAttribute("Pose", nil)
 					z.StunnedUntil = 0
 					z.LastPos = root.Position
 					z.NextBurrow = os.clock() + b.Cooldown
@@ -675,14 +735,23 @@ function ZombieService:_wail(z)
 	local w = z.Def.Wail
 	z.NextWail = os.clock() + w.Cooldown
 	z.StunnedUntil = math.max(z.StunnedUntil, os.clock() + w.Windup)
+	-- it throws its head back, arms up and shaking (the client's "Scream" pose)
+	z.Model:SetAttribute("Pose", "Scream")
+	z.Model:SetAttribute("PoseAt", workspace:GetServerTimeNow())
+	z.AO.CFrame = z.AO.CFrame * CFrame.Angles(0.3, 0, 0)
 	Remotes.Effect:FireAllClients("WailStart", { Model = z.Model, Time = w.Windup })
+	task.delay(w.Windup + 0.4, function()
+		if not z.Dead then
+			z.Model:SetAttribute("Pose", nil)
+		end
+	end)
 	task.delay(w.Windup, function()
 		if z.Dead then
 			return
 		end
 		local origin = z.Root.Position
 		local prey = findTarget(origin)
-		Remotes.Effect:FireAllClients("Wail", { Position = origin, Radius = w.Radius, Blur = w.Blur })
+		Remotes.Effect:FireAllClients("Wail", { Position = origin, Radius = w.Radius, Blur = w.Blur, Stun = w.Stun })
 		if not prey then
 			return
 		end
@@ -762,8 +831,8 @@ function ZombieService:_step(_dt)
 				local goal, goalDist = target.Position, dist
 				-- surround: near the player, close in on an own slot around them instead of the centre
 				if dist < SURROUND_RANGE and not def.Boss then
-					z.Slot = z.Slot or math.atan2(-dir.Z, -dir.X) + (math.random() - 0.5) * 1.2
-					goal = target.Position + Vector3.new(math.cos(z.Slot), 0, math.sin(z.Slot)) * reach * 0.7
+					z.Slot = z.Slot or pickSlot(z, target, math.atan2(-dir.Z, -dir.X))
+					goal = target.Position + Vector3.new(math.cos(z.Slot), 0, math.sin(z.Slot)) * (z.SlotRing or 0) * 4 + Vector3.new(math.cos(z.Slot), 0, math.sin(z.Slot)) * reach * 0.7
 					local toGoal = Vector3.new(goal.X - root.Position.X, 0, goal.Z - root.Position.Z)
 					goalDist = toGoal.Magnitude
 					if goalDist > 0.05 then
@@ -772,8 +841,21 @@ function ZombieService:_step(_dt)
 				elseif dist > SURROUND_RANGE * 1.5 then
 					z.Slot = nil -- lost them: pick a fresh slot next time
 				end
+				if z.Flank and dist >= 8 and not def.Boss then
+					-- spread out: head for a point off to the player's side instead of following the blob
+					goal = target.Position + rotateFlat(-dir, z.Flank) * math.min(dist * 0.6, 24)
+					local toGoal = Vector3.new(goal.X - root.Position.X, 0, goal.Z - root.Position.Z)
+					goalDist = toGoal.Magnitude
+					if goalDist > 0.05 then
+						dir = toGoal / goalDist
+					end
+				end
 				local wantsMove = dist > reach * 0.6 and goalDist > 0.6
 				local moveDir = if wantsMove then navigate(z, dir, goalDist, goal, now) else flat / dist
+				local spread = if wantsMove and z.Sep then moveDir + z.Sep * 0.9 else nil
+				if spread and spread.Magnitude > 0.2 then
+					moveDir = spread.Unit -- ease away from the zombies pressing in on it
+				end
 				z.AO.CFrame = CFrame.lookAt(Vector3.zero, if wantsMove then moveDir else flat / dist)
 				if wantsMove then
 					local speed = def.Speed * z.SpeedMult

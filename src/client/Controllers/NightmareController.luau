@@ -8,7 +8,8 @@
 -- (Nightmare.Heartbeat), and the city's street lamps go out or flicker (Nightmare.Lamps; local only, picked
 -- by lamp position so every player sees the same ones; restored when the run ends).
 -- The Wailer's scream (ZombieService:_wail): "WailStart" plays the scream from it and swells its throat sac,
--- "Wail" blurs the sight of players within its Radius.
+-- "Wail" rolls out a shockwave ring, and players within its Radius get blurred sight, ringing ears and are
+-- rooted for Stun seconds.
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -162,10 +163,42 @@ local function onEffect(kind, data)
 		end)
 		swell:Play()
 	elseif kind == "Wail" then
+		-- the roar rolls out as a pale shockwave everyone can see
+		local ring = Instance.new("Part")
+		ring.Shape = Enum.PartType.Cylinder
+		ring.Anchored, ring.CanCollide, ring.CanQuery, ring.CanTouch, ring.CastShadow = true, false, false, false, false
+		ring.Material = Enum.Material.Neon
+		ring.Color = Color3.fromRGB(170, 215, 255)
+		ring.Transparency = 0.35
+		ring.Size = Vector3.new(0.3, 4, 4)
+		ring.CFrame = CFrame.new(data.Position.X, data.Position.Y - 2, data.Position.Z) * CFrame.Angles(0, 0, math.rad(90))
+		ring.Parent = workspace.CurrentCamera
+		TweenService:Create(ring, TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.new(0.3, data.Radius * 2, data.Radius * 2), Transparency = 1 }):Play()
+		task.delay(0.6, ring.Destroy, ring)
 		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 		if not root or (root.Position - data.Position).Magnitude > data.Radius then
 			return
 		end
+		-- caught in it: rooted to the spot for a moment, ears ringing (the character is ours to move)
+		local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+		if humanoid and data.Stun and not humanoid:GetAttribute("WailStun") then -- an overlapping roar doesn't save 0
+			humanoid:SetAttribute("WailStun", true)
+			local speed, jump = humanoid.WalkSpeed, humanoid.JumpPower
+			humanoid.WalkSpeed, humanoid.JumpPower = 0, 0
+			task.delay(data.Stun, function()
+				humanoid:SetAttribute("WailStun", nil)
+				if humanoid.Parent and humanoid.WalkSpeed == 0 then -- unless the server set a new speed meanwhile
+					humanoid.WalkSpeed, humanoid.JumpPower = speed, jump
+				end
+			end)
+		end
+		local ringing = Instance.new("Sound")
+		ringing.SoundId = "rbxassetid://" .. Nightmare.RingSound.Id
+		ringing.Volume = Nightmare.RingSound.Volume
+		ringing.Parent = SoundService
+		ringing:Play()
+		TweenService:Create(ringing, TweenInfo.new(data.Blur + 1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Volume = 0 }):Play()
+		task.delay(data.Blur + 1.6, ringing.Destroy, ringing)
 		local blur = Instance.new("BlurEffect")
 		blur.Name = "WailBlur"
 		blur.Size = 22

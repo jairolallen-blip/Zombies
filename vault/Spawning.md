@@ -14,7 +14,7 @@ Part of the [[Roadmap]]. Zombies come from the [[Zombies]] phase, and the map is
 
 ## How it works
 - **Where:** a random spot **22–75 studs** from a random living player, in any direction, on an open street cell with a little clearance (from the zombie NavGrid), and never closer than 22 studs to *any* player. If nothing fits after 40 tries, it falls back to the city's fixed `ZombieSpawn` pads. The boss always uses a pad, since it needs room.
-- **Warning:** a red circle pulses for **1.2s** (a ring closes in), then the zombie **rises out of the ground** over 0.6s with a burst of dirt.
+- **Warning:** a red circle pulses for **1.2s** (a ring closes in), then the zombie **claws its way out of the ground** over 0.9s: hunched forward at first, arms reaching up and clawing, straightening as it comes up, with churned dirt, broken rubble, dust and clods around the hole that settle away after a few seconds (2026-11-03; `GroundFxController`, the "Rise" pose in EffectsController).
 - **Update after the balance pass:** the "gap between groups" column below is outdated. Each wave's spawns are now spread over a window of 16s + 1s × wave, with gaps of 0.3–1.4s, which gives about 2 zombies/s at wave 8 instead of 5.4. See [[Waves and Boss#Balance pass (2026-11-01)]].
 - **Original ramp per wave (solo):**
 

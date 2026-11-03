@@ -32,6 +32,7 @@ Read by both server and client (ReplicatedStorage.Shared.Config.GameConfig).
 - [[EconomyService]]
 - [[FieldStations]]
 - [[FlightLine]]
+- [[GroundFxController]]
 - [[HUDController]]
 - [[InputController]]
 - [[LobbyAudioController]]

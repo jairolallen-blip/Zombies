@@ -7,7 +7,11 @@
 local Nightmare = {
 	WinsToUnlock = 3, -- normal-mode victories (profile Stats.Victories) before the gate opens
 	TotalWaves = 10,
-	CountMult = 1.3, -- zombies per wave
+	-- wave n has (BaseCount + CountPerWave * (n - 1)) * CountMult zombies; Normal adds 5 a wave (GameConfig.Waves).
+	-- 2026-11-03: the late waves were too crowded (CountMult 1.3, +5 a wave): wave 10 went from 77 to 54 solo
+	CountMult = 1.2,
+	CountPerWave = 3.5,
+	MaxAlive = 45, -- at most this many on the field at once (Normal: 70)
 	ExtraPlayerMultiplier = 0.15, -- each extra player adds +15% zombies (Normal adds 60%: GameConfig.Waves)
 	HealthMult = 1.5, -- zombie health (on top of the per-wave scaling)
 	BossHealthMult = 1.5,
@@ -18,6 +22,7 @@ local Nightmare = {
 	Heartbeat = { Id = 6202853067, Volume = 0.6, Radius = 22, Full = 6 },
 	Lamps = { Dead = 0.35, Flicker = 0.3 }, -- share of the city's street lamps that are out / flickering (same for everyone)
 	WailSound = { Id = 9113985848, Volume = 1 }, -- PSE, "Creature Scream Piercing Pain Female 3": the Wailer's scream
+	RingSound = { Id = 87380384768764, Volume = 0.55 }, -- "EarRinging" (public upload): concussed ringing when a scream hits you
 }
 
 -- stats: a profile's Stats table (server) or the Stats in AchievementsJson (client)

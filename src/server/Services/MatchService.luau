@@ -455,7 +455,9 @@ function MatchService:_playWave(wave, isBoss)
 	local players = #self:GetRunPlayers()
 	local playerMult = 1 + cfg.ExtraPlayerMultiplier * math.max(0, players - 1)
 	local countMult = 1 + (if nightmare then Nightmare.ExtraPlayerMultiplier else cfg.ExtraPlayerMultiplier) * math.max(0, players - 1)
-	local total = math.floor((cfg.BaseCount + cfg.CountPerWave * (wave - 1)) * countMult * (if isBoss then cfg.BossWaveHordeMult else 1) * (if nightmare then Nightmare.CountMult else 1))
+	local perWave = if nightmare then Nightmare.CountPerWave else cfg.CountPerWave
+	local maxAlive = if nightmare then Nightmare.MaxAlive else cfg.MaxAlive
+	local total = math.floor((cfg.BaseCount + perWave * (wave - 1)) * countMult * (if isBoss then cfg.BossWaveHordeMult else 1) * (if nightmare then Nightmare.CountMult else 1))
 	local healthMult = (1 + cfg.HealthScalePerWave * (wave - 1)) * (if nightmare then Nightmare.HealthMult else 1)
 	local burst = 1 + math.floor(wave / cfg.BurstEvery) -- zombies per spawn group (vault: Spawning.md)
 	local spawnWindow = cfg.SpawnSeconds + cfg.SpawnSecondsPerWave * wave
@@ -473,8 +475,8 @@ function MatchService:_playWave(wave, isBoss)
 		end
 		local now = os.clock()
 		local onField = ZombieService:GetAliveCount() + ZombieService:GetPendingCount()
-		if toSpawn > 0 and now >= nextSpawn and onField < cfg.MaxAlive then
-			local n = math.min(burst, toSpawn, cfg.MaxAlive - onField)
+		if toSpawn > 0 and now >= nextSpawn and onField < maxAlive then
+			local n = math.min(burst, toSpawn, maxAlive - onField)
 			while n > 0 do
 				local typeId = ZombieService:PickType(wave, nightmare)
 				local position = MapService:GetZombieSpawnPosition()

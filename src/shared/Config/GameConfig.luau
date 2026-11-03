@@ -67,7 +67,7 @@ GameConfig.Waves = {
 	SpawnMinDistance = 22, -- studs from every player
 	SpawnMaxDistance = 75, -- studs from the player it spawns around
 	SpawnWarning = 1.2, -- seconds the red circle shows before the zombie rises
-	RiseTime = 0.6, -- seconds to climb out of the ground
+	RiseTime = 0.9, -- seconds to climb out of the ground (was 0.6; slower so the crawl-out reads, 2026-11-03)
 	MaxAlive = 70, -- hard cap on simultaneous zombies (performance)
 	HealthScalePerWave = 0.10, -- zombie health +10% per wave
 	-- the run (vault: Waves and Boss.md): clear TotalWaves to win; the last wave is the boss wave

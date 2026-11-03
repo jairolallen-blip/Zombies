@@ -13,6 +13,7 @@ Back to [[Home]].
 - [[ConditionsController]]: the client side of a run's weather (Shared/Config/Conditions, GameState Condition).
 - [[CutsceneController]]: the first-person drop-in at the start of a run (vault: Match Start.md).
 - [[EffectsController]]: all client-side visuals. Parts go in Workspace.ClientEffects (non-queryable).
+- [[GroundFxController]]: disturbed earth where zombies break through the street (local only, nothing replicates).
 - [[HUDController]]: the in-run HUD. Visible only while the player attribute InRun is true.
 - [[InputController]]: keyboard actions other than shooting — abilities and in-run upgrades.
 - [[LobbyAudioController]]: the safehouse's sound (ids and volumes in Shared/Config/Sounds).

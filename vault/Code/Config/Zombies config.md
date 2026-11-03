@@ -1,6 +1,6 @@
 # Zombies config
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Config/Zombies.luau` (284 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Config/Zombies.luau` (285 lines). Don't edit it here: rerun the script.
 
 Part of [[Config]].
 
@@ -45,9 +45,10 @@ Nightmare types (Config/Nightmare; the NIGHTMARE row of the enemy index):
                     shot), stays under for Under, then a red warning circle opens Behind studs behind the target
                     and it rises out of it (ZombieService:_burrow; GameConfig.Waves SpawnWarning / RiseTime)
   Split = { Into, Count }   on death, Count zombies of type Into crawl out where it fell (ZombieService:Kill)
-  Wail = { Range, Radius, Pull, Windup, Cooldown, Blur, RushMult, RushTime }
+  Wail = { Range, Radius, Pull, Windup, Cooldown, Blur, Stun, RushMult, RushTime }
                     within Range of a player it stops and screams for Windup: players within Radius get their
-                    sight blurred for Blur seconds (NightmareController), and every zombie within Pull of it
+                    sight blurred for Blur seconds, a ringing in the ears and can't move for Stun seconds
+                    (NightmareController), and every zombie within Pull of it
                     rushes the nearest player at RushMult speed for RushTime (ZombieService:_wail)
   An entry without Index (the Husk's halves) is left out of the enemy index.
 ```

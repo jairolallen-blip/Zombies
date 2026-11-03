@@ -17,6 +17,7 @@ A second mode for players who've beaten the normal game: tougher, darker, and sc
 - A quiet eerie music loop (APM "The Fear Within") under the whole run; it fades out while the boss is up so the boss music plays alone.
 - A heartbeat that gets louder and faster the more zombies are close.
 - About a third of the street lamps are dead and another third flicker (the same ones for every player).
+- Fewer but tougher zombies than before: 16 on wave 1 and 54 on wave 10 solo, at most 45 alive (2026-11-03; it got too crowded late).
 - Squads: each extra player adds only 15% more zombies (Normal adds 60%), because Nightmare already has 30% more.
 - **Commander:** Sgt. Voss has lost contact with every other team and stops pretending there's a plan. The radio breaks into static. At the boss the signal dies; he only comes back if the Titan falls ("I'd stopped writing your names down...").
 - **Rewards:** win = the normal Gems x3. Die = nothing ("NO GEMS THIS TIME"). Kills still count toward the enemy index even on a loss, so a failed run still teaches you something.
@@ -28,7 +29,7 @@ A second mode for players who've beaten the normal game: tougher, darker, and sc
    - Shambler -> **Rotter:** kept simple (it's the common zombie): tougher (80 HP), faster, and nastier-looking: a rotting face with sunken red-rimmed eyes, a rotted-out nose, the jaw hanging open on yellow teeth, a cheek rotted through, ribs through the shirt, a bone through one arm. Not the "only moves when you look away" idea (too much for the common type).
    - Runner -> **Skitter:** flayed red muscle with a bone skull face and ribcage, on all fours. **The ambusher** (redesigned 2026-11-03: fast Runners were already hard to hit, so it isn't a faster one): it crawls slowly and is easy to shoot in the open, but from a distance it burrows into the street, out of reach, and bursts up behind you through a red circle. Comes in pairs. The danger is awareness: check your back.
    - Brute -> **Husk:** bone armour (spiked shoulder plates, a split breastplate, horns, tusks) over a glowing seam; when it dies it splits into two crawling halves that keep fighting.
-   - Bloater -> **Wailer:** tall, pale and gaunt, arms to the knees with long talons, blind white eyes. Its throat sac swells and it screams: your sight blurs and every zombie nearby rushes you.
+   - Bloater -> **Wailer:** tall, pale and gaunt, arms to the knees with long talons, blind white eyes. Its throat sac swells, it leans back with its arms thrown up and screams: a pale shockwave rolls out, your sight blurs, your ears ring, you're rooted for a moment, and every zombie nearby rushes you.
    - No Mimic: every zombie must die to end a wave, so a disguised one only stalls.
 4. **New boss** ("The Warden" idea): moves between light sources; the arena's lights die one by one.
 

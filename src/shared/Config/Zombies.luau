@@ -36,9 +36,10 @@
 --                     shot), stays under for Under, then a red warning circle opens Behind studs behind the target
 --                     and it rises out of it (ZombieService:_burrow; GameConfig.Waves SpawnWarning / RiseTime)
 --   Split = { Into, Count }   on death, Count zombies of type Into crawl out where it fell (ZombieService:Kill)
---   Wail = { Range, Radius, Pull, Windup, Cooldown, Blur, RushMult, RushTime }
+--   Wail = { Range, Radius, Pull, Windup, Cooldown, Blur, Stun, RushMult, RushTime }
 --                     within Range of a player it stops and screams for Windup: players within Radius get their
---                     sight blurred for Blur seconds (NightmareController), and every zombie within Pull of it
+--                     sight blurred for Blur seconds, a ringing in the ears and can't move for Stun seconds
+--                     (NightmareController), and every zombie within Pull of it
 --                     rushes the nearest player at RushMult speed for RushTime (ZombieService:_wail)
 --   An entry without Index (the Husk's halves) is left out of the enemy index.
 
@@ -219,7 +220,7 @@ Zombies.Types = {
 		Scale = 1.15,
 		MinWave = 4,
 		Weight = 2,
-		Wail = { Range = 28, Radius = 40, Pull = 60, Windup = 1, Cooldown = 9, Blur = 3, RushMult = 1.5, RushTime = 4 },
+		Wail = { Range = 28, Radius = 40, Pull = 60, Windup = 1, Cooldown = 9, Blur = 3, Stun = 0.8, RushMult = 1.5, RushTime = 4 },
 		Look = {
 			Build = "Gaunt",
 			Horror = "Wailer",

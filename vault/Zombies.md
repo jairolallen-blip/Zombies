@@ -21,7 +21,7 @@ Every zombie is built from parts with **random variation**: shirt and pants colo
 
 ## Behaviour (AI)
 - **Speed variety:** each zombie moves at ±15% of its type's speed, so the horde doesn't march in lockstep.
-- **Surround, don't stack:** within about 14 studs, each zombie heads for its own slot around the player instead of the exact centre, so the horde encircles you rather than piling into one ball.
+- **Surround, don't stack:** within about 14 studs, each zombie heads for its own slot around the player instead of the exact centre, so the horde encircles you rather than piling into one ball. Since 2026-11-03 the slot is the least-taken of 8 sides, one zombie per side close in, the rest waiting in rings behind (at most 8 on you at once), and zombies push away from their neighbours and swing wide out of a clump.
 - **Runner lunge:** within 12 studs, a runner bursts forward at double speed for a moment.
 - **Hit flinch:** each hit slows the zombie briefly, so damage feels like it lands.
 - **Attack swipe:** both arms visibly swing down when it hits you (the client reads `AttackAt`).
@@ -31,7 +31,7 @@ Every zombie is built from parts with **random variation**: shirt and pants colo
 - Arms stay reaching forward with a lazy bob, the head lolls, and the attack swipe plays on top.
 
 ## Notes
-- Headshots count on any part whose name starts with `Head` (face details included) and on `Eye`.
+- Headshots count on any part whose name starts with `Head` (face details included) and on `Eye`. Since 2026-11-03 the whole head counts: the invisible Root hitbox covers most of the face, so CombatService checks whether the bullet's line goes on through the head.
 - Spawn rise-from-the-ground and the red warning circle belong to [[Spawning]] (phase 6). The boss's fight mechanics belong to [[Waves and Boss]] (phase 7).
 
 ## Code
