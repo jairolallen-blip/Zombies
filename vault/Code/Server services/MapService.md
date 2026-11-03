@@ -1,6 +1,6 @@
 # MapService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/MapService.luau` (260 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/MapService.luau` (282 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -22,6 +22,7 @@ Public:
   MapService:GetBossSpawn() -> Vector3   the "BossSpawn" marker (open ground facing the square)
   MapService:GetNavBounds() -> center, halfSize, lattice   (area the zombie NavGrid scans)
   MapService:GetDeployPoints() -> from, to   (pad 1 -> arena spawns, ground level)
+  MapService:ApplyAtmosphere(condition?, deploy?), :FadeFromDeploy(condition, seconds)   run lighting
   MapService:GetPads() -> {[PadId] = Pad part}   Flight Line pads (QueueService)
   MapService:GetPadAt(player) -> PadId?      the pad the player stands on (its take-off zone)
   MapService:GetDeployFlight() -> {Vector3}   helicopter path, ocean -> above the square

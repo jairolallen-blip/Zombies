@@ -13,13 +13,15 @@ A second mode for players who've beaten the normal game: tougher, darker, and sc
 
 ## The run (step 1, done)
 - 10 waves like Normal, but 30% more zombies, 50% more zombie and Titan health, and zombies hit 35% harder.
-- Midnight with a red haze; flashlights on.
+- The helicopter ride in is a red dusk; once you land, night falls over 5 seconds: midnight with a red haze, flashlights on.
+- A quiet eerie music loop (APM "The Fear Within") under the whole run; it fades out while the boss is up so the boss music plays alone.
+- Squads: each extra player adds only 15% more zombies (Normal adds 60%), because Nightmare already has 30% more.
 - **Commander:** Sgt. Voss has lost contact with every other team and stops pretending there's a plan. The radio breaks into static. At the boss the signal dies; he only comes back if the Titan falls ("I'd stopped writing your names down...").
 - **Rewards:** win = the normal Gems x3. Die = nothing ("NO GEMS THIS TIME"). Kills still count toward the enemy index even on a loss, so a failed run still teaches you something.
 
 ## Next steps
 1. ~~Mode, unlock, queue, rewards, harder numbers, radio, dark weather~~ (done).
-2. **Mood:** heartbeat when the horde is close, long silences, flickering lamps, lighting polish (show the owner screenshots first; they disliked the earlier weather lighting).
+2. **Mood:** red dusk ride and background music done (2026-11-02, owner liked the in-city darkness). Still open: heartbeat when the horde is close, long silences, flickering lamps.
 3. **Twisted counterparts**, each with a new look and behaviour, in their own **NIGHTMARE row** under the normal index row:
    - Shambler counterpart: kept simple (it's the common zombie): tougher and nastier-looking, maybe faster in packs. Not the "only moves when you look away" idea (too much for the common type).
    - Runner -> **Skitter:** fast, low to the ground, comes in packs, quiet until close.

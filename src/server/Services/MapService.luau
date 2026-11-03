@@ -13,12 +13,14 @@
 --   MapService:GetBossSpawn() -> Vector3   the "BossSpawn" marker (open ground facing the square)
 --   MapService:GetNavBounds() -> center, halfSize, lattice   (area the zombie NavGrid scans)
 --   MapService:GetDeployPoints() -> from, to   (pad 1 -> arena spawns, ground level)
+--   MapService:ApplyAtmosphere(condition?, deploy?), :FadeFromDeploy(condition, seconds)   run lighting
 --   MapService:GetPads() -> {[PadId] = Pad part}   Flight Line pads (QueueService)
 --   MapService:GetPadAt(player) -> PadId?      the pad the player stands on (its take-off zone)
 --   MapService:GetDeployFlight() -> {Vector3}   helicopter path, ocean -> above the square
 --   MapService:ApplyAtmosphere(condition?)   sunset, or a run's weather (Config/Conditions)
 
 local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -68,8 +70,11 @@ end
 
 -- Warm, hazy sunset (GameConfig.OurMap.Atmosphere). Runtime only; Edit-mode Lighting is untouched.
 -- condition (Config/Conditions entry, optional): its Atmosphere fields replace the sunset ones
-function MapService:ApplyAtmosphere(condition)
+function MapService:ApplyAtmosphere(condition, deploy)
 	local a = setmetatable(table.clone(condition and condition.Atmosphere or {}), { __index = OUR.Atmosphere })
+	for key, value in if deploy and condition and condition.Deploy then condition.Deploy else {} do
+		a[key] = value -- the lighter ride in (Conditions Deploy)
+	end
 	Lighting.ClockTime = a.ClockTime
 	Lighting.Brightness = a.Brightness
 	Lighting.Ambient = a.Ambient
@@ -85,7 +90,7 @@ function MapService:ApplyAtmosphere(condition)
 	atmosphere.Offset = 0.1
 	atmosphere.Color = a.AtmosphereColor
 	atmosphere.Decay = a.HazeColor
-	atmosphere.Glare = 0.6
+	atmosphere.Glare = a.Glare or 0.6
 	atmosphere.Haze = a.Haze
 	atmosphere.Parent = Lighting
 	local grade = Instance.new("ColorCorrectionEffect")
@@ -102,6 +107,23 @@ function MapService:ApplyAtmosphere(condition)
 	rays.Intensity = 0.08
 	rays.Spread = 0.6
 	rays.Parent = Lighting
+end
+
+-- After the drop: tweens a condition's Deploy lighting back to its own Atmosphere over `seconds`
+function MapService:FadeFromDeploy(condition, seconds)
+	local a = setmetatable(table.clone(condition.Atmosphere), { __index = OUR.Atmosphere })
+	local info = TweenInfo.new(seconds, Enum.EasingStyle.Sine)
+	-- clock runs forward (dusk to midnight = 17.85 -> 24), never back through the day
+	local clock = if a.ClockTime < Lighting.ClockTime then a.ClockTime + 24 else a.ClockTime
+	TweenService:Create(Lighting, info, { ClockTime = clock, Brightness = a.Brightness, Ambient = a.Ambient, OutdoorAmbient = a.OutdoorAmbient }):Play()
+	local atmosphere = Lighting:FindFirstChildOfClass("Atmosphere")
+	if atmosphere then
+		TweenService:Create(atmosphere, info, { Density = a.Density, Haze = a.Haze, Glare = a.Glare or 0.6, Color = a.AtmosphereColor, Decay = a.HazeColor }):Play()
+	end
+	local grade = Lighting:FindFirstChildOfClass("ColorCorrectionEffect")
+	if grade then
+		TweenService:Create(grade, info, { TintColor = a.TintColor, Saturation = a.Saturation, Contrast = a.Contrast }):Play()
+	end
 end
 
 function MapService:GetLobbySpawnCFrame()

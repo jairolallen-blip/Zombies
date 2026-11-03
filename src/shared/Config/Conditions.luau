@@ -5,6 +5,8 @@
 -- flashlight on every player while Flashlights is set. PostFXController's sunset grade only runs on Sunset.
 -- OFF for now (2026-11-02, the owner prefers the sunset look): every weather but Sunset has Weight 0.
 -- "Nightmare" is never rolled: MatchService uses it for every Nightmare run (Config/Nightmare).
+-- Deploy (optional): lighter values for the helicopter ride in; MapService:FadeFromDeploy tweens them back
+-- to Atmosphere after the drop.
 
 local Conditions = {}
 
@@ -79,11 +81,24 @@ Conditions.List = {
 			OutdoorAmbient = Color3.fromRGB(78, 48, 50),
 			Density = 0.55,
 			Haze = 2.2,
-			AtmosphereColor = Color3.fromRGB(96, 44, 42),
-			HazeColor = Color3.fromRGB(32, 12, 14),
+			AtmosphereColor = Color3.fromRGB(110, 40, 36),
+			HazeColor = Color3.fromRGB(58, 16, 16), -- a faint red sky over the dark city
 			TintColor = Color3.fromRGB(255, 205, 200),
 			Saturation = -0.4,
 			Contrast = 0.15,
+		},
+		Deploy = { -- the ride in over the sea: a red dusk you can see the city against; night falls on landing
+			ClockTime = 17.85,
+			Brightness = 1.5,
+			Ambient = Color3.fromRGB(96, 56, 52),
+			OutdoorAmbient = Color3.fromRGB(140, 80, 72),
+			Density = 0.42,
+			Haze = 3,
+			Glare = 2,
+			AtmosphereColor = Color3.fromRGB(210, 70, 55),
+			HazeColor = Color3.fromRGB(120, 28, 24),
+			TintColor = Color3.fromRGB(255, 165, 150),
+			Saturation = -0.1,
 		},
 	},
 }

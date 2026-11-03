@@ -1,6 +1,6 @@
 # MatchService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/MatchService.luau` (659 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/MatchService.luau` (663 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 

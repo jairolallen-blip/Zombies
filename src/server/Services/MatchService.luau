@@ -454,7 +454,8 @@ function MatchService:_playWave(wave, isBoss)
 	local MapService = Services.MapService
 	local players = #self:GetRunPlayers()
 	local playerMult = 1 + cfg.ExtraPlayerMultiplier * math.max(0, players - 1)
-	local total = math.floor((cfg.BaseCount + cfg.CountPerWave * (wave - 1)) * playerMult * (if isBoss then cfg.BossWaveHordeMult else 1) * (if nightmare then Nightmare.CountMult else 1))
+	local countMult = 1 + (if nightmare then Nightmare.ExtraPlayerMultiplier else cfg.ExtraPlayerMultiplier) * math.max(0, players - 1)
+	local total = math.floor((cfg.BaseCount + cfg.CountPerWave * (wave - 1)) * countMult * (if isBoss then cfg.BossWaveHordeMult else 1) * (if nightmare then Nightmare.CountMult else 1))
 	local healthMult = (1 + cfg.HealthScalePerWave * (wave - 1)) * (if nightmare then Nightmare.HealthMult else 1)
 	local burst = 1 + math.floor(wave / cfg.BurstEvery) -- zombies per spawn group (vault: Spawning.md)
 	local spawnWindow = cfg.SpawnSeconds + cfg.SpawnSecondsPerWave * wave
@@ -523,7 +524,7 @@ function MatchService:RunMatch(participants, options)
 	-- before the new lighting arrives.
 	local condition = if tutorial then Conditions.List[1] elseif nightmare then Conditions.ById.Nightmare else Conditions.Pick()
 	GameState:SetAttribute("Condition", condition.Id)
-	task.delay(0.5, Services.MapService.ApplyAtmosphere, Services.MapService, condition)
+	task.delay(0.5, Services.MapService.ApplyAtmosphere, Services.MapService, condition, true)
 	if condition ~= Conditions.List[1] then -- only announce weather that isn't the usual sunset
 		for _, player in participants do
 			Remotes.Notify:FireClient(player, "CONDITIONS: " .. condition.Name .. ". " .. condition.Desc, "Info")
@@ -544,6 +545,9 @@ function MatchService:RunMatch(participants, options)
 		Services.EconomyService:ResetRun(player)
 	end
 	self:_deploy(participants)
+	if condition.Deploy then
+		Services.MapService:FadeFromDeploy(condition, 5) -- the city goes dark once you're on the ground
+	end
 
 	local wave, wavesCleared = 0, 0
 	while next(inRun) ~= nil and wavesCleared < totalWaves do
