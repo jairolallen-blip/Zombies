@@ -16,6 +16,7 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local HttpService = game:GetService("HttpService")
 local DataStoreService = game:GetService("DataStoreService")
+local AnalyticsService = game:GetService("AnalyticsService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -25,6 +26,8 @@ local Weapons = require(Shared.Config.Weapons)
 local Util = require(Shared.Util)
 local Remotes = require(Shared.Remotes)
 local Achievements = require(Shared.Config.Achievements)
+local Bounties = require(Shared.Config.Bounties)
+local Zombies = require(Shared.Config.Zombies)
 
 -- Session lock: a run moves players between servers (QueueService), so two servers can hold the same
 -- profile for a moment. Each saved profile carries _Lock = {JobId, Time}: a server only loads a profile
@@ -85,6 +88,9 @@ local DEFAULT_PROFILE = {
 	Stats = {}, -- achievement progress, [stat key] = number (Config/Achievements)
 	Claimed = {}, -- [achievement id] = true
 	TutorialDone = false, -- first-time players get a solo training run before the lobby (QueueService)
+	DailyStreak = 0, -- days in a row the daily rations were claimed (DailyService)
+	DailyDay = 0, -- UTC day number of the last claim
+	Bounty = { Day = 0, Progress = {}, Done = {} }, -- today's bounties (Config/Bounties); Tracked = id or nil
 }
 
 local DataService = {}
@@ -146,6 +152,12 @@ function DataService:Start()
 	end
 	Remotes.ClaimAchievement.OnServerEvent:Connect(function(player, id)
 		self:ClaimAchievement(player, id)
+	end)
+	Remotes.ClaimIndex.OnServerEvent:Connect(function(player, typeId)
+		self:ClaimIndex(player, typeId)
+	end)
+	Remotes.TrackBounty.OnServerEvent:Connect(function(player, id)
+		self:TrackBounty(player, id)
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		self:Save(player, true)
@@ -223,6 +235,9 @@ function DataService:Load(player)
 	end
 
 	local isNew = data == nil
+	if isNew then
+		self:Funnel(player, 1, "Joined")
+	end
 	data = reconcile(data or deepCopy(DEFAULT_PROFILE), DEFAULT_PROFILE)
 	if isNew and RunService:IsStudio() then
 		data.Gems = GameConfig.Data.StudioStartingGems
@@ -307,6 +322,7 @@ function DataService:Replicate(player)
 	player:SetAttribute("LoadoutJson", HttpService:JSONEncode(data.Loadout))
 	player:SetAttribute("OwnedJson", HttpService:JSONEncode({ Classes = data.OwnedClasses, Weapons = data.OwnedWeapons }))
 	player:SetAttribute("AchievementsJson", HttpService:JSONEncode({ Stats = data.Stats, Claimed = data.Claimed }))
+	player:SetAttribute("BountyJson", HttpService:JSONEncode(self:_bounty(data)))
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if leaderstats then
 		leaderstats["Best Wave"].Value = data.BestWave
@@ -341,6 +357,7 @@ function DataService:AddStat(player, key, amount, isMax)
 		end
 	end
 	player:SetAttribute("AchievementsJson", HttpService:JSONEncode({ Stats = stats, Claimed = data.Claimed }))
+	self:_bountyProgress(player, data, key, amount or 1, isMax)
 end
 
 function DataService:ClaimAchievement(player, id)
@@ -354,6 +371,67 @@ function DataService:ClaimAchievement(player, id)
 	self:Replicate(player)
 	Remotes.Notify:FireClient(player, "+◆" .. def.Gems .. "  " .. def.Name, "Good")
 	task.spawn(self.Save, self, player)
+end
+
+-- Enemy index (lobby FIELD RESEARCH station): a zombie type is discovered once you've killed one
+-- (Stats Kills_<type>); claiming it pays its Index.Gems once. Claims share the Claimed table as "Index_<type>".
+function DataService:ClaimIndex(player, typeId)
+	local data = profiles[player]
+	local def = type(typeId) == "string" and Zombies.Types[typeId]
+	local key = "Index_" .. tostring(typeId)
+	if not data or not def or not def.Index or data.Claimed[key] or (data.Stats["Kills_" .. typeId] or 0) < 1 then
+		return
+	end
+	data.Claimed[key] = true
+	data.Gems += def.Index.Gems
+	self:Replicate(player)
+	Remotes.Notify:FireClient(player, "+◆" .. def.Index.Gems .. "  Discovered: " .. def.DisplayName, "Good")
+	task.spawn(self.Save, self, player)
+end
+
+-- Bounties (Config/Bounties): the profile's Bounty table, reset when a new UTC day starts
+function DataService:_bounty(data)
+	local today = Bounties.Today(os.time())
+	if data.Bounty.Day ~= today then
+		data.Bounty = { Day = today, Progress = {}, Done = {} }
+	end
+	return data.Bounty
+end
+
+function DataService:TrackBounty(player, id)
+	local data = profiles[player]
+	if not data or type(id) ~= "string" then
+		return
+	end
+	local bounty = self:_bounty(data)
+	for _, def in Bounties.ForDay(bounty.Day) do
+		if def.Id == id and not bounty.Done[id] then
+			bounty.Tracked = id
+			self:Replicate(player)
+			return
+		end
+	end
+end
+
+-- only the tracked bounty counts; finishing it pays at once and frees the slot
+function DataService:_bountyProgress(player, data, key, amount, isMax)
+	local bounty = self:_bounty(data)
+	local def = bounty.Tracked and Bounties.ById[bounty.Tracked]
+	if not def or def.Stat ~= key then
+		return
+	end
+	local before = bounty.Progress[def.Id] or 0
+	bounty.Progress[def.Id] = math.min(def.Goal, if def.Max then math.max(before, amount) else before + amount)
+	if bounty.Progress[def.Id] >= def.Goal then
+		bounty.Done[def.Id] = true
+		bounty.Tracked = nil
+		data.Gems += def.Gems
+		Remotes.Notify:FireClient(player, "BOUNTY DONE: " .. def.Name .. "  +◆" .. def.Gems, "Good")
+		self:Replicate(player)
+		task.spawn(self.Save, self, player)
+	else
+		player:SetAttribute("BountyJson", HttpService:JSONEncode(bounty))
+	end
 end
 
 -- Called by MatchService at the end of a run. Returns true if this was a new best wave.
@@ -394,6 +472,18 @@ function DataService:GetTopBestWaves(count)
 		table.insert(top, { UserId = tonumber(entry.key:sub(3)), Wave = entry.value })
 	end
 	return top
+end
+
+-- Onboarding funnel (Creator Dashboard > Analytics > Funnels): where new players stop. Roblox counts each
+-- step once per player, so callers can log it every time. Steps:
+--   1 Joined   2-9 tutorial steps 1-8   10 Finished the tutorial   11 Reached the lobby   12 Finished a squad run
+function DataService:Funnel(player, step, name)
+	pcall(AnalyticsService.LogOnboardingFunnelStepEvent, AnalyticsService, player, step, name)
+end
+
+-- how far runs get (Analytics > Custom events "WaveReached", value = the wave)
+function DataService:LogWave(player, wave)
+	pcall(AnalyticsService.LogCustomEvent, AnalyticsService, player, "WaveReached", wave)
 end
 
 DataService.Lock = Lock

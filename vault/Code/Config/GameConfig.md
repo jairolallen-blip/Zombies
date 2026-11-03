@@ -30,6 +30,7 @@ Read by both server and client (ReplicatedStorage.Shared.Config.GameConfig).
 - [[DailyService]]
 - [[DataService]]
 - [[EconomyService]]
+- [[FieldStations]]
 - [[FlightLine]]
 - [[HUDController]]
 - [[InputController]]

@@ -28,3 +28,4 @@ Back to [[Home]].
 - [[UIKit]]: tiny helpers for building UI in code with one consistent theme.
 - [[ViewmodelController]]: the first-person gun + arms you see while CameraController:IsActive().
 - [[WeaponController]]: shooting input, client-side prediction (ammo, tracers, muzzle flash), and
+- [[WelcomeController]]: the "welcome back" screen a returning player sees when they reach a lobby server (once

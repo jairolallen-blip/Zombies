@@ -632,6 +632,7 @@ function OurLobby.Build()
 	require(script.Parent.Commons).Build(lobby) -- the hangout area south of the courtyard
 	require(script.Parent.Survivors).Build(lobby) -- the safehouse's people (Config/Survivors)
 	require(script.Parent.DailyCache).Build(lobby) -- DAILY RATIONS by the flag (Services/DailyService)
+	require(script.Parent.FieldStations).Build(lobby) -- FIELD RESEARCH + BOUNTY BOARD (enemy index, daily bounties)
 	return lobby
 end
 

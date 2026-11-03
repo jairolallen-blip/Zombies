@@ -1,6 +1,6 @@
 # Zombies config
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Config/Zombies.luau` (145 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Config/Zombies.luau` (152 lines). Don't edit it here: rerun the script.
 
 Part of [[Config]].
 
@@ -13,6 +13,8 @@ To add a zombie: copy an entry, give it a new key, set MinWave/Weight so it ente
 
 Fields:
   DisplayName
+  Index             enemy index card in the lobby (Server/Map/FieldStations, Client ShopController "Index"):
+                    Gems paid once for discovering it (first kill), Special (one line), Lore
   Health            base HP (scaled per wave by GameConfig.Waves.HealthScalePerWave)
   Speed             studs/second
   Damage            per melee hit (0 = no melee)
@@ -43,12 +45,16 @@ Fields:
 ## Used by
 
 - [[BossController]]
+- [[DataService]]
 - [[DebugService]]
 - [[MatchService]]
+- [[ShopController]]
+- [[WelcomeController]]
 - [[ZombieService]]
 
 ## Mentions
 
+- [[FieldStations]]
 - [[ZombieModels]]
 
 ## Design notes

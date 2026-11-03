@@ -65,6 +65,30 @@ function ZombieService:Init(services)
 	folder = Instance.new("Folder")
 	folder.Name = "Zombies"
 	folder.Parent = workspace
+	self:_buildPreviews()
+end
+
+-- One still copy of each zombie type in ReplicatedStorage.ZombiePreviews (anchored, non-colliding, facing
+-- -Z, feet near y = 0) for the lobby's enemy index and the welcome screen (Client ShopController,
+-- WelcomeController). Their clothes are picked at random once per server.
+function ZombieService:_buildPreviews()
+	local previews = Instance.new("Folder")
+	previews.Name = "ZombiePreviews"
+	for typeId, def in Zombies.Types do
+		local model, _, lv, ao = ZombieModels.Build(typeId, def, CFrame.new(0, 2.5 * (def.Scale or 1), 0))
+		lv:Destroy()
+		ao:Destroy()
+		for _, part in model:GetDescendants() do
+			if part:IsA("BasePart") then
+				part.Anchored = true
+				part.CanCollide = false
+				part.CanQuery = false
+			end
+		end
+		model.Name = typeId
+		model.Parent = previews
+	end
+	previews.Parent = ReplicatedStorage
 end
 
 function ZombieService:Start()

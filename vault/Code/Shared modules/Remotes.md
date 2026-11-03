@@ -1,6 +1,6 @@
 # Remotes
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Remotes.luau` (70 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Remotes.luau` (74 lines). Don't edit it here: rerun the script.
 
 Part of [[Shared modules]].
 
@@ -23,6 +23,8 @@ Client -> Server
   SetPadOptions({Size?, Difficulty?, Map?})   pad host picks the mission (QueueService; GameConfig.Lobby)
   SkipCutscene()                        vote to skip the deploy ride / boss intro (players with CanSkip)
   QuickPlay()                           lobby: put me on the fullest pad that has room (QueueService)
+  ClaimIndex(typeId: string)              lobby: claim the Gems for a discovered zombie (DataService)
+  TrackBounty(id: string)                 lobby: track one of today's bounties (DataService)
 Server -> Client
   Notify(text: string, kind: "Info" | "Good" | "Danger")     toast message
   HitConfirm(hits: {{Position, Damage, Headshot, Killed}})   shooter-only hit feedback

@@ -1,6 +1,6 @@
 # DataService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/DataService.luau` (402 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/DataService.luau` (492 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -25,11 +25,13 @@ Best waves also go to an OrderedDataStore (BEST_STORE) for the Commons' TOP SURV
 ## Uses
 
 - [[Achievements config]]
+- [[Bounties config]]
 - [[Classes config]]
 - [[GameConfig]]
 - [[Remotes]]
 - [[Util]]
 - [[Weapons config]]
+- [[Zombies config]]
 
 ## Used by
 

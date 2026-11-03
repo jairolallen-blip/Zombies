@@ -48,6 +48,7 @@ Attributes:
 - [[SkipController]]
 - [[SoundController]]
 - [[TutorialService]]
+- [[WelcomeController]]
 - [[ZombieService]]
 
 ## Mentions

@@ -4,6 +4,8 @@
 --
 -- Fields:
 --   DisplayName
+--   Index             enemy index card in the lobby (Server/Map/FieldStations, Client ShopController "Index"):
+--                     Gems paid once for discovering it (first kill), Special (one line), Lore
 --   Health            base HP (scaled per wave by GameConfig.Waves.HealthScalePerWave)
 --   Speed             studs/second
 --   Damage            per melee hit (0 = no melee)
@@ -31,6 +33,7 @@ local Zombies = {}
 Zombies.Types = {
 	Shambler = {
 		DisplayName = "Shambler",
+		Index = { Gems = 50, Special = "The horde's backbone", Lore = "Most of Port Harrow, still walking its old routes. Slow alone, deadly in a crowd." },
 		Health = 60,
 		Speed = 10,
 		Damage = 10,
@@ -50,6 +53,7 @@ Zombies.Types = {
 	},
 	Runner = {
 		DisplayName = "Runner",
+		Index = { Gems = 75, Special = "Lunges when close", Lore = "The Bloom burns hot in the young ones. They sprint, then lunge from a few steps out." },
 		Health = 35,
 		Speed = 19,
 		Damage = 7,
@@ -70,6 +74,7 @@ Zombies.Types = {
 	},
 	Bloater = {
 		DisplayName = "Bloater",
+		Index = { Gems = 100, Special = "Bursts when close or killed", Lore = "Swollen with spores until they split. Shoot them at range; never let one reach you." },
 		Health = 90,
 		Speed = 8,
 		Damage = 0,
@@ -90,6 +95,7 @@ Zombies.Types = {
 	},
 	Brute = {
 		DisplayName = "Brute",
+		Index = { Gems = 150, Special = "Huge health, heavy hits", Lore = "Dock workers and soldiers the Bloom thickened. It takes a lot of lead to drop one." },
 		Health = 450,
 		Speed = 7.5,
 		Damage = 28,
@@ -109,6 +115,7 @@ Zombies.Types = {
 	},
 	GraveTitan = {
 		DisplayName = "The Grave Titan",
+		Index = { Gems = 300, Special = "Charge, Leap, Slam; enrages at 50%", Lore = "What the Bloom grows into under the square, given time. It charges, leaps and slams; at half health it calls the pack." },
 		Boss = true,
 		Health = 18000, -- x (1 + 0.6 per extra player); the final-wave boss (vault: Waves and Boss.md)
 		Speed = 8,

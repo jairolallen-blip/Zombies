@@ -8,6 +8,7 @@ Back to [[Home]].
 
 - [[Achievements config]]: lifetime goals that pay Gems, claimed at the Commendations board in the lobby
 - [[Airdrops config]]: mid-run supply crates (Server/Services/AirdropService, Client/Controllers/AirdropController).
+- [[Bounties config]]: daily tasks on the BOUNTY BOARD by the Flight Line gate (vault: Bounties.md). PURE DATA + the
 - [[Classes config]]: playable roles, unlocked with Gems and chosen in the lobby.
 - [[Conditions config]]: the weather and time of day each run gets, picked at random (vault: City Map.md). PURE DATA.
 - [[GameConfig]]: global tunables for match flow, waves, economy, upgrades, player, camera, map.

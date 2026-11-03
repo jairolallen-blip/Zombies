@@ -25,6 +25,8 @@ local Remotes = require(Shared.Remotes)
 local GunModels = require(Shared.GunModels)
 local ClassFigures = require(Shared.ClassFigures)
 local Achievements = require(Shared.Config.Achievements)
+local Zombies = require(Shared.Config.Zombies)
+local Bounties = require(Shared.Config.Bounties)
 local UIKit = require(script.Parent.Parent.UI.UIKit)
 
 local T = UIKit.Theme
@@ -328,6 +330,109 @@ function ShopController:_buildAchievements()
 	end
 end
 
+-- Enemy index (FIELD RESEARCH station): one card per zombie type, locked until you've killed one
+-- (Stats Kills_<type>); a discovered card shows the model, stats and lore, and pays its Gems once
+-- (Remotes.ClaimIndex; claims are "Index_<type>" in Claimed). Models: ReplicatedStorage.ZombiePreviews.
+function ShopController:_buildIndex()
+	local data = decode("AchievementsJson")
+	local stats, claimed = data.Stats or {}, data.Claimed or {}
+	local ids = {}
+	for id in Zombies.Types do
+		table.insert(ids, id)
+	end
+	table.sort(ids, function(a, b)
+		local da, db = Zombies.Types[a], Zombies.Types[b]
+		if (da.Boss or false) ~= (db.Boss or false) then
+			return not da.Boss
+		end
+		return (da.MinWave or 0) < (db.MinWave or 0)
+	end)
+	UIKit.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 12), Parent = ui.Body })
+	local previews = ReplicatedStorage:FindFirstChild("ZombiePreviews")
+	for _, id in ids do
+		local def = Zombies.Types[id]
+		local found = (stats["Kills_" .. id] or 0) > 0
+		local done = claimed["Index_" .. id] == true
+		local accent = if def.Boss then T.Danger else T.Accent
+		local c = card(ui.Body, 168, accent, found and not done, if found then def.DisplayName else "???")
+		local source = previews and previews:FindFirstChild(id)
+		if found and source then
+			preview(c, UDim2.new(1, -16, 0, 164), source:Clone(), false).Position = UDim2.fromOffset(8, 40)
+		else
+			local box = UIKit.new("Frame", { Position = UDim2.fromOffset(8, 40), Size = UDim2.new(1, -16, 0, 164), BackgroundColor3 = Color3.fromRGB(26, 28, 24), BorderSizePixel = 0, Parent = c })
+			UIKit.Corner(4).Parent = box
+			UIKit.Label({ Text = if found then "?" else "?\nKill one to study it", Size = UDim2.fromScale(1, 1), TextSize = 18, TextWrapped = true, TextColor3 = T.SubText, Parent = box })
+		end
+		if found then
+			UIKit.Label({ Text = def.Index.Special, Position = UDim2.fromOffset(10, 210), Size = UDim2.new(1, -20, 0, 20), TextSize = 15, TextWrapped = true, TextColor3 = accent, Parent = c })
+			local hp = Util.FormatNumber(def.Health)
+			UIKit.Label({ Text = string.format("HP %s · SPD %g · DMG %d", hp, def.Speed, def.Damage), Position = UDim2.fromOffset(10, 232), Size = UDim2.new(1, -20, 0, 18), TextSize = 14, TextColor3 = T.Text, Parent = c })
+			UIKit.Label({ Text = if def.Boss then "Final wave" else string.format("$%d a kill · from wave %d", def.Cash, def.MinWave or 1), Position = UDim2.fromOffset(10, 250), Size = UDim2.new(1, -20, 0, 18), TextSize = 14, TextColor3 = T.Cash, Parent = c })
+			UIKit.Label({ Text = def.Index.Lore, Position = UDim2.fromOffset(10, 272), Size = UDim2.new(1, -20, 0, 76), TextSize = 13, TextWrapped = true, TextColor3 = T.SubText, TextYAlignment = Enum.TextYAlignment.Top, Parent = c })
+		end
+		local button = UIKit.Button({ Name = "Index_" .. id, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -12), Size = UDim2.new(1, -20, 0, 44), TextSize = 18, Parent = c })
+		if found and not done then
+			button.Text = "CLAIM ◆" .. def.Index.Gems
+			button.BackgroundColor3 = T.Cash
+			button.TextColor3 = Color3.fromRGB(20, 30, 20)
+			button.Activated:Connect(function()
+				Remotes.ClaimIndex:FireServer(id)
+			end)
+		else
+			button.Text = if done then "STUDIED" else "◆ " .. def.Index.Gems
+			button.BackgroundColor3 = T.Disabled
+			button.TextColor3 = if done then T.SubText else T.Gem
+			button.AutoButtonColor = false
+		end
+	end
+end
+
+-- Daily bounties (BOUNTY BOARD): today's three (Bounties.ForDay); track one, only it counts progress
+-- (DataService). BountyJson = { Day, Tracked, Progress = {[id] = n}, Done = {[id] = true} }.
+function ShopController:_buildBounties()
+	local now = workspace:GetServerTimeNow()
+	local today = Bounties.Today(now)
+	local data = decode("BountyJson")
+	if data.Day ~= today then
+		data = {} -- a new day: the server resets it on the next save
+	end
+	local progress, done = data.Progress or {}, data.Done or {}
+	local left = (today + 1) * Bounties.Day - now
+	ui.Subtitle.Text = string.format("Track one at a time; only the tracked bounty counts. New bounties in %dh %dm.", left // 3600, left % 3600 // 60)
+	UIKit.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, HorizontalAlignment = Enum.HorizontalAlignment.Center, Padding = UDim.new(0, 16), Parent = ui.Body })
+	for _, def in Bounties.ForDay(today) do
+		local tracked = data.Tracked == def.Id
+		local finished = done[def.Id] == true
+		local accent = if finished then T.SubText elseif tracked then T.Cash else Color3.fromRGB(255, 200, 70)
+		local c = card(ui.Body, 280, accent, tracked, def.Name)
+		UIKit.Label({ Text = def.Desc, Position = UDim2.fromOffset(16, 52), Size = UDim2.new(1, -32, 0, 60), TextSize = 22, TextWrapped = true, TextColor3 = T.Text, TextYAlignment = Enum.TextYAlignment.Top, Parent = c })
+		local n = math.min(progress[def.Id] or 0, def.Goal)
+		local back = UIKit.new("Frame", { Position = UDim2.fromOffset(16, 150), Size = UDim2.new(1, -32, 0, 14), BackgroundColor3 = Color3.fromRGB(30, 34, 28), BorderSizePixel = 0, Parent = c })
+		UIKit.Corner(6).Parent = back
+		local fill = UIKit.new("Frame", { Size = UDim2.fromScale(math.max(n / def.Goal, 0.03), 1), BackgroundColor3 = accent, BorderSizePixel = 0, Parent = back })
+		UIKit.Corner(6).Parent = fill
+		UIKit.Label({ Text = "PROGRESS  " .. n .. " / " .. def.Goal, Position = UDim2.fromOffset(16, 170), Size = UDim2.new(1, -32, 0, 22), TextSize = 17, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Left, Parent = c })
+		UIKit.Label({ Text = "REWARD  ◆ " .. def.Gems, Position = UDim2.fromOffset(16, 214), Size = UDim2.new(1, -32, 0, 30), TextSize = 24, TextColor3 = T.Gem, TextXAlignment = Enum.TextXAlignment.Left, Parent = c })
+		local button = UIKit.Button({ Name = "Bounty_" .. def.Id, AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.new(1, -28, 0, 48), TextSize = 20, Parent = c })
+		if finished then
+			button.Text = "DONE"
+			button.BackgroundColor3 = T.Disabled
+			button.TextColor3 = T.SubText
+			button.AutoButtonColor = false
+		elseif tracked then
+			button.Text = "TRACKING"
+			button.BackgroundColor3 = T.Cash
+			button.TextColor3 = Color3.fromRGB(20, 30, 20)
+			button.AutoButtonColor = false
+		else
+			button.Text = "TRACK"
+			button.Activated:Connect(function()
+				Remotes.TrackBounty:FireServer(def.Id)
+			end)
+		end
+	end
+end
+
 -- "N READY TO CLAIM" on the lobby board's status sign (Workspace.OurMap.Lobby.Commendations.Status)
 local function updateBoardSign()
 	local data = decode("AchievementsJson")
@@ -359,6 +464,13 @@ function ShopController:Refresh()
 		ui.Title.Text = "ARMORY"
 		ui.Subtitle.Text = "Pick one gun for each level. A run starts on Level 1; upgrade in-run with cash."
 		self:_buildArmory()
+	elseif openShop == "Index" then
+		ui.Title.Text = "FIELD RESEARCH"
+		ui.Subtitle.Text = "Kill a zombie to study it. Each discovery pays Gems once."
+		self:_buildIndex()
+	elseif openShop == "Bounties" then
+		ui.Title.Text = "BOUNTY BOARD"
+		self:_buildBounties()
 	elseif openShop == "Achievements" then
 		ui.Title.Text = "COMMENDATIONS"
 		ui.Subtitle.Text = "Lifetime goals. Finish one, then claim its Gems here."
@@ -432,9 +544,9 @@ function ShopController:Init()
 			self:Open(shop, prompt.Parent)
 		end
 	end)
-	for _, attr in { "Gems", "OwnedJson", "ClassId", "LoadoutJson", "AchievementsJson" } do
+	for _, attr in { "Gems", "OwnedJson", "ClassId", "LoadoutJson", "AchievementsJson", "BountyJson" } do
 		player:GetAttributeChangedSignal(attr):Connect(function()
-			if attr ~= "AchievementsJson" or openShop == "Achievements" then
+			if (attr ~= "AchievementsJson" or openShop == "Achievements" or openShop == "Index") and (attr ~= "BountyJson" or openShop == "Bounties") then
 				self:Refresh()
 			end
 		end)
