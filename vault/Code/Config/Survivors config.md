@@ -26,6 +26,7 @@ into given time. Keep new lines consistent with Config/Radio.
 - [[CommonsService]]
 - [[SurvivorController]]
 - [[Survivors map]]
+- [[WelcomeController]]
 
 ## Mentions
 

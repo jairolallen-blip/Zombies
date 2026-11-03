@@ -116,7 +116,7 @@ A fortified safehouse inside a ruined city at **x = 1000, z = 1000** (moved from
 
 ## Welcome screen, Field Research, Bounty Board (2026-11-02)
 Ideas from the owner, built our own way.
-- **Welcome screen** ([[WelcomeController]]): every join after the tutorial. Your avatar idles at dusk while a horde runs past behind you; your stats sit on the right with ENTER SAFEHOUSE.
+- **Welcome screen** ([[WelcomeController]]): every join after the tutorial. Your avatar idles on a ruined Port Harrow street at sunset (broken skyline, burning wrecks, smoke and embers) while a horde runs past behind you. On the right: your stats, your tracked [[Bounties|bounty]], a line from one of the safehouse people, and ENTER SAFEHOUSE. Fire and smoke are animated parts, because 3D UI scenes draw no particles or lights.
 - **Field Research** ([[FieldStations]], north-east of the plaza): the enemy index. Kill a zombie type to unlock its card (spinning model, stats, special, lore from [[Zombies config]]), then claim its Gems once: 50, 75, 100, 150, and 300 for the Titan. See [[Lore]].
 - **Bounty Board** (north-west, by the gate): see [[Bounties]].
 

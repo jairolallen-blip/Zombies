@@ -25,6 +25,7 @@ Ids are saved in profiles: rename the Name freely, never an Id.
 
 - [[DataService]]
 - [[ShopController]]
+- [[WelcomeController]]
 
 ## Mentions
 
