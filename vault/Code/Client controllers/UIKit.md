@@ -28,6 +28,7 @@ All UI in this game is created from code (no StarterGui assets), so restyling = 
 - [[EffectsController]]
 - [[HUDController]]
 - [[LobbyController]]
+- [[LobbyMenu]]
 - [[RadioController]]
 - [[ShopController]]
 - [[SkipController]]

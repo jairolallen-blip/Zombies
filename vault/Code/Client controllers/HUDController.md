@@ -1,6 +1,6 @@
 # HUDController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/HUDController.luau` (431 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/HUDController.luau` (435 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -24,6 +24,7 @@ Everything refreshes in one RenderStepped loop from attributes (player + GameSta
 - [[Classes config]]
 - [[GameConfig]]
 - [[GameState]]
+- [[ReadyFx]]
 - [[Remotes]]
 - [[UIKit]]
 - [[Util]]

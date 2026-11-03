@@ -53,6 +53,7 @@ Server -> Client
 - [[HUDController]]
 - [[InputController]]
 - [[LobbyController]]
+- [[LobbyMenu]]
 - [[LobbyService]]
 - [[MatchService]]
 - [[NightmareController]]

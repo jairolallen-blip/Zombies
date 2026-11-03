@@ -26,6 +26,7 @@ Sounds.Library = {
 	Kill = { Id = 125235091454234, Volume = 0.5, Pitch = 0.9 },
 	Hurt = { Id = 131125543405500, Volume = 0.6, PitchVar = 0.1 }, -- zombie swipe when you take damage
 	Click = { Id = 88442833509532, Volume = 0.6 },
+	UIHover = { Id = 139800881181209, Volume = 0.25 }, -- "ui-simple-button-hover" (AmbientSorcery), lobby menu tiles
 	-- welcome screen level bar (WelcomeController; ids checked 2026-11-03)
 	XPTick = { Id = 72644163309528, Volume = 0.18 }, -- Glockenspiel C6, ticked higher as the bar fills
 	LevelUp = { Id = 132574644259001, Volume = 0.6 }, -- "Complete_Rare" (Draedon Studios), the level-up sting

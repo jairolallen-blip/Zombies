@@ -1,6 +1,5 @@
 -- LobbyController: lobby screen (visible while InRun is false) and the end-of-run results card.
---   top-left   compact chip: Gems, best wave, current class + loadout, and where the shops are
---              (class and gun choices happen in the Armory / Barracks shops: ShopController)
+--   main       wordmark, profile card, menu tiles and QUICK PLAY (UI/LobbyMenu; the shops: ShopController)
 --   bottom     take-off status; on a Flight Line pad (player attribute PadId) it becomes the squad
 --              panel: squad count, countdown and the mission (squad size, map; the caged Nightmare pad plays Nightmare), which
 --              only the pad's host can change (Remotes.SetPadOptions; QueueService)
@@ -19,6 +18,7 @@ local Util = require(Shared.Util)
 local Remotes = require(Shared.Remotes)
 local GameState = require(Shared.GameState)
 local UIKit = require(script.Parent.Parent.UI.UIKit)
+local LobbyMenu = require(script.Parent.Parent.UI.LobbyMenu)
 
 local T = UIKit.Theme
 local player = Players.LocalPlayer
@@ -27,18 +27,7 @@ local LobbyController = {}
 local ui = {}
 
 function LobbyController:Rebuild()
-	ui.Gems.Text = "◆ " .. Util.FormatNumber(player:GetAttribute("Gems") or 0) .. " Gems"
-	ui.Best.Text = "Best wave " .. (player:GetAttribute("BestWave") or 0)
-	local class = Classes.List[player:GetAttribute("ClassId")] or Classes.List[Classes.Default]
-	local ok, picked = pcall(HttpService.JSONDecode, HttpService, player:GetAttribute("LoadoutJson") or "[]")
-	picked = if ok and type(picked) == "table" then picked else {}
-	local guns = {}
-	for level = 1, Weapons.Levels do
-		table.insert(guns, Weapons.List[picked[level] or Weapons.DefaultFor(level)].DisplayName)
-	end
-	ui.Class.Text = "Class: " .. class.DisplayName
-	ui.Class.TextColor3 = class.Color
-	ui.Guns.Text = "Guns: " .. table.concat(guns, " → ")
+	ui.Menu:Refresh()
 end
 
 function LobbyController:ShowResults(results)
@@ -114,33 +103,11 @@ function LobbyController:Init()
 	ui.Root = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = gui })
 	UIKit.AutoScale(ui.Root)
 
-	-- below Roblox's top-bar buttons (the screen ignores the inset), scaled down to stay out of the way
-	local chip = UIKit.Panel({ Position = UDim2.fromOffset(16, 68), Size = UDim2.fromOffset(570, 150), Parent = ui.Root })
-	UIKit.new("UIScale", { Scale = 0.75, Parent = chip })
-	UIKit.Padding(12).Parent = chip
-	UIKit.Label({ Text = "SURVIVE A MILLION ZOMBIES", Size = UDim2.new(1, 0, 0, 28), TextSize = 26, TextColor3 = T.Sign, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
-	ui.Gems = UIKit.Label({ Position = UDim2.fromOffset(0, 30), Size = UDim2.new(0.55, 0, 0, 24), TextSize = 22, TextColor3 = T.Gem, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
-	ui.Best = UIKit.Label({ Position = UDim2.new(0.55, 0, 0, 30), Size = UDim2.new(0.45, 0, 0, 24), TextSize = 18, TextColor3 = T.SubText, TextXAlignment = Enum.TextXAlignment.Right, Parent = chip })
-	ui.Class = UIKit.Label({ Position = UDim2.fromOffset(0, 58), Size = UDim2.new(1, 0, 0, 20), TextSize = 18, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
-	ui.Guns = UIKit.Label({ Position = UDim2.fromOffset(0, 78), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextColor3 = T.Text, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = chip })
-	UIKit.Label({ Text = "ARMORY west: guns  ·  BARRACKS east: classes  ·  FLIGHT LINE north: deploy  ·  COMMONS south", Position = UDim2.fromOffset(0, 104), Size = UDim2.new(1, 0, 0, 20), TextSize = 16, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = chip })
+	-- the main screen: wordmark, profile card, menu tiles, QUICK PLAY and the deploy hint (UI/LobbyMenu)
+	ui.Menu = LobbyMenu.new(ui.Root)
 
-	-- take-off status
-	ui.StatusBar = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(560, 64), Parent = ui.Root })
-	ui.Status = UIKit.Label({ Position = UDim2.fromOffset(12, 0), Size = UDim2.new(1, -24, 1, 0), TextSize = 21, TextWrapped = true, Parent = ui.StatusBar })
+	ui.StatusBar, ui.Status, ui.QuickPlay = ui.Menu.StatusBar, ui.Menu.Status, ui.Menu.QuickPlay
 	self:_buildSquadPanel()
-	-- QUICK PLAY: onto the fullest pad with room (QueueService:QuickPlay); INVITE: Roblox's invite prompt
-	ui.QuickPlay = UIKit.Button({ Name = "QuickPlay", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -98), Size = UDim2.fromOffset(220, 44), Text = "QUICK PLAY", TextSize = 22, Parent = ui.Root }, function()
-		Remotes.QuickPlay:FireServer()
-	end)
-	ui.Invite = UIKit.Button({ Name = "Invite", AnchorPoint = Vector2.new(1, 1), Position = UDim2.new(1, -24, 1, -24), Size = UDim2.fromOffset(200, 44), Text = "INVITE FRIENDS", TextSize = 19, Parent = ui.Root }, function()
-		local SocialService = game:GetService("SocialService")
-		local ok, can = pcall(SocialService.CanSendGameInviteAsync, SocialService, player)
-		if ok and can then
-			pcall(SocialService.PromptGameInvite, SocialService, player)
-		end
-	end)
-
 	-- match server: cover the empty world until the drop starts
 	ui.Waiting = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.fromRGB(10, 10, 12), Visible = false, ZIndex = 10, Parent = gui })
 	ui.WaitingText = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.5), Size = UDim2.fromOffset(600, 90), TextSize = 30, TextWrapped = true, ZIndex = 10, Parent = ui.Waiting })
@@ -171,7 +138,13 @@ function LobbyController:Start()
 	while true do
 		local inRun = player:GetAttribute("InRun") == true
 		local matchServer = GameState:GetAttribute("ServerKind") == "Match"
-		ui.Root.Visible = not inRun and not matchServer
+		local show = not inRun and not matchServer
+		local seen = show and not player.PlayerGui:FindFirstChild("Welcome")
+		if seen and not ui.Seen then
+			ui.Menu:Enter() -- slide the menu in each time the lobby screen comes into view
+		end
+		ui.Seen = seen
+		ui.Root.Visible = show
 		ui.Waiting.Visible = matchServer and not inRun and GameState:GetAttribute("Phase") == "Lobby"
 		if ui.Waiting.Visible then
 			ui.WaitingText.Text = "WHEELS UP SOON\nWaiting for your squad to board..."

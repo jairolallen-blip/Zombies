@@ -24,6 +24,7 @@ bar from before the run to now, levelling up on the way (WelcomeController).
 ## Used by
 
 - [[DataService]]
+- [[LobbyMenu]]
 - [[MatchService]]
 - [[WelcomeController]]
 

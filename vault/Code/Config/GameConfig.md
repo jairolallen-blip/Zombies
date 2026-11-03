@@ -37,6 +37,7 @@ Read by both server and client (ReplicatedStorage.Shared.Config.GameConfig).
 - [[InputController]]
 - [[LobbyAudioController]]
 - [[LobbyController]]
+- [[LobbyMenu]]
 - [[MapService]]
 - [[MatchService]]
 - [[OurCity]]

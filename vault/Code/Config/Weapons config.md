@@ -47,6 +47,7 @@ Fields:
 - [[EffectsController]]
 - [[HUDController]]
 - [[LobbyController]]
+- [[LobbyMenu]]
 - [[LobbyService]]
 - [[OurLobby]]
 - [[ShopController]]

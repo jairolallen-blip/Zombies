@@ -42,6 +42,7 @@ Optional: Ability.EarlyCooldown + EarlyWaves (longer cooldown up to that wave),
 - [[EconomyService]]
 - [[HUDController]]
 - [[LobbyController]]
+- [[LobbyMenu]]
 - [[LobbyService]]
 - [[OurLobby]]
 - [[ShopController]]

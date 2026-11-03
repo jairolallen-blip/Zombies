@@ -18,8 +18,10 @@ Back to [[Home]].
 - [[InputController]]: keyboard actions other than shooting — abilities and in-run upgrades.
 - [[LobbyAudioController]]: the safehouse's sound (ids and volumes in Shared/Config/Sounds).
 - [[LobbyController]]: lobby screen (visible while InRun is false) and the end-of-run results card.
+- [[LobbyMenu]]: the lobby's main screen (owner 2026-11-03: "bare and boring, and it's the first impression").
 - [[NightmareController]]: the client side of the Nightmare pad on the Flight Line (Map/FlightLine
 - [[RadioController]]: the commander's radio panel on the left side of the screen (vault: Match Start.md).
+- [[ReadyFx]]: makes a ready Ability / Ultimate hard to miss without shouting (owner 2026-11-03: "I always forget
 - [[ShopController]]: the lobby's two shops (vault: Lobby.md), opened by walking up to them and pressing
 - [[SkipController]]: "hold to skip" for the deploy ride and the boss intro (Server/Services/MatchService
 - [[SoundController]]: all game audio, client-side (ids + volumes in Shared/Config/Sounds).

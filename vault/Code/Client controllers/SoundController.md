@@ -36,5 +36,6 @@ Public: :Play(name, opts?) 2D, :PlayAt(name, position, opts?) 3D, :PlayGunshot(w
 
 - [[BossController]]
 - [[CutsceneController]]
+- [[LobbyMenu]]
 - [[WeaponController]]
 - [[WelcomeController]]

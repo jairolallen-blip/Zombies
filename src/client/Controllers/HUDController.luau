@@ -22,6 +22,7 @@ local Util = require(Shared.Util)
 local Remotes = require(Shared.Remotes)
 local GameState = require(Shared.GameState)
 local UIKit = require(script.Parent.Parent.UI.UIKit)
+local ReadyFx = require(script.Parent.Parent.UI.ReadyFx)
 
 local T = UIKit.Theme
 local player = Players.LocalPlayer
@@ -367,6 +368,9 @@ function HUDController:_update(dt)
 	ui.Ultimate.Status.Text = if charge >= max then "READY" else math.floor(charge / max * 100) .. "%"
 	ui.Ultimate.Status.TextColor3 = if charge >= max then T.Accent else T.SubText
 	ui.Ultimate.Fill.Size = UDim2.fromScale(math.clamp(charge / max, 0, 1), 1)
+	-- ready cues on the slots: pop, ring, small READY tag, breathing glow, reminders (UI/ReadyFx)
+	ReadyFx.Update(ui.Ability, remaining <= 0, { Color = T.Cash, Key = keyName(GameConfig.Keybinds.Ability) })
+	ReadyFx.Update(ui.Ultimate, charge >= max, { Color = T.Accent, Key = keyName(GameConfig.Keybinds.Ultimate), Big = true })
 
 	-- Weapon + cash
 	local cash = player:GetAttribute("Cash") or 0
