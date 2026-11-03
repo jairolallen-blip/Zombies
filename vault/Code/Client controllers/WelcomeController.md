@@ -1,6 +1,6 @@
 # WelcomeController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WelcomeController.luau` (415 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WelcomeController.luau` (417 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 

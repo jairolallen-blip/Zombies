@@ -195,7 +195,7 @@ local function buildScene(parent)
 	local previews = ReplicatedStorage:WaitForChild("ZombiePreviews", 10)
 	local pool = {}
 	for id, def in Zombies.Types do
-		if not def.Boss and previews and previews:FindFirstChild(id) then
+		if not def.Boss and not def.Nightmare and previews and previews:FindFirstChild(id) then -- Nightmare stays a surprise
 			table.insert(pool, id)
 		end
 	end
@@ -309,9 +309,11 @@ function WelcomeController:Show()
 	UIKit.new("UIGridLayout", { CellSize = UDim2.fromOffset(227, 80), CellPadding = UDim2.fromOffset(16, 12), SortOrder = Enum.SortOrder.LayoutOrder, Parent = grid })
 	local s = decode("AchievementsJson").Stats or {}
 	local studied, total = 0, 0
-	for id in Zombies.Types do
-		total += 1
-		studied += if (s["Kills_" .. id] or 0) > 0 then 1 else 0
+	for id, def in Zombies.Types do
+		if def.Index then -- the index's cards (not the Husk's halves)
+			total += 1
+			studied += if (s["Kills_" .. id] or 0) > 0 then 1 else 0
+		end
 	end
 	local tiles = {
 		tile(grid, "GEMS", "◆ " .. Util.FormatNumber(player:GetAttribute("Gems") or 0), T.Gem, 1),

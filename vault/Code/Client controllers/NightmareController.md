@@ -1,6 +1,6 @@
 # NightmareController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/NightmareController.luau` (176 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/NightmareController.luau` (216 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -16,12 +16,15 @@ During a Nightmare run it also fades in a quiet music loop (Nightmare.Music), dr
 is up so its own music plays alone (BossController), a heartbeat that rises as zombies close in
 (Nightmare.Heartbeat), and the city's street lamps go out or flicker (Nightmare.Lamps; local only, picked
 by lamp position so every player sees the same ones; restored when the run ends).
+The Wailer's scream (ZombieService:_wail): "WailStart" plays the scream from it and swells its throat sac,
+"Wail" blurs the sight of players within its Radius.
 ```
 
 ## Uses
 
 - [[GameState]]
 - [[Nightmare config]]
+- [[Remotes]]
 
 ## Used by
 

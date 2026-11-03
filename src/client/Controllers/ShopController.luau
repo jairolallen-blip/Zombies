@@ -339,11 +339,16 @@ function ShopController:_buildIndex()
 	local data = decode("AchievementsJson")
 	local stats, claimed = data.Stats or {}, data.Claimed or {}
 	local ids = {}
-	for id in Zombies.Types do
-		table.insert(ids, id)
+	for id, def in Zombies.Types do
+		if def.Index then -- not the Husk's halves
+			table.insert(ids, id)
+		end
 	end
 	table.sort(ids, function(a, b)
 		local da, db = Zombies.Types[a], Zombies.Types[b]
+		if (da.Nightmare or false) ~= (db.Nightmare or false) then
+			return not da.Nightmare
+		end
 		if (da.Boss or false) ~= (db.Boss or false) then
 			return not da.Boss
 		end

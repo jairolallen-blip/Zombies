@@ -1,6 +1,6 @@
 # Zombies config
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Config/Zombies.luau` (152 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Config/Zombies.luau` (280 lines). Don't edit it here: rerun the script.
 
 Part of [[Config]].
 
@@ -34,8 +34,18 @@ Fields:
                     at At (fraction of max HP): faster, slams more often, summons a ring of Summon
   Lunge = { Range, SpeedMult, Duration, Cooldown }
                     burst of speed when a player is within Range (runners)
-  Look = { Build, Skin, Eyes, Shirts = {...}, Pants = {...} }
-                    Build: "Normal" | "Lean" | "Bloated" | "Hulk" | "Titan" (see ZombieModels)
+  Look = { Build, Skin, Eyes, Shirts = {...}, Pants = {...}, Horror?, Bone? }
+                    Build: "Normal" | "Lean" | "Bloated" | "Hulk" | "Titan" | "Crawler" | "Gaunt" (see ZombieModels)
+                    Horror: the Nightmare details ZombieModels adds ("Rotter" | "Skitter" | "Husk" | "Half" | "Wailer")
+Nightmare types (Config/Nightmare; the NIGHTMARE row of the enemy index):
+  Nightmare = true   spawns only in Nightmare runs, and Nightmare runs spawn only these (ZombieService:PickType)
+  Pack               spawned in a group of this many (MatchService)
+  Split = { Into, Count }   on death, Count zombies of type Into crawl out where it fell (ZombieService:Kill)
+  Wail = { Range, Radius, Pull, Windup, Cooldown, Blur, RushMult, RushTime }
+                    within Range of a player it stops and screams for Windup: players within Radius get their
+                    sight blurred for Blur seconds (NightmareController), and every zombie within Pull of it
+                    rushes the nearest player at RushMult speed for RushTime (ZombieService:_wail)
+  An entry without Index (the Husk's halves) is left out of the enemy index.
 ```
 
 ## Uses
@@ -55,6 +65,7 @@ Fields:
 ## Mentions
 
 - [[FieldStations]]
+- [[Nightmare config]]
 - [[ZombieModels]]
 
 ## Design notes

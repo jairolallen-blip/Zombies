@@ -24,11 +24,11 @@ A second mode for players who've beaten the normal game: tougher, darker, and sc
 ## Next steps
 1. ~~Mode, unlock, queue, rewards, harder numbers, radio, dark weather~~ (done).
 2. ~~**Mood:** red dusk ride, background music, heartbeat as the horde closes in, dead and flickering street lamps~~ (done 2026-11-02).
-3. **Twisted counterparts**, each with a new look and behaviour, in their own **NIGHTMARE row** under the normal index row:
-   - Shambler counterpart: kept simple (it's the common zombie): tougher and nastier-looking, maybe faster in packs. Not the "only moves when you look away" idea (too much for the common type).
-   - Runner -> **Skitter:** fast, low to the ground, comes in packs, quiet until close.
-   - Brute -> **Husk:** armoured; heavy hits split it into crawling halves.
-   - Bloater/Spitter -> **Wailer:** its scream blurs your screen and pulls the nearby horde to you.
+3. ~~**Twisted counterparts**~~ (done 2026-11-02; models from the owner's reference pictures: a gaunt pale zombie with long clawed arms, a rotting face with an open mouth, a flayed muscle-and-bone body, a blocky zombie with ribs and wounds, and one with an exposed bone). Each has a new look and behaviour, in its own **NIGHTMARE row** under the normal index row:
+   - Shambler -> **Rotter:** kept simple (it's the common zombie): tougher (80 HP), faster, and nastier-looking: a rotting face with sunken red-rimmed eyes, a rotted-out nose, the jaw hanging open on yellow teeth, a cheek rotted through, ribs through the shirt, a bone through one arm. Not the "only moves when you look away" idea (too much for the common type).
+   - Runner -> **Skitter:** flayed red muscle with a bone skull face and ribcage, on all fours; fast (21), comes in packs of three, lunges. (Not quieter than the others yet: zombie sounds live in AnimatedSL's SoundController.)
+   - Brute -> **Husk:** bone armour (spiked shoulder plates, a split breastplate, horns, tusks) over a glowing seam; when it dies it splits into two crawling halves that keep fighting.
+   - Bloater -> **Wailer:** tall, pale and gaunt, arms to the knees with long talons, blind white eyes. Its throat sac swells and it screams: your sight blurs and every zombie nearby rushes you.
    - No Mimic: every zombie must die to end a wave, so a disguised one only stalls.
 4. **New boss** ("The Warden" idea): moves between light sources; the arena's lights die one by one.
 

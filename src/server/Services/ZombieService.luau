@@ -19,7 +19,10 @@
 --   ZombieService:Knockback(model, fromPosition, power, stunTime?)
 --   ZombieService:GetInRadius(position, radius) -> {{Model, State, Distance, Position}}
 --   ZombieService:GetZombieFromPart(part) -> Model?
---   ZombieService:PickType(wave) -> typeId (weighted by MinWave/Weight)
+--   ZombieService:PickType(wave, nightmare?) -> typeId (weighted by MinWave/Weight; a Nightmare run picks only
+--     the Nightmare types, a normal run never does)
+-- Nightmare extras (Config/Zombies): Split (the Husk's halves crawl out in Kill), Wail (_wail: a scream that
+-- calls the horde; clients blur and play it in NightmareController).
 --   ZombieService:GetAliveCount(), ZombieService:ClearAll()
 --   ZombieService.Killed  Signal(state, attacker)
 --   ZombieService.BossEnraged  Signal(state)   boss crossed Def.Enrage.At (see _enrage)
@@ -300,6 +303,12 @@ function ZombieService:Kill(model, attacker)
 		local playerDamage = if attacker then e.Damage * e.ShotPlayerDamageMult else e.Damage
 		Services.CombatService:Explode(position, e.Radius, e.Damage, attacker, { PlayerDamage = playerDamage })
 	end
+	if def.Split then -- a Husk: its halves crawl out where it fell, as tough as it was for this wave
+		for i = 1, def.Split.Count do
+			local side = (i - (def.Split.Count + 1) / 2) * 3
+			self:Spawn(def.Split.Into, position + Vector3.new(side, 0, 0), z.MaxHealth / def.Health)
+		end
+	end
 	self.Killed:Fire(z, attacker)
 end
 
@@ -366,10 +375,10 @@ function ZombieService:Knockback(model, fromPosition, power, stunTime)
 	z.Root.AssemblyLinearVelocity = dir.Unit * power / (z.Def.Scale or 1) + Vector3.new(0, power * 0.35, 0)
 end
 
-function ZombieService:PickType(wave)
+function ZombieService:PickType(wave, nightmare)
 	local pool, total = {}, 0
 	for typeId, def in Zombies.Types do
-		if not def.Boss and (def.MinWave or 1) <= wave and (def.Weight or 0) > 0 then
+		if not def.Boss and (def.Nightmare == true) == (nightmare == true) and (def.MinWave or 1) <= wave and (def.Weight or 0) > 0 then
 			table.insert(pool, { typeId, def.Weight })
 			total += def.Weight
 		end
@@ -600,6 +609,35 @@ local function doLeap(z, now, targetPos)
 	end)
 end
 
+-- Wailer scream (Def.Wail): it stands still and screams for Windup ("WailStart": clients play the scream),
+-- then players within Radius get their sight blurred ("Wail") and every zombie within Pull of it rushes the
+-- nearest player for RushTime.
+function ZombieService:_wail(z)
+	local w = z.Def.Wail
+	z.NextWail = os.clock() + w.Cooldown
+	z.StunnedUntil = math.max(z.StunnedUntil, os.clock() + w.Windup)
+	Remotes.Effect:FireAllClients("WailStart", { Model = z.Model, Time = w.Windup })
+	task.delay(w.Windup, function()
+		if z.Dead then
+			return
+		end
+		local origin = z.Root.Position
+		local prey = findTarget(origin)
+		Remotes.Effect:FireAllClients("Wail", { Position = origin, Radius = w.Radius, Blur = w.Blur })
+		if not prey then
+			return
+		end
+		local now = os.clock()
+		for _, other in alive do
+			if other ~= z and not other.Def.Boss and (other.Root.Position - origin).Magnitude <= w.Pull then
+				other.Target = prey
+				other.NextRetarget = now + w.RushTime
+				other.RushUntil, other.RushMult = now + w.RushTime, w.RushMult
+			end
+		end
+	end)
+end
+
 -- Keep a zombie standing still (no moves, no attacks) for `seconds` (the boss during its intro)
 function ZombieService:Hold(model, seconds)
 	local z = alive[model]
@@ -680,6 +718,9 @@ function ZombieService:_step(_dt)
 				z.AO.CFrame = CFrame.lookAt(Vector3.zero, if wantsMove then moveDir else flat / dist)
 				if wantsMove then
 					local speed = def.Speed * z.SpeedMult
+					if now < (z.RushUntil or 0) then
+						speed *= z.RushMult -- called in by a Wailer's scream (_wail)
+					end
 					local lunge = def.Lunge
 					if lunge and dist <= lunge.Range and now >= z.NextLunge then
 						z.LungeUntil = now + lunge.Duration
@@ -704,6 +745,12 @@ function ZombieService:_step(_dt)
 			end
 			if def.Explode and not z.FuseAt and dist <= def.Explode.TriggerRange then
 				startFuse(z)
+			end
+			if def.Wail then
+				z.NextWail = z.NextWail or now + 2
+				if now >= z.NextWail and dist <= def.Wail.Range then
+					self:_wail(z)
+				end
 			end
 			if def.Slam and now >= z.NextSlam and dist <= def.Slam.TriggerRange and now >= (z.NextSpecial or 0) then
 				doSlam(z, now)

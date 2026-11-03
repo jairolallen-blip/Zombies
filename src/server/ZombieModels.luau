@@ -6,7 +6,8 @@
 --   Motor6Ds named LeftArm / RightArm / LeftLeg / RightLeg on Root (client animates .Transform)
 --   "Torso"     the shirt block (Bloater fuse turns it neon)
 --   "Head", "Head*" detail parts and "Eye" parts count as headshots
--- Builds (def.Look.Build): Normal, Lean (hunched), Bloated, Hulk, Titan.
+-- Builds (def.Look.Build): Normal, Lean (hunched), Bloated, Hulk, Titan, and for Nightmare Crawler (on all
+-- fours) and Gaunt (tall, arms to the knees). def.Look.Horror adds a Nightmare type's details (horror()).
 
 local ZombieModels = {}
 
@@ -24,6 +25,10 @@ local BUILDS = {
 	Bloated = { Torso = Vector3.new(2.8, 2.1, 2), Arm = Vector3.new(1.1, 1.1, 2), Leg = Vector3.new(1.1, 2, 1.1), Lean = 0 },
 	Hulk = { Torso = Vector3.new(2.8, 2.2, 1.4), Arm = Vector3.new(1.3, 1.3, 2.6), Leg = Vector3.new(1.2, 2, 1.2), Lean = 0.15 },
 	Titan = { Torso = Vector3.new(2.8, 2.2, 1.4), Arm = Vector3.new(1.3, 1.3, 2.6), Leg = Vector3.new(1.2, 2, 1.2), Lean = 0.1 },
+	-- Nightmare: ArmPitch tips the arms down from straight ahead, HeadUp lifts the face off a leaned torso,
+	-- Head replaces the 1.25 cube
+	Crawler = { Torso = Vector3.new(1.8, 2.2, 0.9), Arm = Vector3.new(0.7, 0.7, 2.9), Leg = Vector3.new(0.8, 2, 0.8), Lean = 1.15, ArmPitch = 1.2, HeadUp = 0.95 },
+	Gaunt = { Torso = Vector3.new(1.5, 2.5, 0.75), Arm = Vector3.new(0.55, 0.55, 3.2), Leg = Vector3.new(0.7, 2, 0.7), Lean = 0.12, ArmPitch = 1.25, Head = Vector3.new(1, 1.55, 1.05) },
 }
 
 local function newPart(name, size, color, material)
@@ -131,6 +136,289 @@ local function torsoDetails(torso, look, build, s, rng)
 	end
 end
 
+-- Nightmare details (def.Look.Horror; the Nightmare types in Config/Zombies), added once the body is built.
+-- Designs from the owner's references (vault: Nightmare Mode.md):
+--   Rotter   rotting face: sunken red-rimmed eyes, a rotted-out nose, the jaw hanging open on yellow teeth,
+--            lesions, ears, ribs through a torn shirt
+--   Skitter  flayed: red muscle with darker striations, exposed ribcage and vertebrae, a bone skull face
+--            with a lipless grin; low on all fours (Crawler build)
+--   Husk     bone armour (shoulder plates, back carapace, forearm and shin guards, a skull plate and horns)
+--            over a glowing seam it splits along; Half = one of the two halves it leaves behind
+--   Wailer   gaunt and bare-chested: arms to the knees with long talons, blind white eyes, a mouth
+--            stretched open, gore down the chest, a rag on one shoulder, bare feet, a glowing throat sac
+-- Every Nightmare zombie also gets claws and bony spikes down its spine. Head details are named "Head*"
+-- and eyes "Eye", so they count as headshots like the rest of the face.
+local GORE = Color3.fromRGB(78, 8, 10)
+local ROT_TEETH = Color3.fromRGB(214, 190, 128)
+local SOCKET = Color3.fromRGB(34, 10, 10)
+local LESION = Color3.fromRGB(64, 40, 56)
+
+local function horror(model, look, build, s, rng)
+	local kind = look.Horror
+	if not kind then
+		return
+	end
+	local head, torso = model:FindFirstChild("Head"), model:FindFirstChild("Torso")
+	local hs, ts = head.Size, torso.Size
+	local hFront, tFront = -hs.Z / 2, -ts.Z / 2
+	local bone = look.Bone or BONE
+	local arms = { model:FindFirstChild("LeftArm"), model:FindFirstChild("RightArm") }
+	local legs = { model:FindFirstChild("LeftLeg"), model:FindFirstChild("RightLeg") }
+	local dripY = -0.45 * s -- bottom of the mouth (face() puts it at -0.3 x scale, 0.3 tall)
+	local function neon(p)
+		p.Material = Enum.Material.Neon
+		p.CastShadow = false
+		return p
+	end
+
+	-- claws: bone talons past each hand (arms reach along -Z); the Wailer's and Skitter's are long
+	local clawLen = (if kind == "Wailer" then 1.25 elseif kind == "Skitter" then 0.9 else 0.6) * s
+	for _, arm in arms do
+		for i = -1, 1 do
+			stick(arm, "Claw", Vector3.new(0.09, 0.09, 0) * s + Vector3.new(0, 0, clawLen), CFrame.new(i * arm.Size.X * 0.32, -arm.Size.Y * 0.2, -arm.Size.Z / 2 - clawLen / 2 + 0.06 * s) * CFrame.Angles(-0.4, i * 0.18, 0), bone)
+		end
+	end
+	-- spine: bony spikes (vertebrae on the Skitter) along the back, angled up
+	local spikes = if kind == "Skitter" then 7 elseif kind == "Husk" then 5 else 4
+	for n = 1, spikes do
+		local y = ts.Y * (0.42 - (n - 1) * 0.84 / spikes)
+		local h = rng:NextNumber(0.3, 0.55) * s * (if kind == "Husk" then 1.7 elseif kind == "Skitter" then 0.7 else 1)
+		stick(torso, "Spine", Vector3.new(0.24 * s, 0.24 * s, h), CFrame.new(0, y, ts.Z / 2 + h * 0.3) * CFrame.Angles(-0.5, 0, 0), bone)
+	end
+
+	-- the lower jaw hangs open, hinged just behind the face, and juts forward and down out of the mouth
+	-- (Rotter, Wailer)
+	local function jaw(drop, width, teeth)
+		local w = hs.X * width
+		local depth = hs.Z * 0.5
+		local hinge = CFrame.new(0, -hs.Y / 2 + 0.14 * s, hFront + 0.3 * s) * CFrame.Angles(-drop, 0, 0)
+		local j = stick(head, "HeadJaw", Vector3.new(w, 0.26 * s, depth), hinge * CFrame.new(0, -0.13 * s, -depth / 2), look.Skin:Lerp(Color3.new(), 0.2))
+		stick(j, "HeadGums", Vector3.new(w * 0.86, 0.04 * s, depth * 0.8), CFrame.new(0, 0.13 * s + 0.015 * s, 0.02 * s), MOUTH)
+		for i = 1, teeth do -- jagged lower teeth along the front edge
+			local x = (i - (teeth + 1) / 2) / teeth * w * 0.85
+			local th = rng:NextNumber(0.12, 0.24) * s
+			stick(j, "HeadTooth", Vector3.new(0.09 * s, th, 0.07 * s), CFrame.new(x, 0.13 * s + th / 2, -depth / 2 + 0.06 * s) * CFrame.Angles(0, 0, rng:NextNumber(-0.25, 0.25)), ROT_TEETH)
+		end
+		return j
+	end
+	-- an exposed ribcage over a dark cavity in the chest (each on its own depth layer: no z-fighting)
+	local function ribcage(ribs)
+		stick(torso, "Cavity", Vector3.new(ts.X * 0.62, ts.Y * 0.5, 0.05 * s), CFrame.new(0, ts.Y * 0.08, tFront - 0.105 * s), GORE)
+		for r = 0, ribs - 1 do
+			stick(torso, "Rib", Vector3.new(ts.X * (0.7 - r * 0.04), 0.09 * s, 0.06 * s), CFrame.new(0, ts.Y * (0.28 - r * 0.13), tFront - 0.125 * s), bone)
+		end
+		stick(torso, "Sternum", Vector3.new(0.13 * s, ts.Y * 0.46, 0.07 * s), CFrame.new(0, ts.Y * 0.1, tFront - 0.14 * s), bone)
+	end
+	local function lesions(base, count)
+		for _ = 1, count do
+			local side = if rng:NextNumber() < 0.5 then -1 else 1
+			local d = rng:NextNumber(0.18, 0.34) * s
+			stick(base, base.Name == "Head" and "HeadLesion" or "Lesion", Vector3.new(0.05 * s, d, d * 1.2), CFrame.new(side * (base.Size.X / 2 + 0.02 * s), rng:NextNumber(-0.3, 0.3) * base.Size.Y, rng:NextNumber(-0.3, 0.3) * base.Size.Z), LESION)
+		end
+	end
+	local function bareFeet()
+		for _, p in model:GetChildren() do
+			if p.Name == "Shoe" then
+				p.Color = look.Skin:Lerp(Color3.new(), 0.15)
+				p.Material = Enum.Material.SmoothPlastic
+			end
+		end
+	end
+
+	if kind == "Rotter" then
+		-- sunken eyes: pale, bloodshot eyeballs with a burning pupil, in dark red-rimmed sockets
+		for _, p in model:GetChildren() do
+			if p.Name == "Eye" then
+				p.Color = Color3.fromRGB(226, 214, 190)
+				p.Material = Enum.Material.SmoothPlastic
+			end
+		end
+		for _, x in { -0.27, 0.27 } do
+			stick(head, "HeadSocket", Vector3.new(0.4, 0.34, 0.06) * s, CFrame.new(x * s, 0.12 * s, hFront - 0.005 * s), SOCKET)
+			neon(stick(head, "Eye", Vector3.new(0.1, 0.1, 0.04) * s, CFrame.new(x * s, 0.12 * s, hFront - 0.085 * s), look.Eyes))
+		end
+		stick(head, "HeadNose", Vector3.new(0.18, 0.2, 0.06) * s, CFrame.new(0, -0.05 * s, hFront - 0.015 * s), SOCKET)
+		for _, x in { -1, 1 } do
+			stick(head, "HeadEar", Vector3.new(0.12, 0.36, 0.26) * s, CFrame.new(x * (hs.X / 2 + 0.05 * s), 0.05 * s, 0.08 * s) * CFrame.Angles(0, -x * 0.35, 0), look.Skin)
+		end
+		-- a bigger mouth, rotten upper teeth along its top edge, and the jaw hanging open below it
+		for _, p in model:GetChildren() do
+			if p.Name == "HeadTooth" then
+				p:Destroy()
+			elseif p.Name == "HeadMouth" then
+				p.Size = Vector3.new(0.72, 0.36, 0.06) * s
+				local weld = p:FindFirstChildOfClass("Weld")
+				weld.C0 = CFrame.new(0, -0.36 * s, weld.C0.Position.Z)
+				dripY = -0.54 * s
+			end
+		end
+		for i = 1, 5 do
+			local th = rng:NextNumber(0.1, 0.18) * s
+			stick(head, "HeadTooth", Vector3.new(0.09 * s, th, 0.05 * s), CFrame.new((i - 3) * 0.13 * s, -0.19 * s - th / 2, hFront - 0.075 * s) * CFrame.Angles(0, 0, rng:NextNumber(-0.2, 0.2)), ROT_TEETH)
+		end
+		jaw(0.55, 0.62, 5)
+		-- one cheek rotted through: a dark hole with the back teeth showing
+		local side = if rng:NextNumber() < 0.5 then -1 else 1
+		stick(head, "HeadRot", Vector3.new(0.05 * s, 0.36 * s, 0.5 * s), CFrame.new(side * (hs.X / 2 + 0.02 * s), -0.28 * s, -hs.Z * 0.18), SOCKET)
+		for k = 0, 2 do
+			stick(head, "HeadTooth", Vector3.new(0.05 * s, 0.12 * s, 0.1 * s), CFrame.new(side * (hs.X / 2 + 0.05 * s), -0.26 * s, -hs.Z * 0.18 + (k - 1) * 0.13 * s), ROT_TEETH)
+		end
+		-- a broken bone through one forearm
+		local arm = arms[if side > 0 then 1 else 2]
+		stick(arm, "Bone", Vector3.new(0.2, 0.2, 0.75) * s, CFrame.new(0, arm.Size.Y * 0.45, -arm.Size.Z * 0.08) * CFrame.Angles(0.6, 0.3, 0), bone)
+		stick(arm, "Gore", Vector3.new(arm.Size.X + 0.03 * s, 0.05 * s, arm.Size.Z * 0.3), CFrame.new(0, arm.Size.Y / 2 + 0.015 * s, -arm.Size.Z * 0.08), GORE)
+		ribcage(3)
+		lesions(head, 3)
+		for _, a in arms do
+			lesions(a, 2)
+		end
+	elseif kind == "Skitter" then
+		-- flayed: muscle striations on torso and limbs, a bone skull face, bony elbows, bare feet
+		local fibre = look.Skin:Lerp(Color3.new(), 0.35)
+		for i = -2, 2 do
+			stick(torso, "Fibre", Vector3.new(0.07 * s, ts.Y * 0.8, 0.04 * s), CFrame.new(i * ts.X * 0.17, 0, ts.Z / 2 + 0.025 * s) * CFrame.Angles(0, 0, i * 0.06), fibre)
+		end
+		for _, limb in { arms[1], arms[2], legs[1], legs[2] } do
+			local isArm = limb.Size.Z > limb.Size.Y -- arms run along Z (top face up), legs along Y (front face)
+			for _, x in { -0.22, 0.22 } do
+				if isArm then
+					stick(limb, "Fibre", Vector3.new(0.05 * s, 0.05 * s, limb.Size.Z * 0.7), CFrame.new(x * limb.Size.X, limb.Size.Y / 2 + 0.015 * s, 0), fibre)
+				else
+					stick(limb, "Fibre", Vector3.new(0.05 * s, limb.Size.Y * 0.7, 0.05 * s), CFrame.new(x * limb.Size.X, 0, -limb.Size.Z / 2 - 0.015 * s), fibre)
+				end
+			end
+		end
+		for _, arm in arms do -- elbow knob
+			stick(arm, "Bone", Vector3.new(arm.Size.X * 0.7, 0.28 * s, 0.28 * s), CFrame.new(0, arm.Size.Y / 2 + 0.05 * s, arm.Size.Z * 0.1), bone)
+		end
+		head.Color = bone -- the skin is gone from the face
+		for _, p in model:GetChildren() do
+			if p.Name == "HeadHair" or p.Name == "HeadWound" or p.Name == "HeadBrow" or p.Name == "HeadTooth" then
+				p:Destroy()
+			elseif p.Name == "HeadMouth" then
+				p.Size = Vector3.new(0.78, 0.3, 0.06) * s
+			elseif p.Name == "Eye" then
+				p.Size = Vector3.new(0.11, 0.11, 0.08) * s -- a pinprick of light in each socket
+			end
+		end
+		for _, x in { -0.27, 0.27 } do -- deep sockets with a pinprick of light
+			stick(head, "HeadSocket", Vector3.new(0.38, 0.36, 0.06) * s, CFrame.new(x * s, 0.12 * s, hFront - 0.005 * s), SOCKET)
+		end
+		for i = 1, 7 do -- a lipless grin: a full row of teeth top and bottom
+			local x = (i - 4) * 0.105 * s
+			stick(head, "HeadTooth", Vector3.new(0.085, 0.13, 0.05) * s, CFrame.new(x, -0.22 * s, hFront - 0.08 * s), TEETH)
+			stick(head, "HeadTooth", Vector3.new(0.085, 0.11, 0.05) * s, CFrame.new(x, -0.39 * s, hFront - 0.08 * s), TEETH)
+		end
+		stick(head, "HeadNose", Vector3.new(0.16, 0.18, 0.06) * s, CFrame.new(0, -0.04 * s, hFront - 0.015 * s), SOCKET)
+		ribcage(4)
+		bareFeet()
+	elseif kind == "Husk" or kind == "Half" then
+		-- bare grey skin; the seam it splits along: a jagged glowing crack down the middle, spidering out,
+		-- and over the skull
+		torso.Color = look.Skin:Lerp(Color3.new(), 0.1)
+		torso.Material = Enum.Material.SmoothPlastic
+		for _, p in model:GetChildren() do
+			if p.Name == "Hem" or p.Name == "TornChest" or p.Name == "Rib" then
+				p:Destroy() -- no shirt left to tear
+			end
+		end
+		local seam = look.Eyes
+		local armoured = kind == "Husk"
+		for k = 0, 5 do -- zigzag down the front
+			local y = ts.Y * (0.42 - k * 0.17)
+			neon(stick(torso, "Seam", Vector3.new(0.16 * s, ts.Y * 0.2, 0.05 * s), CFrame.new((if k % 2 == 0 then -0.05 else 0.05) * s, y, tFront - 0.11 * s) * CFrame.Angles(0, 0, if k % 2 == 0 then 0.25 else -0.25), seam))
+		end
+		for n = 1, 4 do -- cracks branching off it
+			local x = (if n % 2 == 0 then 1 else -1) * ts.X * 0.14
+			-- (on a Husk they run over the breastplate, which sits in front of the skin)
+			neon(stick(torso, "Crack", Vector3.new(0.08 * s, rng:NextNumber(0.4, 0.8) * s, 0.05 * s), CFrame.new(x, ts.Y * rng:NextNumber(-0.3, 0.3), tFront - (if armoured then 0.28 else 0.125) * s) * CFrame.Angles(0, 0, -math.sign(x) * rng:NextNumber(0.6, 1.1)), seam))
+		end
+		neon(stick(torso, "Seam", Vector3.new(0.14 * s, ts.Y * 0.9, 0.05 * s), CFrame.new(0, 0, ts.Z / 2 + (if armoured then 0.3 else 0.11) * s), seam))
+		local top = if armoured then hs.Y * 0.52 else hs.Y / 2
+		neon(stick(head, "HeadSeam", Vector3.new(0.1 * s, 0.05 * s, hs.Z * 0.9), CFrame.new(0, top + 0.025 * s, 0), seam))
+		local glow = Instance.new("PointLight")
+		glow.Color = seam
+		glow.Range = 9
+		glow.Brightness = 1.4
+		glow.Parent = torso
+		if armoured then
+			-- shoulder plates bristling with spikes, a breastplate split down the seam, a back carapace
+			for _, x in { -1, 1 } do
+				local plate = stick(torso, "BonePlate", Vector3.new(ts.X * 0.5, 0.5 * s, ts.Z * 1.3), CFrame.new(x * ts.X * 0.42, ts.Y * 0.5 + 0.1 * s, 0) * CFrame.Angles(0, 0, -x * 0.35), bone, Enum.Material.Slate)
+				for k = -1, 1 do
+					stick(plate, "Spike", Vector3.new(0.2, 0.75 + 0.2 * (1 - math.abs(k)), 0.2) * s, CFrame.new(x * plate.Size.X * 0.15, plate.Size.Y / 2 + 0.3 * s, k * plate.Size.Z * 0.3) * CFrame.Angles(k * 0.3, 0, -x * 0.25), bone)
+				end
+				-- the breastplate's halves, parted by the seam
+				stick(torso, "BonePlate", Vector3.new(ts.X * 0.36, ts.Y * 0.62, 0.16 * s), CFrame.new(x * ts.X * 0.27, ts.Y * 0.12, tFront - 0.17 * s) * CFrame.Angles(0, x * 0.12, 0), bone, Enum.Material.Slate)
+			end
+			stick(torso, "Carapace", Vector3.new(ts.X * 0.85, ts.Y * 0.75, 0.3 * s), CFrame.new(0, ts.Y * 0.05, ts.Z / 2 + 0.12 * s), bone, Enum.Material.Slate)
+			for _, arm in arms do
+				stick(arm, "Guard", Vector3.new(arm.Size.X + 0.14 * s, arm.Size.Y * 0.55, arm.Size.Z * 0.45), CFrame.new(0, arm.Size.Y * 0.3, -arm.Size.Z * 0.16), bone, Enum.Material.Slate)
+				stick(arm, "Spike", Vector3.new(0.18, 0.6, 0.18) * s, CFrame.new(0, arm.Size.Y * 0.55 + 0.25 * s, -arm.Size.Z * 0.16) * CFrame.Angles(-0.4, 0, 0), bone)
+			end
+			for i, leg in legs do
+				stick(leg, "Guard", Vector3.new(leg.Size.X * 0.8, leg.Size.Y * 0.32, 0.18 * s), CFrame.new(0, -leg.Size.Y * 0.2, -leg.Size.Z / 2 - 0.08 * s), bone, Enum.Material.Slate)
+				if i == 2 then -- bone breaking out through the knee
+					stick(leg, "KneeBone", Vector3.new(0.3, 0.6, 0.3) * s, CFrame.new(leg.Size.X * 0.2, leg.Size.Y * 0.18, -leg.Size.Z / 2 - 0.12 * s) * CFrame.Angles(0.5, 0, 0.2), bone)
+				end
+			end
+			-- tusks up out of the corners of the mouth
+			for _, x in { -1, 1 } do
+				stick(head, "HeadTusk", Vector3.new(0.14, 0.5, 0.14) * s, CFrame.new(x * 0.3 * s, -0.25 * s, hFront - 0.1 * s) * CFrame.Angles(-0.3, 0, -x * 0.2), bone)
+			end
+			stick(head, "HeadPlate", Vector3.new(hs.X + 0.12 * s, hs.Y * 0.32, hs.Z + 0.12 * s), CFrame.new(0, hs.Y * 0.36, 0), bone, Enum.Material.Slate)
+			for _, x in { -1, 1 } do
+				stick(head, "HeadHorn", Vector3.new(0.24, 1, 0.24) * s, CFrame.new(x * hs.X * 0.38, hs.Y * 0.66, 0.1 * s) * CFrame.Angles(0.3, 0, -x * 0.5), bone)
+			end
+		else -- a half: raw where it tore from the other one
+			stick(torso, "RawSide", Vector3.new(0.05 * s, ts.Y * 0.9, ts.Z * 0.9), CFrame.new(ts.X / 2 + 0.03 * s, 0, 0), GORE)
+			stick(head, "HeadRaw", Vector3.new(0.05 * s, hs.Y * 0.8, hs.Z * 0.8), CFrame.new(hs.X / 2 + 0.03 * s, 0, 0), GORE)
+		end
+	elseif kind == "Wailer" then
+		torso.Color = look.Skin -- bare-chested
+		torso.Material = Enum.Material.SmoothPlastic
+		-- a rag of shirt hanging off one shoulder
+		local side = if rng:NextNumber() < 0.5 then -1 else 1
+		stick(torso, "Rag", Vector3.new(ts.X * 0.55, ts.Y * 0.75, ts.Z + 0.12 * s), CFrame.new(side * ts.X * 0.3, ts.Y * 0.1, 0) * CFrame.Angles(0, 0, side * 0.12), pick(rng, look.Shirts), Enum.Material.Fabric)
+		-- gore down the chest from the mouth
+		stick(torso, "Gore", Vector3.new(ts.X * 0.34, ts.Y * 0.7, 0.05 * s), CFrame.new(-side * ts.X * 0.1, ts.Y * 0.12, tFront - 0.03 * s), GORE)
+		ribcage(4)
+		-- the scream: the mouth stretched down the face, rows of teeth, the jaw dropped wide
+		for _, p in model:GetChildren() do
+			if p.Name == "HeadHair" or p.Name == "HeadTooth" then
+				p:Destroy() -- bald, blotched scalp; new teeth below
+			elseif p.Name == "HeadMouth" then
+				p.Size = Vector3.new(0.58, 0.72, 0.06) * s
+				local weld = p:FindFirstChildOfClass("Weld")
+				weld.C0 = CFrame.new(0, -0.4 * s, weld.C0.Position.Z) -- lower, clear of the eyes
+				dripY = -0.76 * s
+			end
+		end
+		for i = 1, 5 do -- the upper teeth hang from the top of the stretched mouth
+			local th = rng:NextNumber(0.12, 0.2) * s
+			stick(head, "HeadTooth", Vector3.new(0.08 * s, th, 0.05 * s), CFrame.new((i - 3) * 0.1 * s, -0.04 * s - th / 2, hFront - 0.075 * s), ROT_TEETH)
+		end
+		jaw(0.8, 0.62, 4)
+		lesions(head, 4)
+		for _, arm in arms do
+			lesions(arm, 2)
+			stick(arm, "Gore", Vector3.new(arm.Size.X + 0.03 * s, arm.Size.Y * 0.5, arm.Size.Z * 0.18), CFrame.new(0, -arm.Size.Y * 0.1, -arm.Size.Z * 0.38), GORE)
+		end
+		-- the scream organ: a pale glowing sac in the throat (ZombieService Wail)
+		local sac = neon(stick(torso, "Throat", Vector3.one * 0.36 * s, CFrame.new(0, ts.Y / 2 - 0.3 * s, tFront - 0.06 * s), Color3.fromRGB(90, 190, 255)))
+		sac.Shape = Enum.PartType.Ball
+		sac.Transparency = 0.25
+		bareFeet()
+	end
+	-- blood drooling from the mouth
+	if kind ~= "Husk" then
+		for _ = 1, 2 do
+			local len = rng:NextNumber(0.3, 0.7) * s
+			stick(head, "HeadDrip", Vector3.new(0.07 * s, len, 0.05 * s), CFrame.new(rng:NextNumber(-0.22, 0.22) * s, dripY - len / 2, hFront - 0.045 * s), GORE)
+		end
+	end
+end
+
 function ZombieModels.Build(typeId, def, cf)
 	local rng = Random.new()
 	local s = def.Scale or 1
@@ -178,7 +466,7 @@ function ZombieModels.Build(typeId, def, cf)
 	local torsoCF = CFrame.new(0, hip + torsoSize.Y / 2, 0) * CFrame.Angles(-b.Lean, 0, 0)
 	local torso = weldToRoot(newPart("Torso", torsoSize, shirt, Enum.Material.Fabric), torsoCF)
 	local neck = torsoCF * CFrame.new(0, torsoSize.Y / 2, 0)
-	local head = weldToRoot(newPart("Head", Vector3.new(1.25, 1.25, 1.25) * s, look.Skin), neck * CFrame.new(0, 0.62 * s, 0) * CFrame.Angles(rng:NextNumber(-0.15, 0.1), 0, rng:NextNumber(-0.25, 0.25)))
+	local head = weldToRoot(newPart("Head", (b.Head or Vector3.new(1.25, 1.25, 1.25)) * s, look.Skin), neck * CFrame.Angles(b.HeadUp or 0, 0, 0) * CFrame.new(0, (if b.Head then b.Head.Y / 2 else 0.62) * s, 0) * CFrame.Angles(rng:NextNumber(-0.15, 0.1), 0, rng:NextNumber(-0.25, 0.25)))
 	face(head, look, s, rng)
 	torsoDetails(torso, look, buildName, s, rng)
 	if buildName == "Titan" then
@@ -195,7 +483,7 @@ function ZombieModels.Build(typeId, def, cf)
 	for _, side in { { "LeftArm", -1 }, { "RightArm", 1 } } do
 		local x = (torsoSize.X / 2 + arm.X / 2) * side[2]
 		local joint = CFrame.new(x, shoulder.Y, shoulder.Z)
-		local limb = motor(newPart(side[1], arm, look.Skin), joint, joint * CFrame.new(0, 0, -arm.Z / 2 + 0.45 * s))
+		local limb = motor(newPart(side[1], arm, look.Skin), joint, joint * CFrame.Angles(-(b.ArmPitch or 0), 0, 0) * CFrame.new(0, 0, -arm.Z / 2 + 0.45 * s))
 		local sleeve = if buildName == "Normal" or buildName == "Titan" then rng:NextNumber(0.25, 0.55) else 0
 		if sleeve > 0 then -- torn sleeve near the shoulder
 			stick(limb, "Sleeve", Vector3.new(arm.X + 0.04, arm.Y + 0.04, arm.Z * sleeve), CFrame.new(0, 0, arm.Z / 2 - arm.Z * sleeve / 2), shirt, Enum.Material.Fabric)
@@ -215,6 +503,8 @@ function ZombieModels.Build(typeId, def, cf)
 		end
 		stick(limb, "Shoe", Vector3.new(leg.X + 0.06, 0.32 * s, leg.Z + 0.3 * s), CFrame.new(0, -leg.Y / 2 + 0.16 * s, -0.12 * s), SHOE)
 	end
+
+	horror(model, look, buildName, s, rng)
 
 	local attachment = Instance.new("Attachment")
 	attachment.Name = "Move"

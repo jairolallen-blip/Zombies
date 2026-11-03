@@ -1,6 +1,6 @@
 # ZombieModels
 
-> Made by `tools/vault-code-notes.js` from `src/server/ZombieModels.luau` (243 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/ZombieModels.luau` (533 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -15,7 +15,8 @@ Contract used by ZombieService / CombatService / EffectsController:
   Motor6Ds named LeftArm / RightArm / LeftLeg / RightLeg on Root (client animates .Transform)
   "Torso"     the shirt block (Bloater fuse turns it neon)
   "Head", "Head*" detail parts and "Eye" parts count as headshots
-Builds (def.Look.Build): Normal, Lean (hunched), Bloated, Hulk, Titan.
+Builds (def.Look.Build): Normal, Lean (hunched), Bloated, Hulk, Titan, and for Nightmare Crawler (on all
+fours) and Gaunt (tall, arms to the knees). def.Look.Horror adds a Nightmare type's details (horror()).
 ```
 
 ## Uses
@@ -26,6 +27,11 @@ Builds (def.Look.Build): Normal, Lean (hunched), Bloated, Hulk, Titan.
 
 - [[ZombieService]]
 
+## Mentions
+
+- [[Zombies config]]
+
 ## Design notes
 
 - [[Zombies]]
+- [[Nightmare Mode]]

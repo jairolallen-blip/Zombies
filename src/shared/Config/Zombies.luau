@@ -25,8 +25,18 @@
 --                     at At (fraction of max HP): faster, slams more often, summons a ring of Summon
 --   Lunge = { Range, SpeedMult, Duration, Cooldown }
 --                     burst of speed when a player is within Range (runners)
---   Look = { Build, Skin, Eyes, Shirts = {...}, Pants = {...} }
---                     Build: "Normal" | "Lean" | "Bloated" | "Hulk" | "Titan" (see ZombieModels)
+--   Look = { Build, Skin, Eyes, Shirts = {...}, Pants = {...}, Horror?, Bone? }
+--                     Build: "Normal" | "Lean" | "Bloated" | "Hulk" | "Titan" | "Crawler" | "Gaunt" (see ZombieModels)
+--                     Horror: the Nightmare details ZombieModels adds ("Rotter" | "Skitter" | "Husk" | "Half" | "Wailer")
+-- Nightmare types (Config/Nightmare; the NIGHTMARE row of the enemy index):
+--   Nightmare = true   spawns only in Nightmare runs, and Nightmare runs spawn only these (ZombieService:PickType)
+--   Pack               spawned in a group of this many (MatchService)
+--   Split = { Into, Count }   on death, Count zombies of type Into crawl out where it fell (ZombieService:Kill)
+--   Wail = { Range, Radius, Pull, Windup, Cooldown, Blur, RushMult, RushTime }
+--                     within Range of a player it stops and screams for Windup: players within Radius get their
+--                     sight blurred for Blur seconds (NightmareController), and every zombie within Pull of it
+--                     rushes the nearest player at RushMult speed for RushTime (ZombieService:_wail)
+--   An entry without Index (the Husk's halves) is left out of the enemy index.
 
 local Zombies = {}
 
@@ -141,6 +151,124 @@ Zombies.Types = {
 			Eyes = Color3.fromRGB(120, 255, 230),
 			Shirts = { Color3.fromRGB(35, 30, 40) },
 			Pants = { Color3.fromRGB(30, 30, 35) },
+		},
+	},
+
+	-- Nightmare counterparts (owner design 2026-11-02; models from the owner's references, see ZombieModels horror())
+	Rotter = {
+		DisplayName = "Rotter",
+		Nightmare = true,
+		Index = { Gems = 100, Special = "Tougher, faster, jaw hanging open", Lore = "Shamblers the Bloom never let go of. The jaw came loose weeks ago; it still tries to bite." },
+		Health = 80,
+		Speed = 12,
+		Damage = 12,
+		AttackRange = 2.5,
+		AttackCooldown = 0.9,
+		Cash = 18,
+		Scale = 1.05,
+		MinWave = 1,
+		Weight = 10,
+		Look = {
+			Build = "Normal",
+			Horror = "Rotter",
+			Skin = Color3.fromRGB(112, 128, 104),
+			Eyes = Color3.fromRGB(255, 34, 24),
+			Shirts = { Color3.fromRGB(58, 52, 60), Color3.fromRGB(84, 46, 40), Color3.fromRGB(70, 66, 54) },
+			Pants = { Color3.fromRGB(44, 48, 58), Color3.fromRGB(60, 52, 44) },
+		},
+	},
+	Skitter = {
+		DisplayName = "Skitter",
+		Nightmare = true,
+		Index = { Gems = 125, Special = "Hunts in packs of three, lunges", Lore = "Its skin went first, then it stopped standing. Low and fast, Skitters come in threes and you rarely hear them first." },
+		Health = 45,
+		Speed = 21,
+		Damage = 8,
+		AttackRange = 2.5,
+		AttackCooldown = 0.6,
+		Cash = 25,
+		Scale = 0.85,
+		MinWave = 2,
+		Weight = 4,
+		Pack = 3,
+		Lunge = { Range = 14, SpeedMult = 2.2, Duration = 0.5, Cooldown = 2.5 },
+		Look = {
+			Build = "Crawler",
+			Horror = "Skitter",
+			Skin = Color3.fromRGB(138, 40, 36), -- flayed muscle
+			Eyes = Color3.fromRGB(255, 236, 120),
+			Bone = Color3.fromRGB(226, 210, 178),
+			Shirts = { Color3.fromRGB(138, 40, 36) },
+			Pants = { Color3.fromRGB(118, 34, 32), Color3.fromRGB(46, 42, 46) },
+		},
+	},
+	Wailer = {
+		DisplayName = "Wailer",
+		Nightmare = true,
+		Index = { Gems = 150, Special = "Its scream blurs your sight and calls the horde", Lore = "Port Harrow's sirens went quiet. These took over. When one screams, everything nearby comes running." },
+		Health = 120,
+		Speed = 9,
+		Damage = 10,
+		AttackRange = 2.5,
+		AttackCooldown = 1,
+		Cash = 40,
+		Scale = 1.15,
+		MinWave = 4,
+		Weight = 2,
+		Wail = { Range = 28, Radius = 40, Pull = 60, Windup = 1, Cooldown = 9, Blur = 3, RushMult = 1.5, RushTime = 4 },
+		Look = {
+			Build = "Gaunt",
+			Horror = "Wailer",
+			Skin = Color3.fromRGB(204, 200, 192),
+			Eyes = Color3.fromRGB(236, 246, 255), -- blind, glowing
+			Shirts = { Color3.fromRGB(78, 58, 62), Color3.fromRGB(60, 62, 70) },
+			Pants = { Color3.fromRGB(58, 78, 108), Color3.fromRGB(46, 60, 84) }, -- jeans
+		},
+	},
+	Husk = {
+		DisplayName = "Husk",
+		Nightmare = true,
+		Index = { Gems = 200, Special = "Bone armour; splits in two when it falls", Lore = "Something grew a shell around a Brute. Crack it open and both halves keep crawling." },
+		Health = 650,
+		Speed = 7,
+		Damage = 32,
+		AttackRange = 3,
+		AttackCooldown = 1.4,
+		Cash = 120,
+		Scale = 1.8,
+		MinWave = 6,
+		Weight = 1,
+		Split = { Into = "HuskHalf", Count = 2 },
+		Look = {
+			Build = "Hulk",
+			Horror = "Husk",
+			Skin = Color3.fromRGB(88, 96, 84),
+			Eyes = Color3.fromRGB(255, 120, 40), -- and the seam
+			Bone = Color3.fromRGB(206, 192, 166),
+			Shirts = { Color3.fromRGB(44, 40, 38) },
+			Pants = { Color3.fromRGB(38, 36, 40) },
+		},
+	},
+	HuskHalf = { -- what a Husk leaves behind (Split); never spawned by itself, not in the index
+		DisplayName = "Husk Half",
+		Nightmare = true,
+		Health = 140,
+		Speed = 9,
+		Damage = 14,
+		AttackRange = 2.5,
+		AttackCooldown = 1,
+		Cash = 30,
+		Scale = 1.15,
+		MinWave = 1,
+		Weight = 0,
+		Look = {
+			Build = "Crawler",
+			Horror = "Half",
+			Skin = Color3.fromRGB(88, 96, 84),
+			Eyes = Color3.fromRGB(255, 120, 40),
+			Bone = Color3.fromRGB(206, 192, 166),
+			Shirts = { Color3.fromRGB(44, 40, 38) },
+			Pants = { Color3.fromRGB(38, 36, 40) },
 		},
 	},
 }

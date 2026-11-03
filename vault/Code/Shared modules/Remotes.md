@@ -54,6 +54,7 @@ Server -> Client
 - [[LobbyController]]
 - [[LobbyService]]
 - [[MatchService]]
+- [[NightmareController]]
 - [[QueueService]]
 - [[RadioController]]
 - [[ShopController]]

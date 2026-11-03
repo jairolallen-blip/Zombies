@@ -7,6 +7,8 @@
 -- is up so its own music plays alone (BossController), a heartbeat that rises as zombies close in
 -- (Nightmare.Heartbeat), and the city's street lamps go out or flicker (Nightmare.Lamps; local only, picked
 -- by lamp position so every player sees the same ones; restored when the run ends).
+-- The Wailer's scream (ZombieService:_wail): "WailStart" plays the scream from it and swells its throat sac,
+-- "Wail" blurs the sight of players within its Radius.
 
 local Players = game:GetService("Players")
 local HttpService = game:GetService("HttpService")
@@ -14,8 +16,11 @@ local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Lighting = game:GetService("Lighting")
+
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameState = require(Shared.GameState)
+local Remotes = require(Shared.Remotes)
 local Nightmare = require(Shared.Config.Nightmare)
 
 local player = Players.LocalPlayer
@@ -136,7 +141,42 @@ local function updateLamps()
 	end
 end
 
+local function onEffect(kind, data)
+	if kind == "WailStart" then
+		local throat = data.Model and data.Model:FindFirstChild("Throat")
+		if not throat then
+			return
+		end
+		local scream = Instance.new("Sound")
+		scream.SoundId = "rbxassetid://" .. Nightmare.WailSound.Id
+		scream.Volume = Nightmare.WailSound.Volume
+		scream.RollOffMaxDistance = 220
+		scream.Parent = throat
+		scream:Play()
+		task.delay(6, scream.Destroy, scream)
+		local base = throat:GetAttribute("BaseSize") or throat.Size -- swells for the scream, then settles back
+		throat:SetAttribute("BaseSize", base)
+		local swell = TweenService:Create(throat, TweenInfo.new(data.Time, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Size = base * 1.8 })
+		swell.Completed:Connect(function()
+			TweenService:Create(throat, TweenInfo.new(0.6), { Size = base }):Play()
+		end)
+		swell:Play()
+	elseif kind == "Wail" then
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if not root or (root.Position - data.Position).Magnitude > data.Radius then
+			return
+		end
+		local blur = Instance.new("BlurEffect")
+		blur.Name = "WailBlur"
+		blur.Size = 22
+		blur.Parent = Lighting
+		TweenService:Create(blur, TweenInfo.new(data.Blur, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Size = 0 }):Play()
+		task.delay(data.Blur, blur.Destroy, blur)
+	end
+end
+
 function NightmareController:Start()
+	Remotes.Effect.OnClientEvent:Connect(onEffect)
 	task.spawn(function()
 		local last = os.clock()
 		while true do

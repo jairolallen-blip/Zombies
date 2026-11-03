@@ -17,6 +17,7 @@ local Nightmare = {
 	-- "Heartbeat (loop)": louder and faster the more zombies are within Radius studs (Full of them = loudest)
 	Heartbeat = { Id = 6202853067, Volume = 0.6, Radius = 22, Full = 6 },
 	Lamps = { Dead = 0.35, Flicker = 0.3 }, -- share of the city's street lamps that are out / flickering (same for everyone)
+	WailSound = { Id = 9113985848, Volume = 1 }, -- PSE, "Creature Scream Piercing Pain Female 3": the Wailer's scream
 }
 
 -- stats: a profile's Stats table (server) or the Stats in AchievementsJson (client)
