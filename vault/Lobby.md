@@ -48,7 +48,22 @@ The lobby was quiet and purely functional, so it got a place to hang out and som
   - Beds: a soft sea wash and a faint eerie ambience.
   - The music and beds fade out when a run starts and back in when you return.
   - 3D loops: a fire crackle on every fire (courtyard barrels, campfire, mess stove) and radio chatter from the shack. They are Sounds named `LobbyAmbient` that the controller starts as they stream in.
+- **Things to do** (`Server/Services/CommonsService`, added the same day):
+  - **Sit** on the couches, log benches and mess benches (22 Seats).
+  - **Listen in** at the radio shack: Sgt. Voss plays a lore broadcast on your radio panel (lines in `Config/Survivors`).
+  - **Shoot** the ball at the hoop: it arcs at the rim, and about 1 in 3 goes in from 9 studs (bank shots count). A make calls "SWISH!" for you and everyone near.
+  - **TOP SURVIVORS** board: the all-time best waves of every player, from an OrderedDataStore (`SAMZ_BestWave_v1`, written by DataService). Studio has no DataStores, so it lists the players in the server.
+  - The **Commendations board** moved from in front of the south gate (it blocked the way in) to the Commons entrance, west of the path, facing it; TOP SURVIVORS stands opposite.
+- **Survivors** (`Shared/Config/Survivors`, placed by `Server/Map/Survivors`, talking via `Client/Controllers/SurvivorController`): five people built from the class figures, each with a name tag and a "Talk" prompt. Each cycles five lines of tips and lore in a speech bubble only you see.
+  - **Rook** (old-timer, campfire): the city and cash tips.
+  - **Doc Hale** (medic, mess tent): health tips.
+  - **Cpl. Reyes** (radio operator, radio shack): Overwatch, crates and the Titan.
+  - **Sparks** (mechanic, Flight Line gate): squads, upgrades and classes.
+  - **Big Mo** (bruiser, hoop): Gems, boards and the Titan's enrage.
+  - **Lore so far:** the city is Port Harrow, the infection is "the Bloom", and Overwatch flies from a carrier offshore.
+  - **Bubbles and tags** are sized in studs, so they always take the same space. Every NPC's bubble space was checked clear of parts.
 - **Fixes found on the way:**
+  - The sleeping tents were built upside down (the slope sign was flipped) and had a rectangular back panel that stuck out; both are fixed.
   - The barrel flames burned sideways: the Fire's attachment inherited the barrel cylinder's 90° roll. It's set upright now.
   - The flag hung edge-on to the plaza. It's three panels flying east-west now.
   - The ground cracks floated 0.27 studs above the asphalt and lay across the plaza, so they read as sticks. They're flat on the ground now, and off the plaza.

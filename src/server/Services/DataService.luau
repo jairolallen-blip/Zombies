@@ -9,6 +9,8 @@
 --   AchievementsJson ('{"Stats":{...},"Claimed":{...}}'; Config/Achievements)
 -- Achievements: :AddStat(player, key, amount, isMax) counts progress (toast when one completes);
 -- the ClaimAchievement remote pays its Gems once.
+-- Best waves also go to an OrderedDataStore (BEST_STORE) for the Commons' TOP SURVIVORS board:
+-- :GetTopBestWaves(n) -> {{UserId, Wave}} best first, or nil when DataStores are unavailable.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -63,6 +65,8 @@ DataService.ProfileLoaded = Util.Signal.new() -- (player, profile)
 local profiles = {} -- [Player] = profile table
 local noSave = {} -- [Player] = true when the load failed (never overwrite their real data)
 local store = nil
+local BEST_STORE = "SAMZ_BestWave_v1"
+local bestStore = nil -- OrderedDataStore: key "u_<UserId>" -> best wave
 
 local function deepCopy(t)
 	local copy = {}
@@ -98,6 +102,8 @@ function DataService:Init()
 	end)
 	if ok then
 		store = result
+		local okBest, ordered = pcall(DataStoreService.GetOrderedDataStore, DataStoreService, BEST_STORE)
+		bestStore = if okBest then ordered else nil
 	else
 		warn("[DataService] DataStores unavailable, memory-only mode:", result)
 	end
@@ -192,6 +198,9 @@ function DataService:Load(player)
 	kills.Parent = leaderstats
 	leaderstats.Parent = player
 
+	if data.BestWave > 0 then
+		self:_submitBest(player, data.BestWave) -- also back-fills saves from before the board
+	end
 	self:Replicate(player)
 	self.ProfileLoaded:Fire(player, data)
 end
@@ -283,6 +292,9 @@ function DataService:RecordRun(player, waveReached, kills, gems)
 		return false
 	end
 	local newBest = waveReached > data.BestWave
+	if newBest then
+		self:_submitBest(player, waveReached)
+	end
 	data.BestWave = math.max(data.BestWave, waveReached)
 	data.TotalKills += kills
 	data.RunsPlayed += 1
@@ -290,6 +302,27 @@ function DataService:RecordRun(player, waveReached, kills, gems)
 	self:Replicate(player)
 	task.spawn(self.Save, self, player)
 	return newBest
+end
+
+function DataService:_submitBest(player, wave)
+	if bestStore and store and not noSave[player] then
+		task.spawn(pcall, bestStore.SetAsync, bestStore, keyFor(player), wave)
+	end
+end
+
+function DataService:GetTopBestWaves(count)
+	if not bestStore or not store then
+		return nil
+	end
+	local ok, pages = pcall(bestStore.GetSortedAsync, bestStore, false, count)
+	if not ok then
+		return nil
+	end
+	local top = {}
+	for _, entry in pages:GetCurrentPage() do
+		table.insert(top, { UserId = tonumber(entry.key:sub(3)), Wave = entry.value })
+	end
+	return top
 end
 
 return DataService

@@ -4,6 +4,9 @@
 --   west    the mess tent: long tables, benches, a cooking barrel, crates of cans
 --   east    sleeping tents with cots
 --   corners a radio shack (south-east) with live chatter, and a hoop and crates to sit on (south-west)
+--   entry   the Commendations board (moved here from in front of the gate) and the TOP SURVIVORS board
+-- Things to do (Server/Services/CommonsService): sit on any couch, log or mess bench (Seats); "Listen in"
+-- at the radio for an Overwatch broadcast; "Shoot" the ball at the hoop; read the global best-wave board.
 -- The south ruins move back to the new edge. Sounds: every fire (here and the courtyard's barrels) gets a
 -- looped crackle and the radio shack plays chatter; they are Sounds named "LobbyAmbient" that
 -- Client/Controllers/LobbyAudioController starts (ids in Shared/Config/Sounds).
@@ -239,6 +242,19 @@ end
 
 -- Hangout pieces -----------------------------------------------------------------------------------
 
+-- An invisible Seat players can sit on; they face the cframe's front (-Z)
+local function seat(parent, cframe)
+	local s = Instance.new("Seat")
+	s.Name = "Seat"
+	s.Anchored = true
+	s.Size = Vector3.new(2, 0.4, 2)
+	s.CFrame = cframe
+	s.Transparency = 1
+	s.CanCollide = false
+	s.Parent = parent
+	return s
+end
+
 local function couch(parent, cframe, color)
 	local m = model(parent, "Couch")
 	part(m, "Base", Vector3.new(7, 1.4, 3), cframe * CFrame.new(0, 0.9, 0), color, Enum.Material.Fabric)
@@ -246,6 +262,7 @@ local function couch(parent, cframe, color)
 	for _, s in { -1, 1 } do
 		part(m, "Arm", Vector3.new(0.9, 1.2, 3), cframe * CFrame.new(s * 3.5, 2, 0), color:Lerp(Color3.new(), 0.15), Enum.Material.Fabric)
 		part(m, "Cushion", Vector3.new(3.2, 0.5, 2.6), cframe * CFrame.new(s * 1.65, 1.85, -0.1) * CFrame.Angles(0, 0, math.rad(s * 2)), color:Lerp(Color3.new(1, 1, 1), 0.08), Enum.Material.Fabric)
+		seat(m, cframe * CFrame.new(s * 1.65, 2.1, -0.1))
 	end
 	return m
 end
@@ -253,6 +270,9 @@ end
 local function logBench(parent, cframe)
 	local log = part(parent, "LogBench", Vector3.new(8, 1.6, 1.6), cframe * CFrame.new(0, 0.8, 0), C.Log, Enum.Material.Wood)
 	log.Shape = Enum.PartType.Cylinder
+	for _, x in { -2, 2 } do
+		seat(parent, cframe * CFrame.new(x, 1.6, 0))
+	end
 	return log
 end
 
@@ -360,6 +380,10 @@ local function buildMessTent(m)
 		end
 		for _, bx in { -2.2, 2.2 } do
 			part(t, "Bench", Vector3.new(1, 0.25, 13), at(cx + tx + bx, GROUND_Y + 1.5, cz), C.Wood, Enum.Material.WoodPlanks)
+			for _, sz in { -4, 0, 4 } do -- facing the table
+				local p = at(cx + tx + bx, GROUND_Y + 1.6, cz + sz).Position
+				seat(t, CFrame.lookAt(p, p - Vector3.new(bx, 0, 0)))
+			end
 			part(t, "BenchLeg", Vector3.new(0.8, 1.4, 0.25), at(cx + tx + bx, GROUND_Y + 0.7, cz - 5.5), C.Wood, Enum.Material.Wood)
 			part(t, "BenchLeg", Vector3.new(0.8, 1.4, 0.25), at(cx + tx + bx, GROUND_Y + 0.7, cz + 5.5), C.Wood, Enum.Material.Wood)
 		end
@@ -382,11 +406,10 @@ local function buildBunks(m)
 	for i, z in { 82, 98, 114 } do
 		local cx = 40
 		local cf = at(cx, GROUND_Y, z)
-		-- A-frame tent, open end facing the campfire (west)
+		-- A-frame tent, open at both ends (a flat back panel stuck out past the slopes)
 		for _, s in { -1, 1 } do
-			part(b, "TentSide", Vector3.new(9, 0.2, 5.2), cf * CFrame.new(0, 2, s * 1.9) * CFrame.Angles(math.rad(-s * 52), 0, 0), if i == 2 then C.CanvasDark else C.Canvas, Enum.Material.Fabric)
+			part(b, "TentSide", Vector3.new(9, 0.2, 5.2), cf * CFrame.new(0, 2, s * 1.9) * CFrame.Angles(math.rad(s * 52), 0, 0), if i == 2 then C.CanvasDark else C.Canvas, Enum.Material.Fabric)
 		end
-		part(b, "TentBack", Vector3.new(0.2, 3.8, 6), cf * CFrame.new(4.4, 1.9, 0), C.CanvasDark, Enum.Material.Fabric)
 		part(b, "Bedroll", Vector3.new(6, 0.4, 1.8), cf * CFrame.new(0.5, 0.2, 0), Color3.fromRGB(80, 60, 50), Enum.Material.Fabric)
 		-- a cot beside each tent
 		part(b, "Cot", Vector3.new(6, 0.3, 2.2), cf * CFrame.new(1, 1.4, 5.5), C.CanvasDark, Enum.Material.Fabric)
@@ -440,6 +463,14 @@ local function buildRadioShack(m)
 	end
 	part(r, "Handset", Vector3.new(0.4, 0.3, 1.4), at(cx + 1.4, GROUND_Y + 3, cz + 3.8) * CFrame.Angles(0, 0.4, 0), Color3.fromRGB(30, 30, 30), Enum.Material.SmoothPlastic)
 	ambient(radio, "RadioChatter")
+	-- "Listen in": Overwatch plays a lore broadcast on your radio panel (Server/Services/CommonsService)
+	local listen = Instance.new("ProximityPrompt")
+	listen.ActionText = "Listen in"
+	listen.ObjectText = "RADIO"
+	listen.MaxActivationDistance = 9
+	listen.RequiresLineOfSight = false
+	listen:SetAttribute("Commons", "Radio")
+	listen.Parent = radio
 	local light = Instance.new("PointLight")
 	light.Color = C.Screen
 	light.Range = 6
@@ -464,13 +495,83 @@ local function buildHangoutCorner(m)
 		local a = k * math.pi / 4
 		part(h, "Rim", Vector3.new(0.12, 0.12, 0.9), at(cx + math.cos(a) * 1.1, GROUND_Y + 10, cz + 2.2 + math.sin(a) * 1.1) * CFrame.Angles(0, -a, 0), Color3.fromRGB(220, 90, 40), Enum.Material.Metal, DECOR)
 	end
+	-- the rim's centre and the ball's resting spot are attributes for CommonsService (the "Shoot" prompt)
+	h:SetAttribute("RimCenter", Vector3.new(origin.X + cx, GROUND_Y + 10, origin.Z + cz + 2.2))
 	local ball = part(h, "Ball", Vector3.new(1.4, 1.4, 1.4), at(cx + 3, GROUND_Y + 0.7, cz - 2), Color3.fromRGB(200, 100, 40), Enum.Material.SmoothPlastic)
 	ball.Shape = Enum.PartType.Ball
+	ball:SetAttribute("Home", ball.Position)
+	local shoot = Instance.new("ProximityPrompt")
+	shoot.ActionText = "Shoot"
+	shoot.ObjectText = "BALL"
+	shoot.MaxActivationDistance = 8
+	shoot.RequiresLineOfSight = false
+	shoot:SetAttribute("Commons", "Hoop")
+	shoot.Parent = ball
 	-- faded court lines
 	part(h, "CourtLine", Vector3.new(14, 0.05, 0.4), at(cx, GROUND_Y + 0.03, cz - 6), C.White, Enum.Material.SmoothPlastic, { Transparency = 0.5, CanCollide = false })
 	for k = 0, 2 do
 		crate(h, at(cx + 8 + k * 2.6, GROUND_Y, cz - 10 + (k % 2) * 1.2) * CFrame.Angles(0, 0.2 * k, 0), 2.2)
 	end
+end
+
+-- "TOP SURVIVORS": the all-time best waves of every player (CommonsService fills Row1..Row10 from an
+-- OrderedDataStore). It stands east of the path in from the gate, facing west.
+local function buildLeaderboard(m)
+	local b = model(m, "TopSurvivors")
+	local cx, cz = 20, 72
+	for _, dz in { -5.5, 5.5 } do
+		part(b, "Post", Vector3.new(0.6, 10, 0.6), at(cx + 0.4, GROUND_Y + 5, cz + dz), C.Wood, Enum.Material.Wood)
+	end
+	local board = part(b, "Board", Vector3.new(0.4, 7.5, 11), at(cx, GROUND_Y + 5.6, cz), Color3.fromRGB(34, 32, 30), Enum.Material.Wood)
+	part(b, "Awning", Vector3.new(2.4, 0.2, 12.4), at(cx - 0.6, GROUND_Y + 9.7, cz) * CFrame.Angles(0, 0, math.rad(-12)), C.Rust, Enum.Material.CorrodedMetal)
+	local gui = Instance.new("SurfaceGui")
+	gui.Name = "Rows"
+	gui.Face = Enum.NormalId.Left -- -X: towards the path
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = 40
+	gui.Parent = board
+	local list = Instance.new("UIListLayout")
+	list.SortOrder = Enum.SortOrder.LayoutOrder
+	list.Parent = gui
+	local function row(name, order, text, color, height)
+		local label = Instance.new("TextLabel")
+		label.Name = name
+		label.LayoutOrder = order
+		label.Size = UDim2.new(1, 0, height, 0)
+		label.BackgroundTransparency = 1
+		label.Font = Enum.Font.GothamBlack
+		label.TextScaled = true
+		label.TextColor3 = color
+		label.Text = text
+		label.Parent = gui
+	end
+	row("Header", 0, "TOP SURVIVORS · BEST WAVE", Color3.fromRGB(150, 255, 90), 0.12)
+	for i = 1, 10 do
+		row("Row" .. i, i, "", if i <= 3 then Color3.fromRGB(255, 214, 120) else C.White, 0.088)
+	end
+	local light = Instance.new("SpotLight")
+	light.Face = Enum.NormalId.Left
+	light.Range = 12
+	light.Brightness = 1.2
+	light.Color = Color3.fromRGB(255, 230, 190)
+	light.Parent = board
+end
+
+-- The Commendations board used to stand right in front of the south gate. It moves into the Commons,
+-- west of the path in, turned to face east (once: it's marked Moved).
+local function moveCommendations(lobby)
+	local board = lobby:FindFirstChild("Commendations")
+	if not board or board:GetAttribute("Moved") then
+		return
+	end
+	local pivot = board:GetPivot()
+	local cf = board:GetBoundingBox()
+	local offset = pivot.Position - cf.Position
+	local target = Vector3.new(origin.X - 20, cf.Y, origin.Z + 72)
+	-- it faced north (-Z); a -90 degree turn makes it face east (+X)
+	local turn = CFrame.Angles(0, math.rad(-90), 0)
+	board:PivotTo(CFrame.new(target) * turn * CFrame.new(offset) * pivot.Rotation)
+	board:SetAttribute("Moved", true)
 end
 
 function Commons.Build(lobby)
@@ -490,6 +591,8 @@ function Commons.Build(lobby)
 	buildBunks(m)
 	buildRadioShack(m)
 	buildHangoutCorner(m)
+	buildLeaderboard(m)
+	moveCommendations(lobby)
 	m.Parent = lobby
 	return m
 end

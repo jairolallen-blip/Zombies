@@ -1,6 +1,7 @@
 -- RadioController: the commander's radio panel on the left side of the screen (vault: Match Start.md).
 -- Remotes.Radio(text) lines are queued; each slides in next to a 3D portrait (ViewportFrame) whose
--- mouth moves while the text types out, holds, then slides away. Only shown during a run.
+-- mouth moves while the text types out, holds, then slides away. Shown during a run, and in the lobby
+-- while a radio-shack broadcast is up.
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
@@ -131,8 +132,10 @@ function RadioController:Start()
 		while true do
 			ui.Live.TextTransparency = if ui.Live.TextTransparency == 0 then 0.7 else 0
 			-- off during the boss intro (BossController hides every screen, but this loop would switch it
-			-- back on); it stays on during the drop-in, where it carries the Deploy/Drop briefing
-			ui.Gui.Enabled = player:GetAttribute("InRun") == true and player:GetAttribute("BossIntro") ~= true
+			-- back on); it stays on during the drop-in, where it carries the Deploy/Drop briefing. In the
+			-- lobby it shows only while a line is up (the radio shack's broadcasts: CommonsService)
+			local busy = ui.Panel.Position ~= HIDDEN or #queue > 0
+			ui.Gui.Enabled = player:GetAttribute("BossIntro") ~= true and (player:GetAttribute("InRun") == true or busy)
 			task.wait(0.5)
 		end
 	end)
