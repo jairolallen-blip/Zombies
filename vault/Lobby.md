@@ -103,10 +103,13 @@ A fortified safehouse inside a ruined city at **x = 1000, z = 1000** (moved from
 - `GameConfig.OurMap` (centres at x = 1000) is **the only map**. On 2026-11-01 the original "Graveside Isle" generator, the friend's city map, `Props` and `Bricks` were deleted, and MapService now only reads our marker parts (see [[Roadmap#Project history]]).
 - `Server/Map/OurLobby` builds `Workspace.OurMap.Lobby`. It's baked in Edit mode (rebuild instructions are in its header), so it can be hand-edited afterwards.
 - `MapService:GetLobbySpawnCFrame()` uses the parts named `LobbySpawn` in our lobby.
-- **The arena is still the original one** until our city exists, since `OurMap` has no `Arena` yet. That's phase 2.
 - Profile: `Loadout = { [level] = weaponId }` replaces `EquippedWeapon`. Old saves are migrated automatically, and every free gun is granted.
 - `WeaponTier` now means **gun level**. `GameConfig.WeaponTiers` multipliers are all 1, kept only for the level colours.
 
 ## Notes for later
-- Lighting and sky are still the original map's bright daytime look. Give our map its own atmosphere (overcast, fog, dusk) in [[City Map]], switching on `ActiveMap`.
 - **Shared code:** the loadout and upgrade changes also apply to the friend's version.
+
+## Code
+[[OurLobby]], [[FlightLine]], [[Commons]] and [[Survivors map]] build it. [[LobbyService]], [[QueueService]] and [[CommonsService]] run it. [[ShopController]], [[LobbyController]], [[LobbyAudioController]] and [[SurvivorController]] are the client. See also [[Servers and Teleports]], [[Tutorial]], [[Achievements]] and [[Lore]].
+
+Back to [[Home]].

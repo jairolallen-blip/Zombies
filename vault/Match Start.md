@@ -34,3 +34,8 @@ Part of the [[Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and p
 ## Later
 - A real voice line for the pilot (it's a subtitle plus a squelch for now).
 - Players who respawn mid-run skip the cutscene and appear normally.
+
+## Code
+[[MatchService]] runs the deploy, [[CutsceneController]] plays it, and [[RadioController]] shows [[Radio config]] lines. Sound: [[SoundController]] and [[Sounds config]].
+
+Back to [[Home]].

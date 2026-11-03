@@ -2,7 +2,7 @@
 
 > **New agent or collaborator?** Start with `CLAUDE.md` in the repo root (outside this vault). It's the always-current handoff guide: game content, architecture, workflow, playtesting and pitfalls.
 
-Our take on *Survive a Million Zombies*, built next to the friend's version. Each phase has its own note, and we finish one before starting the next.
+Back to [[Home]]. Our take on *Survive a Million Zombies*, built next to the friend's version. Each phase has its own note, and we finish one before starting the next.
 
 | # | Phase | Note | Status |
 |---|---|---|---|

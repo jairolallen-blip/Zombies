@@ -61,3 +61,8 @@ The map is a 23 × 23 grid of 12-stud tiles (276 studs across). North is up.
 ## Spawns (for now)
 - `PlayerSpawn` × 8 around the fountain.
 - `ZombieSpawn` × 12 on the ring road and in the side areas, away from the square. These are replaced by random spawns with red warning circles in [[Spawning]] (phase 6).
+
+## Code
+[[OurCity]] builds it, [[MapService]] reads its markers and sets the atmosphere, and [[NavGrid]] maps it for the zombies.
+
+Back to [[Home]].

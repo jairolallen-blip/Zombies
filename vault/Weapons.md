@@ -35,3 +35,8 @@ Zombie HP is Shambler 60, Runner 35, Bloater 90, Brute 450 and the Grave Titan b
 ## Later
 - **Sounds** for shots, reloads, the minigun spin and the laser hum, once audio assets are chosen.
 - Reload animations (dropping the mag).
+
+## Code
+Data in [[Weapons config]] and [[GunModels]]. [[WeaponController]] and [[ViewmodelController]] on the client, [[CombatService]] on the server, upgrades in [[EconomyService]], shared math in [[Util]].
+
+Back to [[Home]].

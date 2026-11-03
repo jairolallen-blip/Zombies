@@ -47,3 +47,8 @@ Tunables: `GameConfig.Waves.SpawnSeconds` / `SpawnSecondsPerWave` (spawn window)
 ## Later ideas
 - A helicopter extraction cutscene on victory, reusing the drop-in helicopter.
 - Endless mode after wave 10 for high scores.
+
+## Code
+The run loop is in [[MatchService]] and the boss in [[ZombieService]]. Client: [[BossController]] and [[HUDController]].
+
+Back to [[Home]].

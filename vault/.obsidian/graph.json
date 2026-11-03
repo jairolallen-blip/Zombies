@@ -6,7 +6,50 @@
   "hideUnresolved": false,
   "showOrphans": true,
   "collapse-color-groups": true,
-  "colorGroups": [],
+  "colorGroups": [
+    {
+      "query": "path:\"Code/Server services\"",
+      "color": {
+        "a": 1,
+        "rgb": 14701138
+      }
+    },
+    {
+      "query": "path:\"Code/Map builders\"",
+      "color": {
+        "a": 1,
+        "rgb": 14721072
+      }
+    },
+    {
+      "query": "path:\"Code/Client controllers\"",
+      "color": {
+        "a": 1,
+        "rgb": 5217248
+      }
+    },
+    {
+      "query": "path:\"Code/Shared modules\"",
+      "color": {
+        "a": 1,
+        "rgb": 10185696
+      }
+    },
+    {
+      "query": "path:\"Code/Config\"",
+      "color": {
+        "a": 1,
+        "rgb": 5290104
+      }
+    },
+    {
+      "query": "file:Home",
+      "color": {
+        "a": 1,
+        "rgb": 16777215
+      }
+    }
+  ],
   "collapse-display": true,
   "showArrow": false,
   "textFadeMultiplier": 0,
@@ -17,6 +60,6 @@
   "repelStrength": 10,
   "linkStrength": 1,
   "linkDistance": 250,
-  "scale": 1.4019828977761002,
-  "close": true
+  "scale": 0.5087618855792579,
+  "close": false
 }

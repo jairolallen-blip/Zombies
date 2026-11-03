@@ -33,3 +33,8 @@ Every zombie is built from parts with **random variation**: shirt and pants colo
 ## Notes
 - Headshots count on any part whose name starts with `Head` (face details included) and on `Eye`.
 - Spawn rise-from-the-ground and the red warning circle belong to [[Spawning]] (phase 6). The boss's fight mechanics belong to [[Waves and Boss]] (phase 7).
+
+## Code
+Data in [[Zombies config]], bodies from [[ZombieModels]], AI in [[ZombieService]] with [[NavGrid]], walk animation in [[EffectsController]].
+
+Back to [[Home]].

@@ -28,3 +28,8 @@ Part of the [[Roadmap]]. Zombies come from the [[Zombies]] phase, and the map is
 
 There are +60% zombies per extra player, at most 70 alive at once, and zombie HP rises 10% per wave.
 - Tunables live in `GameConfig.Waves`.
+
+## Code
+[[MapService]] picks the spot, [[ZombieService]] raises the zombie, and [[EffectsController]] draws the warning circle.
+
+Back to [[Home]].
