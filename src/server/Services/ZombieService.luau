@@ -302,6 +302,9 @@ function ZombieService:Kill(model, attacker)
 		GameState:SetAttribute("BossHealth", 0)
 		GameState:SetAttribute("BossMaxHealth", 0)
 	end
+	if def.Death then -- a boss with a death scene: its body stays for the clients to burst (MatchService:_bossDeath)
+		z.Corpse = model:Clone()
+	end
 	model:Destroy()
 	if def.Explode then
 		local e = def.Explode
@@ -728,6 +731,103 @@ function ZombieService:_burrow(z)
 	end)
 end
 
+-- Bloom Mother spore volley (Def.Spores; see Config/Zombies BloomMother). Clients draw the pods and clouds
+-- (BossController "SporeVolley"); the red circles and the damage are here.
+function ZombieService:_spores(z, now)
+	local sp = z.Def.Spores
+	z.NextSpores = now + specialCooldown(z, sp.Cooldown)
+	z.NextSpecial = now + sp.Windup + z.Def.SpecialGap
+	z.StunnedUntil = math.max(z.StunnedUntil, now + sp.Windup)
+	local targets = {}
+	for _, player in Services.MatchService:GetRunPlayers() do
+		local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if r and Util.FlatDistance(r.Position, z.Root.Position) <= sp.Range then
+			table.insert(targets, r)
+		end
+	end
+	if #targets == 0 then
+		return
+	end
+	local groundY = Services.MapService.GroundY
+	local landings, rings = {}, {}
+	for i = 1, if z.Enraged then sp.EnragedCount else sp.Count do
+		local r = targets[(i - 1) % #targets + 1]
+		-- the first pod at each player lands where they're heading; the rest scatter around them
+		local lead = r.AssemblyLinearVelocity * Vector3.new(1, 0, 1) * (sp.Windup + sp.Flight) * 0.5
+		local off = if i <= #targets then Vector3.zero else Vector3.new(math.random() - 0.5, 0, math.random() - 0.5) * 2 * sp.Spread
+		local spot = r.Position + lead + off
+		spot = Vector3.new(spot.X, groundY, spot.Z)
+		table.insert(landings, spot)
+		local ring = telegraph(Vector3.new(0.2, sp.Radius * 2, sp.Radius * 2), CFrame.new(spot + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)))
+		ring.Shape = Enum.PartType.Cylinder
+		table.insert(rings, ring)
+	end
+	Remotes.Effect:FireAllClients("SporeVolley", { Model = z.Model, Landings = landings, Windup = sp.Windup, Flight = sp.Flight, Radius = sp.Radius, Cloud = sp.Cloud })
+	local gen = generation
+	task.delay(sp.Windup + sp.Flight, function()
+		for _, ring in rings do
+			ring:Destroy()
+		end
+		local function hurt(damage)
+			for _, player in Services.MatchService:GetRunPlayers() do
+				local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+				for _, spot in landings do
+					if r and Util.FlatDistance(r.Position, spot) <= sp.Radius then
+						Services.CombatService:DamagePlayer(player, damage)
+					end
+				end
+			end
+		end
+		hurt(sp.Damage)
+		for _ = 1, sp.Cloud * 2 do -- the poison clouds (pods keep working after it dies, until the run clears)
+			task.wait(0.5)
+			if gen ~= generation then
+				return
+			end
+			hurt(sp.CloudDamage)
+		end
+	end)
+end
+
+-- Bloom Burst (Def.Burst): it roots itself and swells for Windup inside a red ring (BossController draws the
+-- danger filling in and the countdown), then everyone still inside takes Damage and is thrown clear.
+function ZombieService:_bloomBurst(z, now)
+	local b = z.Def.Burst
+	z.Slamming = true
+	z.NextBurst = now + b.Windup + specialCooldown(z, b.Cooldown)
+	z.NextSpecial = now + b.Windup + z.Def.SpecialGap
+	local center = Vector3.new(z.Root.Position.X, Services.MapService.GroundY, z.Root.Position.Z)
+	local ring = telegraph(Vector3.new(0.2, b.Radius * 2, b.Radius * 2), CFrame.new(center + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90)))
+	ring.Shape = Enum.PartType.Cylinder
+	ring.Transparency = 0.75
+	Remotes.Effect:FireAllClients("BloomBurst", { Model = z.Model, Position = center, Radius = b.Radius, Windup = b.Windup })
+	task.delay(b.Windup, function()
+		ring:Destroy()
+		z.Slamming = false
+		if z.Dead then
+			return
+		end
+		Remotes.Effect:FireAllClients("BloomBlast", { Position = center, Radius = b.Radius })
+		for _, player in Services.MatchService:GetRunPlayers() do
+			local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+			if r and Util.FlatDistance(r.Position, center) <= b.Radius then
+				Services.CombatService:DamagePlayer(player, b.Damage)
+				knock(r, center, b.Knockback)
+			end
+		end
+	end)
+end
+
+-- The Nightmare boss fell: everything it grew dies with it (no rewards) and nothing more rises (MatchService)
+function ZombieService:Collapse()
+	generation += 1
+	pendingCount = 0
+	for model, z in alive do
+		Remotes.Effect:FireAllClients("ZombieDeath", { Position = z.Root.Position, Color = z.Def.Look.Skin, Scale = z.Def.Scale or 1 })
+		self:Remove(model)
+	end
+end
+
 -- Wailer scream (Def.Wail): it stands still and screams for Windup ("WailStart": clients play the scream),
 -- then players within Radius get their sight blurred ("Wail") and every zombie within Pull of it rushes the
 -- nearest player for RushTime.
@@ -904,7 +1004,13 @@ function ZombieService:_step(_dt)
 			elseif def.Boss and now >= (z.NextSpecial or 0) then
 				z.NextCharge = z.NextCharge or now + 3
 				z.NextLeap = z.NextLeap or now + 6
-				if def.Charge and now >= z.NextCharge and dist >= def.Charge.MinRange and dist <= def.Charge.MaxRange and z.HasLOS then
+				z.NextSpores = z.NextSpores or now + 3
+				z.NextBurst = z.NextBurst or now + (if def.Burst then def.Burst.First else 0)
+				if def.Burst and now >= z.NextBurst and dist <= def.Burst.Radius then
+					self:_bloomBurst(z, now)
+				elseif def.Spores and now >= z.NextSpores and dist <= def.Spores.Range then
+					self:_spores(z, now)
+				elseif def.Charge and now >= z.NextCharge and dist >= def.Charge.MinRange and dist <= def.Charge.MaxRange and z.HasLOS then
 					doCharge(z, now, target.Position)
 				elseif def.Leap and now >= z.NextLeap and dist >= def.Leap.MinRange then
 					doLeap(z, now, target.Position)

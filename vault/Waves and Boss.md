@@ -16,6 +16,7 @@ Part of the [[Roadmap]]. The spawn ramp per wave is in [[Spawning]].
 - **Dying** is the same as before: OVERRUN, with rewards for the waves you cleared.
 
 ## The Grave Titan
+Normal runs only. Nightmare runs end in **The Bloom Mother** instead (see [[Nightmare Mode]]).
 - **Entrance cutscene (2026-11-02), 7s:** before the horde spawns, every player is frozen and the camera takes over (`MatchService:_bossIntro`, client `BossController`).
   - **Shots:** letterboxed, with tense drums ("Stalking the Prey"). It starts high over the square pushing down the south avenue, cuts low in front as the Titan claws out of the ground, then goes close up for the **roar**.
   - **The roar:** heavy shake, an FOV punch, a red flash, a shockwave ring, the radio line and the "THE GRAVE TITAN · FINAL WAVE" title card.

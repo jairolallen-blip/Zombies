@@ -21,13 +21,14 @@
 --   Slam = { Radius, Damage, Windup, Cooldown, TriggerRange }
 --                     telegraphed ground slam (red ring) — used by bosses
 --   Charge, Leap, SpecialGap, Intro   boss-only extras; see GraveTitan
+--   Spores, Burst, Death, Intro.Style   the Nightmare boss's extras; see BloomMother
 --   Enrage = { At, SpeedMult, SlamCooldownMult, Summon, SummonCount, SummonRadius }
 --                     at At (fraction of max HP): faster, slams more often, summons a ring of Summon
 --   Lunge = { Range, SpeedMult, Duration, Cooldown }
 --                     burst of speed when a player is within Range (runners)
 --   Look = { Build, Skin, Eyes, Shirts = {...}, Pants = {...}, Horror?, Bone? }
 --                     Build: "Normal" | "Lean" | "Bloated" | "Hulk" | "Titan" | "Crawler" | "Gaunt" (see ZombieModels)
---                     Horror: the Nightmare details ZombieModels adds ("Rotter" | "Skitter" | "Husk" | "Half" | "Wailer")
+--                     Horror: the Nightmare details ZombieModels adds ("Rotter" | "Skitter" | "Husk" | "Half" | "Wailer" | "Bloom")
 -- Nightmare types (Config/Nightmare; the NIGHTMARE row of the enemy index):
 --   Nightmare = true   spawns only in Nightmare runs, and Nightmare runs spawn only these (ZombieService:PickType)
 --   Pack               spawned in a group of this many (MatchService)
@@ -160,6 +161,44 @@ Zombies.Types = {
 		},
 	},
 
+	-- The Nightmare boss (owner design 2026-11-03): a swollen spore-mother, slow and huge.
+	--   Spores: it rears up for Windup, then lobs Count pods (EnragedCount in phase 2) that land after Flight
+	--     inside red circles: one on each player in Range (led a little), the rest scattered within Spread.
+	--     Each does Damage within Radius, then leaves a poison cloud there: CloudDamage every 0.5s for Cloud s.
+	--   Burst: with a player within Radius it roots itself and swells while a red ring and a countdown run
+	--     for Windup; then everyone still inside takes Damage and is thrown out. First at First s, then Cooldown.
+	--   Enrage (phase 2): faster, specials come sooner (SlamCooldownMult), Rotters climb out around it.
+	--   Death: a cutscene (MatchService:_bossDeath, BossController): the horde collapses, the body swells,
+	--     bursts into spores at BurstAt that drift up, and the sky fades to dawn (ClockTime Dawn).
+	--   Intro.Style "Bloom": the sky turns sick green and it tears out of a giant pod (BossController).
+	BloomMother = {
+		DisplayName = "The Bloom Mother",
+		Nightmare = true,
+		Index = { Gems = 400, Special = "Spore pods, poison clouds and the Bloom Burst; Rotters at 50%", Lore = "Where the Bloom began. It doesn't hunt, it seeds. Kill it and everything it grew dies with it." },
+		Boss = true,
+		Health = 16000, -- x Nightmare.BossHealthMult, x (1 + 0.6 per extra player)
+		Speed = 7,
+		Damage = 30,
+		AttackRange = 5,
+		AttackCooldown = 1.5,
+		Cash = 2000,
+		Scale = 3.6,
+		Spores = { Count = 3, EnragedCount = 5, Range = 90, Windup = 0.5, Flight = 1.3, Spread = 10, Radius = 7, Damage = 18, Cloud = 4, CloudDamage = 4, Cooldown = 4.5 },
+		Burst = { Radius = 30, Windup = 3.5, Damage = 75, Knockback = 70, Cooldown = 20, First = 14 },
+		SpecialGap = 1.5,
+		Intro = { Time = 8, RiseAt = 2.4, RiseTime = 3, RoarAt = 5.8, Style = "Bloom" },
+		Death = { Time = 8, BurstAt = 3.2, Dawn = 6.4 },
+		Enrage = { At = 0.5, SpeedMult = 1.25, SlamCooldownMult = 0.6, Summon = "Rotter", SummonCount = 6, SummonRadius = 16 },
+		Look = {
+			Build = "Bloated",
+			Horror = "Bloom",
+			Skin = Color3.fromRGB(118, 128, 86),
+			Eyes = Color3.fromRGB(225, 255, 110),
+			Shirts = { Color3.fromRGB(58, 52, 38) },
+			Pants = { Color3.fromRGB(42, 38, 32) },
+		},
+	},
+
 	-- Nightmare counterparts (owner design 2026-11-02; models from the owner's references, see ZombieModels horror())
 	Rotter = {
 		DisplayName = "Rotter",
@@ -282,5 +321,7 @@ Zombies.Types = {
 
 -- The final wave's boss is BossOrder[1] (GameConfig.Waves.TotalWaves).
 Zombies.BossOrder = { "GraveTitan" }
+-- A Nightmare run's final wave has this boss instead (MatchService:_bossIntro).
+Zombies.NightmareBoss = "BloomMother"
 
 return Zombies

@@ -1,6 +1,6 @@
 # Zombies config
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Config/Zombies.luau` (287 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Config/Zombies.luau` (328 lines). Don't edit it here: rerun the script.
 
 Part of [[Config]].
 
@@ -30,13 +30,14 @@ Fields:
   Slam = { Radius, Damage, Windup, Cooldown, TriggerRange }
                     telegraphed ground slam (red ring) — used by bosses
   Charge, Leap, SpecialGap, Intro   boss-only extras; see GraveTitan
+  Spores, Burst, Death, Intro.Style   the Nightmare boss's extras; see BloomMother
   Enrage = { At, SpeedMult, SlamCooldownMult, Summon, SummonCount, SummonRadius }
                     at At (fraction of max HP): faster, slams more often, summons a ring of Summon
   Lunge = { Range, SpeedMult, Duration, Cooldown }
                     burst of speed when a player is within Range (runners)
   Look = { Build, Skin, Eyes, Shirts = {...}, Pants = {...}, Horror?, Bone? }
                     Build: "Normal" | "Lean" | "Bloated" | "Hulk" | "Titan" | "Crawler" | "Gaunt" (see ZombieModels)
-                    Horror: the Nightmare details ZombieModels adds ("Rotter" | "Skitter" | "Husk" | "Half" | "Wailer")
+                    Horror: the Nightmare details ZombieModels adds ("Rotter" | "Skitter" | "Husk" | "Half" | "Wailer" | "Bloom")
 Nightmare types (Config/Nightmare; the NIGHTMARE row of the enemy index):
   Nightmare = true   spawns only in Nightmare runs, and Nightmare runs spawn only these (ZombieService:PickType)
   Pack               spawned in a group of this many (MatchService)

@@ -144,6 +144,8 @@ end
 --            with a lipless grin; low on all fours (Crawler build)
 --   Husk     bone armour (shoulder plates, back carapace, forearm and shin guards, a skull plate and horns)
 --            over a glowing seam it splits along; Half = one of the two halves it leaves behind
+--   Bloom    the Nightmare boss (Bloated build): a spore sac on its back and glowing pods all over, shelf
+--            fungus, a cluster of extra eyes, a gaping maw with tendrils, drifting spores and a sick green glow
 --   Wailer   gaunt and bare-chested: arms to the knees with long talons, blind white eyes, a mouth
 --            stretched open, gore down the chest, a rag on one shoulder, bare feet, a glowing throat sac
 -- Every Nightmare zombie also gets claws and bony spikes down its spine. Head details are named "Head*"
@@ -408,6 +410,122 @@ local function horror(model, look, build, s, rng)
 		local sac = neon(stick(torso, "Throat", Vector3.one * 0.36 * s, CFrame.new(0, ts.Y / 2 - 0.3 * s, tFront - 0.06 * s), Color3.fromRGB(90, 190, 255)))
 		sac.Shape = Enum.PartType.Ball
 		sac.Transparency = 0.25
+		bareFeet()
+	elseif kind == "Bloom" then
+		local POD = Color3.fromRGB(150, 255, 60)
+		local FLESH = look.Skin:Lerp(Color3.fromRGB(70, 92, 40), 0.45)
+		local FUNGUS = Color3.fromRGB(150, 110, 70)
+		torso.Color = look.Skin -- bare, swollen
+		torso.Material = Enum.Material.SmoothPlastic
+		-- the spore sac: a huge bulb on its back studded with glowing pods
+		local sacR = ts.X * 0.55
+		local sac = stick(torso, "SporeSac", Vector3.one * sacR * 2, CFrame.new(0, ts.Y * 0.25, ts.Z * 0.5 + sacR * 0.45), FLESH)
+		sac.Shape = Enum.PartType.Ball
+		-- a glowing pod bulging out of a darker fleshy cup, pushed out along dir
+		local function pod(base, pos, dir, d)
+			local cup = stick(base, "PodCup", Vector3.one * d * 1.25, CFrame.new(pos), FLESH:Lerp(Color3.new(), 0.25))
+			cup.Shape = Enum.PartType.Ball
+			local p = neon(stick(base, "Pod", Vector3.one * d, CFrame.new(pos + dir * d * 0.3), POD))
+			p.Shape = Enum.PartType.Ball
+		end
+		for _ = 1, 11 do -- pods over the back half of the sac
+			local dir = Vector3.new(rng:NextNumber(-1, 1), rng:NextNumber(-0.4, 1), rng:NextNumber(0.1, 1)).Unit
+			pod(sac, dir * sacR * 0.92, dir, rng:NextNumber(0.35, 0.75) * s)
+		end
+		for _, x in { -0.38, 0.38 } do -- and bursting out of its shoulders
+			pod(torso, Vector3.new(x * ts.X, ts.Y * rng:NextNumber(0.3, 0.45), tFront * 0.8), Vector3.new(x, 0.5, -1).Unit, rng:NextNumber(0.35, 0.5) * s)
+		end
+		-- the belly is split open down the middle: a dark wet maw lined with teeth, a glowing core inside
+		for _, p in model:GetChildren() do
+			if p.Name == "Pustule" then
+				p.Color = POD -- the Bloated build's pustules, greener
+			end
+		end
+		local bellyZ = -ts.Z * 0.63
+		local mawW, mawH = ts.X * 0.3, ts.Y * 0.5
+		stick(torso, "Maw", Vector3.new(mawW + 0.3 * s, mawH + 0.3 * s, 0.06 * s), CFrame.new(0, -ts.Y * 0.1, bellyZ - 0.02 * s), GORE)
+		stick(torso, "Maw", Vector3.new(mawW, mawH, 0.06 * s), CFrame.new(0, -ts.Y * 0.1, bellyZ - 0.06 * s), SOCKET)
+		local core = neon(stick(torso, "Core", Vector3.new(mawW * 0.55, mawH * 0.55, mawW * 0.55), CFrame.new(0, -ts.Y * 0.1, bellyZ - 0.08 * s), POD))
+		core.Shape = Enum.PartType.Ball
+		for k = 1, 5 do -- fangs down both lips, pointing in
+			local y = -ts.Y * 0.1 + (k - 3) * mawH * 0.2
+			for _, side in { -1, 1 } do
+				local len = rng:NextNumber(0.3, 0.5) * s
+				stick(torso, "Fang", Vector3.new(len, 0.12 * s, 0.1 * s), CFrame.new(side * (mawW / 2 - len * 0.3), y, bellyZ - 0.11 * s) * CFrame.Angles(0, 0, side * rng:NextNumber(-0.25, 0.25)), ROT_TEETH)
+			end
+		end
+		-- shelf fungus growing out of the shoulders and arms
+		for i = 1, 4 do
+			local base = if i <= 2 then torso else arms[i - 2]
+			local x = if i <= 2 then (if i == 1 then -1 else 1) * ts.X * 0.5 else 0
+			local y = if i <= 2 then ts.Y * 0.35 else base.Size.Y * 0.5
+			local cap = stick(base, "Fungus", Vector3.new(0.18 * s, 0.9 * s, 0.9 * s), CFrame.new(x, y, 0) * CFrame.Angles(0, 0, math.rad(90)) * CFrame.Angles(rng:NextNumber(-0.3, 0.3), 0, 0), FUNGUS, Enum.Material.Sand)
+			cap.Shape = Enum.PartType.Cylinder
+		end
+		-- a cluster of extra glowing eyes and a gaping maw with tendrils hanging from it
+		for _, p in model:GetChildren() do
+			if p.Name == "HeadHair" or p.Name == "HeadTooth" then
+				p:Destroy()
+			elseif p.Name == "HeadMouth" then
+				p.Size = Vector3.new(0.7, 0.62, 0.06) * s
+				local weld = p:FindFirstChildOfClass("Weld")
+				weld.C0 = CFrame.new(0, -0.32 * s, weld.C0.Position.Z)
+				dripY = -0.63 * s
+			end
+		end
+		-- its own eyes are dark pits with a pinprick glow; a cluster of small eyes has grown in over the brow
+		for _, p in model:GetChildren() do
+			if p.Name == "HeadBrow" then
+				p:Destroy()
+			elseif p.Name == "Eye" then
+				p.Color = SOCKET
+				p.Material = Enum.Material.SmoothPlastic
+				p.Size = Vector3.new(0.34, 0.3, 0.06) * s
+				neon(stick(head, "Eye", Vector3.new(0.08, 0.08, 0.04) * s, p:FindFirstChildOfClass("Weld").C0 * CFrame.new(0, 0, -0.04 * s), look.Eyes))
+			end
+		end
+		for _, e in { Vector3.new(0, 0.45, 0), Vector3.new(-0.14, 0.36, 0), Vector3.new(0.17, 0.4, 0), Vector3.new(0.3, 0.5, 0), Vector3.new(-0.33, 0.47, 0), Vector3.new(0.05, 0.56, 0) } do
+			local d = rng:NextNumber(0.07, 0.12) * s
+			neon(stick(head, "Eye", Vector3.new(d, d, 0.05 * s), CFrame.new(e.X * s, e.Y * s, hFront - 0.03 * s), look.Eyes))
+		end
+		for i = 1, 6 do
+			local th = rng:NextNumber(0.12, 0.22) * s
+			stick(head, "HeadTooth", Vector3.new(0.08 * s, th, 0.05 * s), CFrame.new((i - 3.5) * 0.1 * s, -0.04 * s - th / 2, hFront - 0.075 * s), ROT_TEETH)
+		end
+		jaw(0.9, 0.7, 5)
+		for i = 1, 4 do
+			local len = rng:NextNumber(0.6, 1.3) * s
+			stick(head, "HeadTendril", Vector3.new(0.09 * s, len, 0.09 * s), CFrame.new((i - 2.5) * 0.16 * s, -hs.Y / 2 - len / 2 + 0.1 * s, hFront - 0.2 * s) * CFrame.Angles(rng:NextNumber(-0.3, 0.1), 0, rng:NextNumber(-0.2, 0.2)), FLESH)
+		end
+		local growth = stick(head, "HeadPod", Vector3.one * 0.5 * s, CFrame.new(hs.X * 0.42, hs.Y * 0.45, 0), FLESH)
+		growth.Shape = Enum.PartType.Ball
+		for _, arm in arms do
+			lesions(arm, 3)
+			for k = 1, 2 do -- tendrils trailing off the forearms
+				local len = rng:NextNumber(0.6, 1.1) * s
+				stick(arm, "Tendril", Vector3.new(0.08 * s, len, 0.08 * s), CFrame.new((k - 1.5) * arm.Size.X * 0.4, -arm.Size.Y / 2 - len / 2 + 0.05 * s, -arm.Size.Z * 0.3), FLESH)
+			end
+		end
+		lesions(head, 3)
+		-- spores drifting off it, and a sick green glow from the sac
+		local spores = Instance.new("ParticleEmitter")
+		spores.Name = "Spores"
+		spores.Texture = "rbxasset://textures/particles/smoke_main.dds"
+		spores.Color = ColorSequence.new(Color3.fromRGB(200, 240, 110), Color3.fromRGB(120, 150, 70))
+		spores.LightEmission = 0.4
+		spores.Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.2, 0.7), NumberSequenceKeypoint.new(1, 1) })
+		spores.Size = NumberSequence.new(1.2 * s, 3 * s)
+		spores.Lifetime = NumberRange.new(3, 5)
+		spores.Rate = 10
+		spores.Speed = NumberRange.new(1, 3)
+		spores.SpreadAngle = Vector2.new(60, 60)
+		spores.Acceleration = Vector3.new(0, 1.5, 0)
+		spores.Parent = sac
+		local glow = Instance.new("PointLight")
+		glow.Color = POD
+		glow.Range = 22
+		glow.Brightness = 1.6
+		glow.Parent = sac
 		bareFeet()
 	end
 	-- blood drooling from the mouth

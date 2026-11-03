@@ -7,7 +7,7 @@ Client systems. Client Main loads them and calls Init, then Start.
 Back to [[Home]].
 
 - [[AirdropController]]: client side of supply drops (Server/Services/AirdropService).
-- [[BossController]]: the client side of the final boss (vault: Waves and Boss.md).
+- [[BossController]]: the client side of the final boss (vault: Waves and Boss.md, Nightmare Mode.md).
 - [[CameraController]]: FIRST-PERSON run camera + the single source of truth for AIMING.
 - [[Client Main]]: Client entry point. Requires every ModuleScript in Controllers, then calls
 - [[ConditionsController]]: the client side of a run's weather (Shared/Config/Conditions, GameState Condition).

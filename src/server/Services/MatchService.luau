@@ -73,6 +73,7 @@ function MatchService:Init(services)
 	end)
 	Services.ZombieService.Killed:Connect(function(z)
 		if z.Def.Boss then
+			self._bossFell = z -- _playWave plays its death scene (def.Death)
 			self:_radio("BossDown")
 		end
 	end)
@@ -421,22 +422,17 @@ end
 -- stands down). The boss claws out of the ground at the BossSpawn marker facing the square, roars
 -- (radio "BossIncoming" + shockwave), then the fight starts. The horde spawns after this returns.
 function MatchService:_bossIntro(playerMult)
-	local typeId = Zombies.BossOrder[1]
+	local typeId = if nightmare then Zombies.NightmareBoss else Zombies.BossOrder[1]
 	local intro = Zombies.Types[typeId].Intro
+	self._bossFell = nil
 	local position = Services.MapService:GetBossSpawn()
 	local players = self:GetRunPlayers()
-	local function freeze(on)
-		for _, player in players do
-			player:SetAttribute("BossIntro", if on then true else nil)
-			local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-			if root then
-				root.Anchored = on
-			end
-		end
-	end
-	freeze(true)
-	Remotes.Effect:FireAllClients("BossIntro", { Position = position, Time = intro.Time, RiseAt = intro.RiseAt, RiseTime = intro.RiseTime, RoarAt = intro.RoarAt })
+	self:_freeze(players, true)
+	Remotes.Effect:FireAllClients("BossIntro", { TypeId = typeId, Position = position, Time = intro.Time, RiseAt = intro.RiseAt, RiseTime = intro.RiseTime, RoarAt = intro.RoarAt })
 	local skipped = self:_skippableWait(intro.RiseAt, "BossIntro")
+	if intro.Style then -- it tears up out of the street (GroundFxController throws the dirt)
+		Remotes.Effect:FireAllClients("Burrow", { Position = position, Radius = 12 })
+	end
 	local boss = Services.ZombieService:Spawn(typeId, position, playerMult, intro.RiseTime, GameConfig.OurMap.ArenaCenter)
 	Services.ZombieService:Hold(boss, if skipped then intro.RiseTime else intro.Time - intro.RiseAt)
 	skipped = skipped or self:_skippableWait(intro.RoarAt - intro.RiseAt, "BossIntro")
@@ -445,7 +441,48 @@ function MatchService:_bossIntro(playerMult)
 	if not skipped then
 		self:_skippableWait(intro.Time - intro.RoarAt, "BossIntro")
 	end
-	freeze(false)
+	self:_freeze(players, false)
+end
+
+-- Cutscene hold: the BossIntro player attribute hands the camera to BossController (CameraController stands
+-- down) and the character is anchored in place.
+function MatchService:_freeze(players, on)
+	for _, player in players do
+		player:SetAttribute("BossIntro", if on then true else nil)
+		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+		if root then
+			root.Anchored = on
+		end
+	end
+end
+
+-- Nightmare boss death scene (def.Death; called by _playWave once it fell, after the horde collapsed): every
+-- run player is frozen while BossController circles the swelling body; it bursts into spores at BurstAt,
+-- the spores drift up and the sky fades from the Nightmare night to dawn before the Victory.
+function MatchService:_bossDeath(z)
+	local death = z.Def.Death
+	local players = self:GetRunPlayers()
+	local corpse = z.Corpse
+	if corpse then
+		for _, d in corpse:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.Anchored, d.CanCollide, d.CanQuery, d.CanTouch = true, false, false, false
+			elseif d:IsA("Constraint") then
+				d:Destroy()
+			end
+		end
+		corpse.Parent = Services.CombatService.EffectsFolder
+	end
+	self:_freeze(players, true)
+	Remotes.Effect:FireAllClients("BossDeath", { Corpse = corpse, Position = z.Root.Position, Time = death.Time, BurstAt = death.BurstAt, Scale = z.Def.Scale or 1 })
+	task.wait(death.BurstAt)
+	Services.MapService:FadeFromDeploy({ Atmosphere = { ClockTime = death.Dawn } }, death.Time - death.BurstAt)
+	task.wait(1)
+	if corpse then
+		corpse:Destroy()
+	end
+	task.wait(death.Time - death.BurstAt - 1)
+	self:_freeze(players, false)
 end
 
 function MatchService:_playWave(wave, isBoss)
@@ -488,6 +525,14 @@ function MatchService:_playWave(wave, isBoss)
 				end
 			end
 			nextSpawn = now + interval
+		end
+		if isBoss and self._bossFell and self._bossFell.Def.Death then -- the Nightmare boss fell: its horde dies with it
+			local fell = self._bossFell
+			self._bossFell = nil
+			ZombieService:Collapse()
+			GameState:SetAttribute("ZombiesLeft", 0)
+			self:_bossDeath(fell)
+			return true
 		end
 		local left = toSpawn + ZombieService:GetAliveCount() + ZombieService:GetPendingCount()
 		GameState:SetAttribute("ZombiesLeft", left)
