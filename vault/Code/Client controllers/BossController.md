@@ -1,6 +1,6 @@
 # BossController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/BossController.luau` (562 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/BossController.luau` (744 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -17,10 +17,11 @@ BossController: the client side of the final boss (vault: Waves and Boss.md, Nig
              when the boss dies or the run ends (GameState BossName)
   attacks    roar on "BossCharge" / "BossLeap"; "BossKnock" shoves your character (you own its physics).
              Bloom Mother (ZombieService:_spores, :_bloomBurst): "SporeVolley" lobs glowing pods that burst
-             into poison clouds; "BloomBurst" fills its red ring in from the middle with a countdown over
-             its head and GET CLEAR on screen while you're inside; "BloomBlast" is the explosion.
-  death      Effect "BossDeath" (MatchService:_bossDeath): circles the swelling body, which bursts into a
-             column of spores at BurstAt while the green sky clears, then hands the camera back.
+             into poison clouds; "BloomBurst" (its ultimate) is a riser, rumble and quickening thumps while
+             spores stream in and its red ring fills with a countdown and GET CLEAR; "BloomBlast" is the
+             explosion (core flash, shockwaves, spore column and ring) and the spore field it leaves.
+  death      Effect "BossDeath" (MatchService:_bossDeath): it staggers to its knees while bits of it burst
+             off, then goes up in a huge spore explosion at BurstAt as the green sky clears.
 ```
 
 ## Uses

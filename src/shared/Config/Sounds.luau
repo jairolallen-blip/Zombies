@@ -47,6 +47,13 @@ Sounds.Library = {
 	-- final boss (BossController; ids checked 2026-11-02)
 	BossMusic = { Id = 1837840355, Volume = 0.45, Looped = true }, -- APM Music, "Vengeful Attack" (fades in after the intro)
 	BossIntroDrums = { Id = 1835248722, Volume = 0.6, Looped = true }, -- APM Music, "Stalking the Prey 60" (under the entrance)
+	-- Bloom Mother's ultimate and death (BossController; APM "Horror Tools" / "Trailer Tools", ids checked 2026-11-03)
+	BloomRiser = { Id = 9043343295, Volume = 0.8 }, -- "Reverse Noise Hard End 09" (4.1s), stretched to the burst windup
+	BloomRumble = { Id = 9043356042, Volume = 0.55 }, -- "Airy Metal Rumble 01", under the windup
+	BloomThump = { Id = 9043367738, Volume = 0.6 }, -- "Percussive Noise 12 - Distorted FX Kick", the quickening heartbeat
+	BloomBlastTail = { Id = 9043355570, Volume = 0.7, MaxDistance = 500 }, -- "One Shot - Low Drone 05", the boom's tail
+	BloomDeathGroan = { Id = 9043357191, Volume = 0.6 }, -- "Bassbend Down 05", as it staggers
+	BloomDeathRiser = { Id = 9040281024, Volume = 0.75 }, -- "Amplified Expanse" (5.7s), ends on the death burst
 
 	-- deploy cutscene (CutsceneController drives the loops' volume per frame; ids checked 2026-11-01)
 	CabinWind = { Id = 85352789269452, Volume = 0.35, Looped = true }, -- loop_wind_01 (WhistleAcousticMan), wind through the open door

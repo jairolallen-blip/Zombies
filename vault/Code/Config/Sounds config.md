@@ -1,6 +1,6 @@
 # Sounds config
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Config/Sounds.luau` (97 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Config/Sounds.luau` (104 lines). Don't edit it here: rerun the script.
 
 Part of [[Config]].
 

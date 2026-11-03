@@ -165,11 +165,14 @@ Zombies.Types = {
 	--   Spores: it rears up for Windup, then lobs Count pods (EnragedCount in phase 2) that land after Flight
 	--     inside red circles: one on each player in Range (led a little), the rest scattered within Spread.
 	--     Each does Damage within Radius, then leaves a poison cloud there: CloudDamage every 0.5s for Cloud s.
-	--   Burst: with a player within Radius it roots itself and swells while a red ring and a countdown run
-	--     for Windup; then everyone still inside takes Damage and is thrown out. First at First s, then Cooldown.
+	--   Burst (its ultimate): with a player within Radius it roots itself and swells while a red ring and a
+	--     countdown run for Windup; then everyone still inside takes Damage and is thrown out, and a spore field
+	--     (Field) hangs within Field.Radius for Field.Time, hurting Field.Damage every Field.Every s. First at
+	--     First s, then Cooldown.
 	--   Enrage (phase 2): faster, specials come sooner (SlamCooldownMult), Rotters climb out around it.
-	--   Death: a cutscene (MatchService:_bossDeath, BossController): the horde collapses, the body swells,
-	--     bursts into spores at BurstAt that drift up, and the sky fades to dawn (ClockTime Dawn).
+	--   Death: a cutscene (MatchService:_bossDeath, BossController): the horde collapses, the body staggers to
+	--     its knees as bits of it burst off, goes up in a huge spore explosion at BurstAt, and the sky fades to
+	--     dawn (ClockTime Dawn) by Time.
 	--   Intro.Style "Bloom": the sky turns sick green and it tears out of a giant pod (BossController).
 	BloomMother = {
 		DisplayName = "The Bloom Mother",
@@ -184,10 +187,10 @@ Zombies.Types = {
 		Cash = 2000,
 		Scale = 3.6,
 		Spores = { Count = 3, EnragedCount = 5, Range = 90, Windup = 0.5, Flight = 1.3, Spread = 10, Radius = 7, Damage = 18, Cloud = 4, CloudDamage = 4, Cooldown = 4.5 },
-		Burst = { Radius = 30, Windup = 3.5, Damage = 75, Knockback = 70, Cooldown = 20, First = 14 },
+		Burst = { Radius = 42, Windup = 4, Damage = 95, Knockback = 90, Cooldown = 20, First = 14, Field = { Radius = 30, Time = 7, Damage = 6, Every = 0.5 } },
 		SpecialGap = 1.5,
 		Intro = { Time = 8, RiseAt = 2.4, RiseTime = 3, RoarAt = 5.8, Style = "Bloom" },
-		Death = { Time = 8, BurstAt = 3.2, Dawn = 6.4 },
+		Death = { Time = 11, BurstAt = 6, Dawn = 6.4 },
 		Enrage = { At = 0.5, SpeedMult = 1.25, SlamCooldownMult = 0.6, Summon = "Rotter", SummonCount = 6, SummonRadius = 16 },
 		Look = {
 			Build = "Bloated",

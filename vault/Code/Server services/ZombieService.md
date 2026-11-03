@@ -1,6 +1,6 @@
 # ZombieService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/ZombieService.luau` (1035 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/ZombieService.luau` (1049 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 

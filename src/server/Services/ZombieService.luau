@@ -790,7 +790,8 @@ function ZombieService:_spores(z, now)
 end
 
 -- Bloom Burst (Def.Burst): it roots itself and swells for Windup inside a red ring (BossController draws the
--- danger filling in and the countdown), then everyone still inside takes Damage and is thrown clear.
+-- danger filling in and the countdown), then everyone still inside takes Damage and is thrown clear, and the
+-- spore field it leaves (b.Field) hurts anyone in it until it thins out or the boss dies.
 function ZombieService:_bloomBurst(z, now)
 	local b = z.Def.Burst
 	z.Slamming = true
@@ -807,12 +808,25 @@ function ZombieService:_bloomBurst(z, now)
 		if z.Dead then
 			return
 		end
-		Remotes.Effect:FireAllClients("BloomBlast", { Position = center, Radius = b.Radius })
+		Remotes.Effect:FireAllClients("BloomBlast", { Position = center, Radius = b.Radius, Field = b.Field })
 		for _, player in Services.MatchService:GetRunPlayers() do
 			local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 			if r and Util.FlatDistance(r.Position, center) <= b.Radius then
 				Services.CombatService:DamagePlayer(player, b.Damage)
 				knock(r, center, b.Knockback)
+			end
+		end
+		local f, gen = b.Field, generation
+		for _ = 1, if f then math.floor(f.Time / f.Every) else 0 do
+			task.wait(f.Every)
+			if gen ~= generation then
+				return
+			end
+			for _, player in Services.MatchService:GetRunPlayers() do
+				local r = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
+				if r and Util.FlatDistance(r.Position, center) <= f.Radius then
+					Services.CombatService:DamagePlayer(player, f.Damage)
+				end
 			end
 		end
 	end)

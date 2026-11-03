@@ -8,10 +8,11 @@
 --              when the boss dies or the run ends (GameState BossName)
 --   attacks    roar on "BossCharge" / "BossLeap"; "BossKnock" shoves your character (you own its physics).
 --              Bloom Mother (ZombieService:_spores, :_bloomBurst): "SporeVolley" lobs glowing pods that burst
---              into poison clouds; "BloomBurst" fills its red ring in from the middle with a countdown over
---              its head and GET CLEAR on screen while you're inside; "BloomBlast" is the explosion.
---   death      Effect "BossDeath" (MatchService:_bossDeath): circles the swelling body, which bursts into a
---              column of spores at BurstAt while the green sky clears, then hands the camera back.
+--              into poison clouds; "BloomBurst" (its ultimate) is a riser, rumble and quickening thumps while
+--              spores stream in and its red ring fills with a countdown and GET CLEAR; "BloomBlast" is the
+--              explosion (core flash, shockwaves, spore column and ring) and the spore field it leaves.
+--   death      Effect "BossDeath" (MatchService:_bossDeath): it staggers to its knees while bits of it burst
+--              off, then goes up in a huge spore explosion at BurstAt as the green sky clears.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -284,54 +285,111 @@ function BossController:PlayIntro(data)
 	end)
 end
 
--- Nightmare boss death (MatchService:_bossDeath): the camera circles the body as it swells and shudders,
--- it bursts into a column of spores at BurstAt, the camera follows them up as the green sky clears to dawn.
+-- a chunk of the body bursts off (death scene): a green pop, a puff of spores, a few bits flung, a wet crack
+local function pop(pos, size)
+	local Sound = Controllers.SoundController
+	local ball = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one * size, CFrame = CFrame.new(pos), Color = POD, Material = Enum.Material.Neon, Transparency = 0.1 })
+	TweenService:Create(ball, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.one * size * 3.2, Transparency = 1 }):Play()
+	task.delay(0.4, ball.Destroy, ball)
+	local puff = sporeEmitter(fxPart({ Size = Vector3.one, CFrame = CFrame.new(pos), Transparency = 1 }), 0)
+	puff.Speed = NumberRange.new(6, 16)
+	puff.Size = NumberSequence.new(2, 6)
+	puff:Emit(30)
+	task.delay(4.5, puff.Parent.Destroy, puff.Parent)
+	fling(pos, Color3.fromRGB(118, 128, 86), 5, size * 0.35, 30)
+	Sound:PlayAt("Slam", pos, { Pitch = 1.6, Volume = 0.7 })
+	Sound:PlayAt("Explosion", pos, { Pitch = 1.45, Volume = 0.45 })
+	Controllers.EffectsController:Shake(0.35, 0.25)
+end
+
+-- Nightmare boss death (MatchService:_bossDeath), owner design 2026-11-03: it staggers and sways, sinking to its
+-- knees, while bits of it burst off one after another (pops, spores, flung chunks), each one quicker than the
+-- last; a rising roar of noise sucks it in tight, then at BurstAt it goes up in a huge spore explosion (white
+-- flash, shockwaves, a spore column and a rolling ring of spores) and the camera follows the spores up as the
+-- green sky clears to dawn.
+local POPS = { 0.2, 0.33, 0.44, 0.54, 0.62, 0.69, 0.75, 0.8, 0.85, 0.89, 0.92 } -- fractions of BurstAt
 function BossController:PlayDeath(data)
 	local camera = workspace.CurrentCamera
 	local Sound = Controllers.SoundController
 	local ui = overlay("THE BLOOM MOTHER IS DEAD", "AND EVERYTHING IT GREW DIES WITH IT")
+	ui.Flash.BackgroundColor3 = Color3.fromRGB(235, 255, 215)
 	local hidden = hideScreens(ui)
 	local P = data.Position
 	local H = 5.5 * data.Scale
+	local B = data.BurstAt
 	local corpse = data.Corpse
 	local pivot = corpse and corpse.Parent and corpse:GetPivot()
-	local glow
+	local glow, bits = nil, {}
 	if pivot then
 		glow = Instance.new("Highlight")
 		glow.FillColor = POD
 		glow.OutlineColor = Color3.fromRGB(255, 255, 200)
 		glow.Parent = corpse
+		for _, d in corpse:GetDescendants() do -- the small parts (pods, tendrils, fungus) are what bursts off
+			if d:IsA("BasePart") and d.Transparency < 1 and math.max(d.Size.X, d.Size.Y, d.Size.Z) < H * 0.3 then
+				table.insert(bits, d)
+			end
+		end
 	end
 	Sound:PlayAt("BossRoar", P, { Pitch = 0.55 }) -- its dying wail
+	task.delay(0.4, Sound.Play, Sound, "BloomDeathGroan")
+	task.delay(math.max(0, B - 5.75), Sound.Play, Sound, "BloomDeathRiser") -- its hard end lands on the burst
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 	local away = if root then Vector3.new(root.Position.X - P.X, 0, root.Position.Z - P.Z) else Vector3.xAxis
 	local angle0 = math.atan2(away.Z, away.X)
 	local start = os.clock()
-	local burst = false
+	local burst, popped, jolt, kick = false, 0, 0, 0
+	local last = start
 	camera.CameraType = Enum.CameraType.Scriptable
 	RunService:BindToRenderStep("SAMZ_BossDeath", Enum.RenderPriority.Camera.Value + 10, function()
-		local t = os.clock() - start
-		local swell = smooth(t / data.BurstAt)
+		local now = os.clock()
+		local t, dt = now - start, now - last
+		last = now
+		jolt = math.max(0, jolt - dt * 4)
+		kick = math.max(0, kick - dt * 3)
+		local swell = smooth(t / B)
 		local angle = angle0 + t * 0.22
 		local orbit = Vector3.new(math.cos(angle), 0, math.sin(angle))
 		local from, look
-		if t < data.BurstAt then -- circling as it swells and shudders
+		if t < B then -- circling as it staggers, sinks and bursts apart
 			from = P + orbit * H * (2.4 - 0.4 * swell) + Vector3.yAxis * H * 0.35
 			look = P + Vector3.yAxis * H * 0.15
+			while popped < #POPS and t >= POPS[popped + 1] * B do
+				popped += 1
+				jolt, kick = 1, 1
+				local pos
+				if #bits > 0 then
+					local bit = table.remove(bits, math.random(#bits))
+					pos = bit.Position
+					bit.Transparency = 1
+				elseif corpse and corpse.Parent then
+					local cf, size = corpse:GetBoundingBox()
+					pos = (cf * CFrame.new((math.random() - 0.5) * size.X * 0.7, (math.random() - 0.3) * size.Y * 0.6, (math.random() - 0.5) * size.Z * 0.7)).Position
+				end
+				if pos then
+					pop(pos, 2 + 2.5 * popped / #POPS)
+				end
+			end
 			if pivot and corpse.Parent then
-				local j = 0.08 * swell * (data.Scale or 1)
-				corpse:ScaleTo(1 + 0.3 * swell)
-				corpse:PivotTo(pivot * CFrame.new(math.noise(t * 20, 1) * j, 0, math.noise(t * 20, 2) * j))
-				glow.FillTransparency = 0.85 - 0.6 * swell + 0.15 * math.sin(t * (6 + 20 * swell))
+				local s = data.Scale or 1
+				local sway = math.sin(t * 2.3) * (0.4 + 0.6 * swell)
+				local sink = smooth((t - B * 0.45) / (B * 0.4))
+				local squeeze = smooth((t - B + 0.6) / 0.6) -- it pulls in tight just before it goes
+				corpse:ScaleTo(1 + 0.3 * swell - 0.12 * squeeze + 0.05 * jolt)
+				corpse:PivotTo(pivot
+					* CFrame.new(sway * 0.35 * s + math.noise(t * 25, 1) * 0.12 * jolt * s, -sink * H * 0.16, math.noise(t * 25, 2) * 0.12 * jolt * s)
+					* CFrame.Angles(0.22 * sink + 0.08 * jolt, 0, 0.12 * sway))
+				glow.FillTransparency = math.clamp(0.85 - 0.5 * swell + 0.12 * math.sin(t * (6 + 24 * swell)) - 0.15 * jolt, 0.3, 1) -- never a flat silhouette
 			end
 		else -- pull back and follow the spores up into the clearing sky
-			local u = t - data.BurstAt
-			from = P + orbit * H * (2 + 0.5 * u) + Vector3.yAxis * H * (0.35 + 0.15 * u)
+			local u = t - B
+			from = P + orbit * H * (2 + 0.6 * u) + Vector3.yAxis * H * (0.35 + 0.18 * u)
 			look = P + Vector3.yAxis * (H * 0.3 + u * 9)
 		end
-		local shake = 0.03 * swell + (if burst then 0.1 * math.max(0, 1 - (t - data.BurstAt) / 1.2) else 0)
+		local shake = 0.03 * swell + 0.04 * jolt + (if burst then 0.14 * math.max(0, 1 - (t - B) / 1.5) else 0)
 		camera.CFrame = CFrame.lookAt(from, look) * CFrame.Angles(math.noise(t * 14, 1) * shake, math.noise(t * 14, 2) * shake, 0)
-		if t >= data.BurstAt and not burst then
+		camera.FieldOfView = 70 + 4 * kick + (if burst then 14 * math.max(0, 1 - (t - B) / 0.8) else 0)
+		if t >= B and not burst then
 			burst = true
 			if corpse and corpse.Parent then
 				for _, d in corpse:GetDescendants() do
@@ -342,33 +400,61 @@ function BossController:PlayDeath(data)
 					end
 				end
 			end
-			fling(P, Color3.fromRGB(118, 128, 86), 14, 2.2, 55)
-			local column = fxPart({ Size = Vector3.new(6, 1, 6), CFrame = CFrame.new(P), Transparency = 1 })
-			local spores = sporeEmitter(column, 90)
+			fling(P, Color3.fromRGB(118, 128, 86), 26, 2.6, 70)
+			fling(P, POD, 10, 1.6, 55)
+			-- the spore column, a mushroom of spores at its top and a ring rolling out along the street
+			local column = fxPart({ Size = Vector3.new(8, 1, 8), CFrame = CFrame.new(P), Transparency = 1 })
+			local spores = sporeEmitter(column, 120)
 			spores.EmissionDirection = Enum.NormalId.Top
-			spores.SpreadAngle = Vector2.new(35, 35)
-			spores.Speed = NumberRange.new(14, 34)
+			spores.SpreadAngle = Vector2.new(30, 30)
+			spores.Speed = NumberRange.new(18, 42)
 			spores.Drag = 0.5
 			spores.Acceleration = Vector3.new(0, 5, 0)
 			spores.Lifetime = NumberRange.new(5, 7)
-			spores.Size = NumberSequence.new(4, 14)
-			spores:Emit(160)
-			task.delay(1.6, function()
+			spores.Size = NumberSequence.new(5, 16)
+			spores:Emit(220)
+			task.delay(2, function()
 				spores.Enabled = false
 			end)
+			local ring = sporeEmitter(fxPart({ Size = Vector3.new(6, 1, 6), CFrame = CFrame.new(P + Vector3.new(0, 1.5, 0)), Transparency = 1 }), 0)
+			ring.EmissionDirection = Enum.NormalId.Top
+			ring.SpreadAngle = Vector2.new(88, 88)
+			ring.Speed = NumberRange.new(45, 70)
+			ring.Drag = 1.6
+			ring.Acceleration = Vector3.new(0, -2, 0)
+			ring.Size = NumberSequence.new(5, 12)
+			ring:Emit(160)
+			task.delay(7, ring.Parent.Destroy, ring.Parent)
 			task.delay(9, column.Destroy, column)
-			local flash = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one * 6, CFrame = CFrame.new(P), Color = POD, Material = Enum.Material.Neon, Transparency = 0.2 })
-			TweenService:Create(flash, TweenInfo.new(0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.one * 50, Transparency = 1 }):Play()
-			task.delay(0.8, flash.Destroy, flash)
-			Sound:PlayAt("Explosion", P, { Pitch = 0.5 })
-			Controllers.EffectsController:Shake(1.2, 1)
-			setTint(false, data.Time - data.BurstAt) -- the sky clears (MatchService fades the clock to dawn)
+			local core = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one * 10, CFrame = CFrame.new(P + Vector3.new(0, H * 0.3, 0)), Color = Color3.fromRGB(245, 255, 225), Material = Enum.Material.Neon })
+			TweenService:Create(core, TweenInfo.new(0.25), { Size = Vector3.one * 30, Transparency = 1 }):Play()
+			task.delay(0.3, core.Destroy, core)
+			local flash = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one * 8, CFrame = CFrame.new(P), Color = POD, Material = Enum.Material.Neon, Transparency = 0.15 })
+			TweenService:Create(flash, TweenInfo.new(0.9, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.one * 90, Transparency = 1 }):Play()
+			task.delay(1, flash.Destroy, flash)
+			for i, reach in { 110, 70 } do -- two shockwave rings along the ground
+				local wave = fxPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 6, 6), CFrame = CFrame.new(P + Vector3.new(0, 0.3 * i, 0)) * FLAT, Color = if i == 1 then Color3.fromRGB(235, 255, 200) else POD, Material = Enum.Material.Neon, Transparency = 0.25 })
+				TweenService:Create(wave, TweenInfo.new(0.6 + 0.3 * i, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { Size = Vector3.new(0.3, reach, reach), Transparency = 1 }):Play()
+				task.delay(1.3, wave.Destroy, wave)
+			end
+			local light = Instance.new("PointLight")
+			light.Color, light.Range, light.Brightness = POD, 60, 12
+			light.Parent = column
+			TweenService:Create(light, TweenInfo.new(2.5), { Brightness = 0 }):Play()
+			ui.Flash.BackgroundTransparency = 0.05
+			TweenService:Create(ui.Flash, TweenInfo.new(0.9), { BackgroundTransparency = 1 }):Play()
+			Sound:PlayAt("Explosion", P, { Pitch = 0.42, Volume = 1.2 })
+			task.delay(0.12, Sound.PlayAt, Sound, "Explosion", P, { Pitch = 0.6 })
+			task.delay(0.3, Sound.PlayAt, Sound, "Slam", P, { Pitch = 0.45 })
+			Sound:Play("BloomBlastTail")
+			Controllers.EffectsController:Shake(1.6, 1.2)
+			setTint(false, data.Time - B) -- the sky clears (MatchService fades the clock to dawn)
 		end
 		local bars = smooth(t / 0.5) * (1 - smooth((t - data.Time + 0.3) / 0.3))
 		for _, bar in ui.Bars do
 			bar.Size = UDim2.new(1, 0, 0.11 * bars, 0)
 		end
-		local title = 1 - smooth((t - data.BurstAt - 1.2) / 0.4) * (1 - smooth((t - data.Time + 0.7) / 0.4))
+		local title = 1 - smooth((t - B - 1.4) / 0.4) * (1 - smooth((t - data.Time + 0.7) / 0.4))
 		ui.Title.TextTransparency, ui.Sub.TextTransparency = title, title
 		ui.Title.Visible, ui.Sub.Visible = title < 0.98, title < 0.98
 		ui.Fade.BackgroundTransparency = 1 - smooth((t - data.Time + 0.35) / 0.35)
@@ -431,8 +517,9 @@ local function sporeVolley(data)
 	end
 end
 
--- Bloom Burst windup: the danger fills its red ring from the middle, it swells inside a pulsing glow, a
--- countdown hangs over it, and GET CLEAR flashes on your screen while you're inside the ring
+-- Bloom Burst windup (its ultimate): a rising roar of noise and a low rumble under heartbeat thumps that
+-- quicken, spores streaming in from the edge of the red ring, the danger filling the ring from the middle while
+-- it swells and glows, a countdown over its head and GET CLEAR on your screen while you're inside
 local function bloomBurst(data)
 	local model = data.Model
 	if not (model and model.Parent and model.PrimaryPart) then
@@ -442,11 +529,21 @@ local function bloomBurst(data)
 	local P, R, W = data.Position, data.Radius, data.Windup
 	local s = Zombies.Types[model.Name] and Zombies.Types[model.Name].Scale or 1
 	local fill = fxPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.18, 1, 1), CFrame = CFrame.new(P + Vector3.new(0, 0.18, 0)) * FLAT, Color = Color3.fromRGB(255, 110, 40), Material = Enum.Material.Neon, Transparency = 0.55 })
+	local edge = fxPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.12, R * 2 + 1, R * 2 + 1), CFrame = CFrame.new(P + Vector3.new(0, 0.14, 0)) * FLAT, Color = Color3.fromRGB(255, 60, 30), Material = Enum.Material.Neon, Transparency = 0.6 })
 	local swell = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one, Color = POD, Material = Enum.Material.Neon, Transparency = 0.8 })
+	local light = Instance.new("PointLight")
+	light.Color, light.Range = POD, R
+	light.Parent = swell
 	local glow = Instance.new("Highlight")
 	glow.FillColor = POD
 	glow.OutlineColor = Color3.fromRGB(255, 90, 40)
 	glow.Parent = model
+	-- spores drawn in from the ring's edge toward it
+	local motes = {}
+	for i = 1, 18 do
+		local m = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one * 1.2, Color = POD, Material = Enum.Material.Neon, Transparency = 0.3 })
+		table.insert(motes, { Part = m, Angle = i / 18 * math.pi * 2, Phase = math.random() })
+	end
 	local board = Instance.new("BillboardGui")
 	board.Size = UDim2.fromOffset(160, 120)
 	board.AlwaysOnTop = true
@@ -459,53 +556,138 @@ local function bloomBurst(data)
 	UIKit.AutoScale(text)
 	local label = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.3), Size = UDim2.fromOffset(700, 60), Text = "GET CLEAR!", TextSize = 54, TextColor3 = Color3.fromRGB(255, 80, 40), Visible = false, Parent = text })
 	Sound:PlayAt("BossRoar", P, { Pitch = 0.7 })
-	local t0, shown = os.clock(), nil
+	local riser = Sound:Loop("BloomRiser") -- a 4.1s reverse swell with a hard end, stretched so the end is the blast
+	riser.PlaybackSpeed = 4.13 / W
+	riser:Play()
+	local rumble = Sound:Loop("BloomRumble")
+	rumble.Volume = 0
+	rumble:Play()
+	fade(rumble, Sounds.Library.BloomRumble.Volume, W * 0.6)
+	local t0, shown, nextThump = os.clock(), nil, 0
 	local conn
 	conn = RunService.RenderStepped:Connect(function()
 		local t = os.clock() - t0
 		local u = math.min(t / W, 1)
 		local pulse = math.sin(t * (5 + 22 * u))
 		fill.Size = Vector3.new(0.18, R * 2 * u, R * 2 * u)
-		if model.Parent then
-			swell.Size = Vector3.one * (5 + 4 * u + 0.6 * pulse) * s
-			swell.CFrame = CFrame.new(model:GetPivot().Position + Vector3.new(0, 0.5 * s, 0))
+		edge.Transparency = 0.6 - 0.35 * math.max(0, pulse)
+		local center = if model.Parent then model:GetPivot().Position else P
+		swell.Size = Vector3.one * (4 + 3.5 * u + 0.5 * pulse) * s
+		swell.CFrame = CFrame.new(center + Vector3.new(0, 0.5 * s, 0))
+		light.Brightness = 0.5 + 2.5 * u + 0.8 * pulse
+		for _, m in motes do
+			local k = (t * (0.8 + 1.2 * u) + m.Phase) % 1 -- each mote runs edge -> centre, faster as it builds
+			local dir = Vector3.new(math.cos(m.Angle + k * 0.6), 0, math.sin(m.Angle + k * 0.6))
+			m.Part.CFrame = CFrame.new(P + dir * R * (1 - k) + Vector3.new(0, 1 + k * 3 * s, 0))
+			m.Part.Transparency = 0.2 + 0.8 * k
 		end
-		glow.FillTransparency = math.clamp(0.75 - 0.5 * u + 0.15 * pulse, 0, 1)
+		glow.FillTransparency = math.clamp(0.75 - 0.55 * u + 0.15 * pulse, 0, 1)
+		if t >= nextThump and u < 1 then -- heartbeat thumps, 0.8s apart down to 0.15s
+			nextThump = t + 0.8 - 0.65 * u
+			Sound:Play("BloomThump", { Pitch = 0.8 + 0.5 * u, Volume = 0.6 + 0.6 * u })
+		end
 		local n = math.ceil(W - t)
 		if n ~= shown and n > 0 then
 			shown = n
 			count.Text = tostring(n)
-			Sound:PlayAt("Click", P, { Pitch = 0.7 })
 		end
 		local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
 		label.Visible = root ~= nil and Vector3.new(root.Position.X - P.X, 0, root.Position.Z - P.Z).Magnitude <= R and pulse > -0.3
 		if u >= 1 or not model.Parent then
 			conn:Disconnect()
+			for _, m in motes do
+				m.Part:Destroy()
+			end
 			fill:Destroy()
+			edge:Destroy()
 			swell:Destroy()
 			glow:Destroy()
 			board:Destroy()
 			warn:Destroy()
+			fade(rumble, 0, 0.6)
+			task.delay(0.7, rumble.Destroy, rumble)
+			if u < 1 then -- it died mid-windup: cut the swell short
+				riser:Destroy()
+			else
+				task.delay(1, riser.Destroy, riser)
+			end
 		end
 	end)
 end
 
--- the Bloom Burst goes off: a green blast filling the ring and a ring of spores rolling out
+-- the Bloom Burst goes off: a white-hot core, a green blast filling the ring, two shockwaves along the ground,
+-- a spore column and a ring of spores rolling out, flung chunks and a deep double boom; then a spore field
+-- hangs over the ring for Field.Time (ZombieService hurts anyone inside it)
 local function bloomBlast(data)
-	local P, R = data.Position, data.Radius
-	Controllers.SoundController:PlayAt("Explosion", P, { Pitch = 0.6 })
-	local ball = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one * 6, CFrame = CFrame.new(P), Color = POD, Material = Enum.Material.Neon, Transparency = 0.3 })
-	TweenService:Create(ball, TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.one * R * 2, Transparency = 1 }):Play()
+	local Sound = Controllers.SoundController
+	local P, R, F = data.Position, data.Radius, data.Field
+	Sound:PlayAt("Explosion", P, { Pitch = 0.45, Volume = 1.2 })
+	task.delay(0.1, Sound.PlayAt, Sound, "Explosion", P, { Pitch = 0.7 })
+	Sound:PlayAt("Slam", P, { Pitch = 0.5 })
+	Sound:PlayAt("BloomBlastTail", P)
+	local core = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one * 8, CFrame = CFrame.new(P + Vector3.new(0, 3, 0)), Color = Color3.fromRGB(245, 255, 225), Material = Enum.Material.Neon })
+	TweenService:Create(core, TweenInfo.new(0.2), { Size = Vector3.one * 24, Transparency = 1 }):Play()
+	task.delay(0.25, core.Destroy, core)
+	local ball = fxPart({ Shape = Enum.PartType.Ball, Size = Vector3.one * 6, CFrame = CFrame.new(P), Color = POD, Material = Enum.Material.Neon, Transparency = 0.25 })
+	TweenService:Create(ball, TweenInfo.new(0.55, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Size = Vector3.one * R * 2, Transparency = 1 }):Play()
 	task.delay(0.6, ball.Destroy, ball)
-	local holder = fxPart({ Size = Vector3.new(R * 1.6, 1, R * 1.6), CFrame = CFrame.new(P + Vector3.new(0, 1, 0)), Transparency = 1 })
-	local dust = sporeEmitter(holder, 0)
-	dust.Speed = NumberRange.new(4, 12)
-	dust.Size = NumberSequence.new(4, 10)
-	dust:Emit(70)
-	task.delay(5, holder.Destroy, holder)
+	for i, reach in { R * 2.4, R * 1.6 } do
+		local wave = fxPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.3, 4, 4), CFrame = CFrame.new(P + Vector3.new(0, 0.3 * i, 0)) * FLAT, Color = if i == 1 then Color3.fromRGB(235, 255, 200) else POD, Material = Enum.Material.Neon, Transparency = 0.2 })
+		TweenService:Create(wave, TweenInfo.new(0.45 + 0.25 * i, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), { Size = Vector3.new(0.3, reach, reach), Transparency = 1 }):Play()
+		task.delay(1.1, wave.Destroy, wave)
+	end
+	local holder = fxPart({ Size = Vector3.new(6, 1, 6), CFrame = CFrame.new(P + Vector3.new(0, 1, 0)), Transparency = 1 })
+	local column = sporeEmitter(holder, 0)
+	column.EmissionDirection = Enum.NormalId.Top
+	column.SpreadAngle = Vector2.new(25, 25)
+	column.Speed = NumberRange.new(20, 40)
+	column.Drag = 0.6
+	column.Size = NumberSequence.new(4, 12)
+	column:Emit(90)
+	local roll = sporeEmitter(holder, 0)
+	roll.EmissionDirection = Enum.NormalId.Top
+	roll.SpreadAngle = Vector2.new(88, 88)
+	roll.Speed = NumberRange.new(R * 1.2, R * 1.8)
+	roll.Drag = 2
+	roll.Size = NumberSequence.new(4, 10)
+	roll:Emit(120)
+	local light = Instance.new("PointLight")
+	light.Color, light.Range, light.Brightness = POD, R * 1.5, 10
+	light.Parent = holder
+	TweenService:Create(light, TweenInfo.new(1.5), { Brightness = 0 }):Play()
+	task.delay(7, holder.Destroy, holder)
+	fling(P, Color3.fromRGB(118, 128, 86), 16, 2, 60)
 	local root = player.Character and player.Character:FindFirstChild("HumanoidRootPart")
-	local near = root and (root.Position - P).Magnitude <= R * 1.6
-	Controllers.EffectsController:Shake(if near then 1.2 else 0.4, if near then 0.7 else 0.4)
+	local near = root and (root.Position - P).Magnitude <= R * 1.5
+	Controllers.EffectsController:Shake(if near then 1.5 else 0.6, if near then 0.9 else 0.5)
+	if near then -- a blinding flash on your own screen
+		local cc = Instance.new("ColorCorrectionEffect")
+		cc.Brightness, cc.TintColor = 0.5, Color3.fromRGB(225, 255, 200)
+		cc.Parent = Lighting
+		TweenService:Create(cc, TweenInfo.new(0.8), { Brightness = 0, TintColor = Color3.new(1, 1, 1) }):Play()
+		task.delay(0.9, cc.Destroy, cc)
+	end
+	if F then -- the spore field left behind: a sick glow on the street under a low churning cloud
+		local disc = fxPart({ Shape = Enum.PartType.Cylinder, Size = Vector3.new(0.15, F.Radius * 2, F.Radius * 2), CFrame = CFrame.new(P + Vector3.new(0, 0.16, 0)) * FLAT, Color = Color3.fromRGB(110, 160, 40), Material = Enum.Material.Neon, Transparency = 0.72 })
+		local mist = fxPart({ Size = Vector3.new(F.Radius * 1.7, 3, F.Radius * 1.7), CFrame = CFrame.new(P + Vector3.new(0, 2, 0)), Transparency = 1 })
+		local cloud = sporeEmitter(mist, 70)
+		cloud.Speed = NumberRange.new(0.5, 2.5)
+		cloud.Size = NumberSequence.new(4, 9)
+		cloud.Lifetime = NumberRange.new(1.5, 3)
+		cloud:Emit(80)
+		local t0 = os.clock()
+		local conn
+		conn = RunService.Heartbeat:Connect(function()
+			local t = os.clock() - t0
+			disc.Transparency = 0.72 + 0.1 * math.sin(t * 5) + 0.28 * smooth((t - F.Time + 1) / 1)
+			if t >= F.Time then
+				conn:Disconnect()
+				cloud.Enabled = false
+				disc:Destroy()
+				task.delay(3, mist.Destroy, mist)
+			end
+		end)
+	end
 end
 
 function BossController:Init(controllers)
