@@ -751,7 +751,7 @@ function ZombieService:_wail(z)
 		end
 		local origin = z.Root.Position
 		local prey = findTarget(origin)
-		Remotes.Effect:FireAllClients("Wail", { Position = origin, Radius = w.Radius, Blur = w.Blur, Stun = w.Stun })
+		Remotes.Effect:FireAllClients("Wail", { Position = origin, Radius = w.Radius, Blur = w.Blur, Stun = w.Stun, Model = z.Model })
 		if not prey then
 			return
 		end

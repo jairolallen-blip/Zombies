@@ -192,6 +192,18 @@ local function onEffect(kind, data)
 				end
 			end)
 		end
+		-- mark the Wailer that got you, so you know what to shoot
+		if data.Model and data.Model.Parent and not data.Model:FindFirstChild("WailMark") then
+			local mark = Instance.new("Highlight")
+			mark.Name = "WailMark"
+			mark.FillColor = Color3.fromRGB(170, 215, 255)
+			mark.OutlineColor = Color3.new(1, 1, 1)
+			mark.FillTransparency = 0.55
+			mark.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+			mark.Parent = data.Model
+			TweenService:Create(mark, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, 3), { FillTransparency = 1, OutlineTransparency = 1 }):Play()
+			task.delay(4.6, mark.Destroy, mark)
+		end
 		local ringing = Instance.new("Sound")
 		ringing.SoundId = "rbxassetid://" .. Nightmare.RingSound.Id
 		ringing.Volume = Nightmare.RingSound.Volume

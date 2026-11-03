@@ -7,7 +7,8 @@
 -- Public:
 --   MapService.GroundY
 --   MapService:GetLobbySpawnCFrame(), :GetArenaSpawnCFrame(index?)
---   MapService:GetZombieSpawnPosition(usePads?)  random open street spot around a living player
+--   MapService:GetZombieSpawnPosition(usePads?, minDist?)  random open street spot around a living player
+--     (minDist overrides SpawnMinDistance: a zombie type's SpawnMin)
 --     (GameConfig.Waves.SpawnMin/MaxDistance, vault: Spawning.md); usePads = a fixed ZombieSpawn pad
 --   MapService:GetZombiePads() -> {Vector3}
 --   MapService:GetBossSpawn() -> Vector3   the "BossSpawn" marker (open ground facing the square)
@@ -154,7 +155,7 @@ local function spawnSpotOK(pos, players, minDist)
 	return true
 end
 
-function MapService:GetZombieSpawnPosition(usePads)
+function MapService:GetZombieSpawnPosition(usePads, minDist)
 	if not usePads then
 		local players = {}
 		for _, player in Services.MatchService:GetRunPlayers() do
@@ -163,12 +164,14 @@ function MapService:GetZombieSpawnPosition(usePads)
 			end
 		end
 		local W = GameConfig.Waves
+		local near = math.max(minDist or 0, W.SpawnMinDistance)
+		local far = math.max(W.SpawnMaxDistance, near + 15)
 		for _ = 1, if #players > 0 then 40 else 0 do
 			local around = players[math.random(1, #players)]
 			local angle = math.random() * math.pi * 2
-			local dist = W.SpawnMinDistance + math.random() * (W.SpawnMaxDistance - W.SpawnMinDistance)
+			local dist = near + math.random() * (far - near)
 			local pos = Vector3.new(around.X + math.cos(angle) * dist, self.GroundY, around.Z + math.sin(angle) * dist)
-			if spawnSpotOK(pos, players, W.SpawnMinDistance) then
+			if spawnSpotOK(pos, players, near) then
 				return pos
 			end
 		end

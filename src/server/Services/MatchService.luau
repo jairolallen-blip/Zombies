@@ -479,7 +479,7 @@ function MatchService:_playWave(wave, isBoss)
 			local n = math.min(burst, toSpawn, maxAlive - onField)
 			while n > 0 do
 				local typeId = ZombieService:PickType(wave, nightmare)
-				local position = MapService:GetZombieSpawnPosition()
+				local position = MapService:GetZombieSpawnPosition(nil, Zombies.Types[typeId].SpawnMin)
 				for k = 1, math.min(Zombies.Types[typeId].Pack or 1, n) do -- a pack (Skitters) rises together
 					local spread = if k == 1 then Vector3.zero else Vector3.new(math.random(-4, 4), 0, math.random(-4, 4))
 					ZombieService:SpawnWarned(typeId, position + spread, healthMult)
