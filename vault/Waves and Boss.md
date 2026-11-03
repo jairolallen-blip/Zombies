@@ -47,6 +47,8 @@ Tunables: `GameConfig.Waves.SpawnSeconds` / `SpawnSecondsPerWave` (spawn window)
 ## Bot run after the faster start (2026-11-02)
 One solo run (Fog): every wave up to 9 cleared, then overrun on the boss wave with the Titan at 64% HP. The 2026-11-01 baseline got the boss to 9%. Late wave sizes barely changed, so this may be noise. Run the bot again before changing anything. See [[Spawning]].
 
+Second run, with god mode from wave 4 so it shows damage instead of deaths: waves 1-9 matched the first run, and it killed the Titan in 49s but took 407 damage on the boss wave against a 240 max HP. A real player would die about halfway through. **The boss wave is the wall.** The 2026-11-01 baseline came before the boss got Charge and Leap, so it no longer applies. Options: a smaller boss-wave horde (`BossWaveHordeMult`, 0.6 now), less Charge/Leap damage, or less Titan health.
+
 ## Later ideas
 - A helicopter extraction cutscene on victory, reusing the drop-in helicopter.
 - Endless mode after wave 10 for high scores.

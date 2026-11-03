@@ -1,6 +1,6 @@
 # TouchController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/TouchController.luau` (168 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/TouchController.luau` (169 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 

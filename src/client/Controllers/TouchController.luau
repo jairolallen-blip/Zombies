@@ -113,31 +113,32 @@ local function buildTouch()
 	root.BackgroundTransparency = 1
 	root.Parent = gui
 	UIKit.AutoScale(root)
-	-- the cluster sits right of centre-height, above the HUD's weapon card and clear of Roblox's jump button
+	-- the cluster sits in the upper right: on a small landscape phone (UI scale 0.6) it ends above the HUD upgrade
+	-- buttons (y ~ H - 152) and Roblox's jump button, and below the toasts
 	local red, dark, gold = Color3.fromRGB(200, 60, 50), Color3.fromRGB(30, 34, 42), Color3.fromRGB(200, 150, 40)
 	local aiming = false
-	roundButton(root, "Fire", "FIRE", 110, UDim2.new(1, -110, 0.56, 0), red, function(down)
+	roundButton(root, "Fire", "FIRE", 110, UDim2.new(1, -110, 0.46, 0), red, function(down)
 		Controllers.WeaponController:SetTrigger(down)
 	end)
 	local aim
-	aim = roundButton(root, "Aim", "AIM", 70, UDim2.new(1, -225, 0.6, 0), dark, function(down)
+	aim = roundButton(root, "Aim", "AIM", 70, UDim2.new(1, -215, 0.5, 0), dark, function(down)
 		if down then
 			aiming = not aiming
 			setAim(aiming)
 			aim.BackgroundColor3 = if aiming then Color3.fromRGB(70, 140, 220) else dark
 		end
 	end)
-	roundButton(root, "Reload", "R", 60, UDim2.new(1, -205, 0.45, 0), dark, function(down)
+	roundButton(root, "Reload", "R", 60, UDim2.new(1, -195, 0.33, 0), dark, function(down)
 		if down then
 			Controllers.WeaponController:Reload()
 		end
 	end)
-	roundButton(root, "Ability", "E", 66, UDim2.new(1, -130, 0.36, 0), Color3.fromRGB(60, 120, 200), function(down)
+	roundButton(root, "Ability", "E", 66, UDim2.new(1, -130, 0.24, 0), Color3.fromRGB(60, 120, 200), function(down)
 		if down then
 			ability("Ability")
 		end
 	end)
-	roundButton(root, "Ultimate", "F", 66, UDim2.new(1, -50, 0.4, 0), gold, function(down)
+	roundButton(root, "Ultimate", "F", 66, UDim2.new(1, -50, 0.28, 0), gold, function(down)
 		if down then
 			ability("Ultimate")
 		end
