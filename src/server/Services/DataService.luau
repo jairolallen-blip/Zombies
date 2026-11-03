@@ -28,6 +28,7 @@ local Remotes = require(Shared.Remotes)
 local Achievements = require(Shared.Config.Achievements)
 local Bounties = require(Shared.Config.Bounties)
 local Zombies = require(Shared.Config.Zombies)
+local Levels = require(Shared.Config.Levels)
 
 -- Session lock: a run moves players between servers (QueueService), so two servers can hold the same
 -- profile for a moment. Each saved profile carries _Lock = {JobId, Time}: a server only loads a profile
@@ -93,6 +94,7 @@ local DEFAULT_PROFILE = {
 	Receipts = {}, -- PurchaseIds of Robux products already paid (StoreService)
 	StarterPack = false, -- bought the one-time Starter Pack
 	Bounty = { Day = 0, Progress = {}, Done = {} }, -- today's bounties (Config/Bounties); Tracked = id or nil
+	-- XP (total run XP, Config/Levels) is not defaulted here: load credits saves without it from their Stats
 }
 
 local DataService = {}
@@ -261,6 +263,7 @@ function DataService:Load(player)
 	stats.Kills = math.max(stats.Kills or 0, data.TotalKills)
 	stats.Runs = math.max(stats.Runs or 0, data.RunsPlayed)
 	stats.BestWave = math.max(stats.BestWave or 0, data.BestWave)
+	data.XP = data.XP or Levels.Credit(stats) -- saves from before levels start where their history puts them
 	if data.RunsPlayed > 0 then
 		data.TutorialDone = true -- saves from before the tutorial existed
 	end
@@ -325,6 +328,7 @@ function DataService:Replicate(player)
 	end
 	player:SetAttribute("Gems", data.Gems)
 	player:SetAttribute("BestWave", data.BestWave)
+	player:SetAttribute("XP", data.XP)
 	player:SetAttribute("ClassId", data.EquippedClass)
 	player:SetAttribute("LoadoutJson", HttpService:JSONEncode(data.Loadout))
 	player:SetAttribute("OwnedJson", HttpService:JSONEncode({ Classes = data.OwnedClasses, Weapons = data.OwnedWeapons }))
@@ -334,6 +338,18 @@ function DataService:Replicate(player)
 	if leaderstats then
 		leaderstats["Best Wave"].Value = data.BestWave
 	end
+end
+
+-- Run XP (Config/Levels). Returns the total before it was added (the run report animates from there).
+function DataService:AddXP(player, amount)
+	local data = profiles[player]
+	if not data then
+		return 0
+	end
+	local before = data.XP
+	data.XP += math.max(0, math.floor(amount))
+	player:SetAttribute("XP", data.XP)
+	return before
 end
 
 function DataService:AddGems(player, amount)

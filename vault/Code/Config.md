@@ -12,6 +12,7 @@ Back to [[Home]].
 - [[Classes config]]: playable roles, unlocked with Gems and chosen in the lobby.
 - [[Conditions config]]: the weather and time of day each run gets, picked at random (vault: City Map.md). PURE DATA.
 - [[GameConfig]]: global tunables for match flow, waves, economy, upgrades, player, camera, map.
+- [[Levels config]]: account XP and levels (owner design 2026-11-03; vault: Levels.md). PURE DATA + math.
 - [[Nightmare config]]: the hard mode (vault: Nightmare Mode.md). PURE DATA plus the unlock check.
 - [[Radio config]]: the commander's lines (vault: Match Start.md). PURE DATA.
 - [[Sounds config]]: every sound in the game (pure data; played by Client/Controllers/SoundController).

@@ -1,6 +1,6 @@
 # WelcomeController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WelcomeController.luau` (458 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WelcomeController.luau` (533 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -18,12 +18,16 @@ Run report (2026-11-03): after every run the same screen comes back as a report 
 safehouse: VICTORY / OVERRUN / TRAINING DONE and that run's wave, kills, Gems and waves cleared. The
 results come from Remotes.RunResults when the run played on this server (Studio), or from the teleport
 data a match server sends back (MatchService.LastResults via QueueService:ReturnToLobby).
+Level header (Config/Levels) under the headline: LEVEL n, its rank title and the XP bar; the run report
+adds the run's +XP, chips breaking it down, and fills the bar from before the run (results.XPBefore) to
+now with LEVEL UP! and a pop at each level gained. The wave tile gets a gold NEW BEST tag.
 ```
 
 ## Uses
 
 - [[Bounties config]]
 - [[GameState]]
+- [[Levels config]]
 - [[Remotes]]
 - [[Survivors config]]
 - [[UIKit]]

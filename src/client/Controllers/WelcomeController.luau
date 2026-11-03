@@ -9,6 +9,9 @@
 -- safehouse: VICTORY / OVERRUN / TRAINING DONE and that run's wave, kills, Gems and waves cleared. The
 -- results come from Remotes.RunResults when the run played on this server (Studio), or from the teleport
 -- data a match server sends back (MatchService.LastResults via QueueService:ReturnToLobby).
+-- Level header (Config/Levels) under the headline: LEVEL n, its rank title and the XP bar; the run report
+-- adds the run's +XP, chips breaking it down, and fills the bar from before the run (results.XPBefore) to
+-- now with LEVEL UP! and a pop at each level gained. The wave tile gets a gold NEW BEST tag.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -25,6 +28,7 @@ local Zombies = require(Shared.Config.Zombies)
 local Bounties = require(Shared.Config.Bounties)
 local Survivors = require(Shared.Config.Survivors)
 local Util = require(Shared.Util)
+local Levels = require(Shared.Config.Levels)
 local UIKit = require(script.Parent.Parent.UI.UIKit)
 
 local T = UIKit.Theme
@@ -296,7 +300,7 @@ function WelcomeController:Show(results)
 	local root = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundTransparency = 1, Parent = gui })
 	UIKit.AutoScale(root)
 
-	local panel = UIKit.new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -48, 0.5, 0), Size = UDim2.fromOffset(470, 600), BackgroundTransparency = 1, Parent = root })
+	local panel = UIKit.new("Frame", { AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -48, 0.5, 0), Size = UDim2.fromOffset(470, 682), BackgroundTransparency = 1, Parent = root })
 	local fade = {} -- everything that fades in
 	local function text(props)
 		props.BackgroundTransparency = 1
@@ -324,8 +328,76 @@ function WelcomeController:Show(results)
 	end
 	UIKit.new("Frame", { Position = UDim2.fromOffset(0, 124), Size = UDim2.fromOffset(90, 4), BackgroundColor3 = T.Cash, BorderSizePixel = 0, Parent = panel })
 
+	-- level header: LEVEL n + rank, the run's +XP, the bar (XP inside it), and chips breaking the XP down
+	local GOLD = Color3.fromRGB(255, 200, 70)
+	local xpNow = player:GetAttribute("XP") or 0
+	local xpFrom = math.min(if results and results.XPBefore then results.XPBefore else xpNow, xpNow)
+	local lvl = UIKit.new("Frame", { Position = UDim2.fromOffset(0, 140), Size = UDim2.fromOffset(470, 80), BackgroundTransparency = 1, Parent = panel })
+	local lvlText = text({ Parent = lvl, Size = UDim2.fromOffset(150, 30), Font = Enum.Font.GothamBlack, TextSize = 30, TextColor3 = Color3.fromRGB(255, 255, 255) })
+	local pop = UIKit.new("UIScale", { Parent = lvlText })
+	local rankText = text({ Parent = lvl, Position = UDim2.fromOffset(152, 9), Size = UDim2.fromOffset(170, 18), Font = Enum.Font.GothamBold, TextSize = 15, TextColor3 = Color3.fromRGB(255, 170, 90) })
+	if results and (results.XP or 0) > 0 then
+		text({ Parent = lvl, Text = "+" .. Util.FormatNumber(results.XP) .. " XP", Position = UDim2.fromOffset(300, 0), Size = UDim2.fromOffset(170, 30), Font = Enum.Font.GothamBlack, TextSize = 30, TextXAlignment = Enum.TextXAlignment.Right, TextColor3 = GOLD })
+	end
+	local track = UIKit.new("Frame", { Position = UDim2.fromOffset(0, 36), Size = UDim2.fromOffset(470, 21), BackgroundColor3 = Color3.fromRGB(14, 12, 14), BackgroundTransparency = 0.15, BorderSizePixel = 0, Parent = lvl })
+	UIKit.Corner(4).Parent = track
+	UIKit.Stroke(GOLD, 1).Parent = track
+	local fill = UIKit.new("Frame", { Size = UDim2.fromScale(0, 1), BackgroundColor3 = GOLD, BorderSizePixel = 0, Parent = track })
+	UIKit.Corner(4).Parent = fill
+	local xpText = text({ Parent = track, Size = UDim2.fromScale(1, 1), Font = Enum.Font.GothamBlack, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Center, TextColor3 = Color3.fromRGB(255, 255, 255), TextStrokeTransparency = 0.3, ZIndex = 2 })
+	if results then -- where the XP came from (Levels.RunXP)
+		local chips = UIKit.new("Frame", { Position = UDim2.fromOffset(0, 60), Size = UDim2.fromOffset(470, 20), BackgroundTransparency = 1, Parent = lvl })
+		UIKit.new("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 6), Parent = chips })
+		local parts = { { "KILLS", "+" .. Util.FormatNumber((results.Kills or 0) * Levels.PerKill) }, { "WAVES", "+" .. Util.FormatNumber((results.WavesCleared or 0) * Levels.PerWave) } }
+		if results.Victory and not results.Tutorial then
+			table.insert(parts, { "VICTORY", "+" .. Levels.Victory })
+		end
+		if results.Nightmare then
+			table.insert(parts, { "NIGHTMARE", "x" .. Levels.NightmareMult })
+		end
+		for _, part in parts do
+			local chip = UIKit.new("TextLabel", { AutomaticSize = Enum.AutomaticSize.X, Size = UDim2.fromOffset(0, 20), BackgroundColor3 = Color3.fromRGB(14, 12, 14), BackgroundTransparency = 0.15, BorderSizePixel = 0, RichText = true, Font = Enum.Font.GothamBold, TextSize = 13, TextColor3 = Color3.fromRGB(200, 190, 180), Text = part[1] .. "  <font color=\"#8CE65A\">" .. part[2] .. "</font>", Parent = chips })
+			UIKit.new("UIPadding", { PaddingLeft = UDim.new(0, 8), PaddingRight = UDim.new(0, 8), Parent = chip })
+			UIKit.Stroke(Color3.fromRGB(70, 90, 60), 1).Parent = chip
+		end
+	end
+	local function showXP(xp)
+		local level, into, need = Levels.FromXP(xp)
+		lvlText.Text = "LEVEL " .. level
+		rankText.Text = Levels.Rank(level)
+		xpText.Text = Util.FormatNumber(math.floor(into)) .. " / " .. Util.FormatNumber(need) .. " XP"
+		fill.Size = UDim2.fromScale(into / need, 1)
+		return level
+	end
+	showXP(xpFrom)
+	if xpNow > xpFrom then
+		task.delay(0.9, function() -- after the panel slides in
+			local last = Levels.FromXP(xpFrom)
+			local seconds = math.clamp(1 + (Levels.FromXP(xpNow) - last) * 0.7, 1.2, 4)
+			local t0 = os.clock()
+			while lvl.Parent do
+				local u = math.min((os.clock() - t0) / seconds, 1)
+				local level = showXP(xpFrom + (xpNow - xpFrom) * (1 - (1 - u) ^ 2))
+				if level > last then -- level up: the bar flashes white, the level pops, LEVEL UP! rises off the bar
+					last = level
+					fill.BackgroundColor3 = Color3.new(1, 1, 1)
+					TweenService:Create(fill, TweenInfo.new(0.5), { BackgroundColor3 = GOLD }):Play()
+					pop.Scale = 1.4
+					TweenService:Create(pop, TweenInfo.new(0.4, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+					local up = UIKit.new("TextLabel", { Text = "LEVEL UP!", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 36), Size = UDim2.fromOffset(240, 30), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 28, TextColor3 = GOLD, TextStrokeTransparency = 0.4, ZIndex = 3, Parent = lvl })
+					TweenService:Create(up, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = UDim2.new(0.5, 0, 0, -6), TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+					task.delay(1.3, up.Destroy, up)
+				end
+				if u >= 1 then
+					break
+				end
+				task.wait()
+			end
+		end)
+	end
+
 	-- stats
-	local grid = UIKit.new("Frame", { Position = UDim2.fromOffset(0, 146), Size = UDim2.fromOffset(470, 270), BackgroundTransparency = 1, Parent = panel })
+	local grid = UIKit.new("Frame", { Position = UDim2.fromOffset(0, 228), Size = UDim2.fromOffset(470, 270), BackgroundTransparency = 1, Parent = panel })
 	UIKit.new("UIGridLayout", { CellSize = UDim2.fromOffset(227, 80), CellPadding = UDim2.fromOffset(16, 12), SortOrder = Enum.SortOrder.LayoutOrder, Parent = grid })
 	local s = decode("AchievementsJson").Stats or {}
 	local studied, total = 0, 0
@@ -336,7 +408,7 @@ function WelcomeController:Show(results)
 		end
 	end
 	local tiles = if results then {
-		tile(grid, if results.NewBest and not results.Tutorial then "WAVE REACHED · NEW BEST" else "WAVE REACHED", tostring(results.Wave or 0), Color3.fromRGB(255, 170, 70), 1),
+		tile(grid, "WAVE REACHED", tostring(results.Wave or 0), Color3.fromRGB(255, 170, 70), 1),
 		tile(grid, "ZOMBIES KILLED", Util.FormatNumber(results.Kills or 0), Color3.fromRGB(255, 90, 80), 2),
 		tile(grid, "GEMS EARNED", if results.Nightmare and not results.Victory and not results.Tutorial then "NONE" else "+◆ " .. Util.FormatNumber(results.Gems or 0), T.Gem, 3),
 		tile(grid, "WAVES CLEARED", tostring(results.WavesCleared or 0), T.Cash, 4),
@@ -350,9 +422,12 @@ function WelcomeController:Show(results)
 		tile(grid, "VICTORIES", Util.FormatNumber(s.Victories or 0), T.Cash, 5),
 		tile(grid, "ENEMIES STUDIED", studied .. " / " .. total, Color3.fromRGB(150, 255, 110), 6),
 	}
+	if results and results.NewBest and not results.Tutorial then -- a gold tag on the wave tile's corner
+		UIKit.new("TextLabel", { Text = "NEW BEST", AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -8, 0, 0), Size = UDim2.fromOffset(86, 20), BackgroundColor3 = GOLD, BorderSizePixel = 0, Font = Enum.Font.GothamBlack, TextSize = 13, TextColor3 = Color3.fromRGB(30, 20, 10), ZIndex = 3, Parent = tiles[1] })
+	end
 
 	-- tracked bounty (or a nudge toward the board)
-	local strip = UIKit.new("Frame", { Position = UDim2.fromOffset(0, 432), Size = UDim2.fromOffset(470, 56), BackgroundColor3 = Color3.fromRGB(14, 12, 14), BackgroundTransparency = 0.2, BorderSizePixel = 0, Parent = panel })
+	local strip = UIKit.new("Frame", { Position = UDim2.fromOffset(0, 514), Size = UDim2.fromOffset(470, 56), BackgroundColor3 = Color3.fromRGB(14, 12, 14), BackgroundTransparency = 0.2, BorderSizePixel = 0, Parent = panel })
 	UIKit.Corner(6).Parent = strip
 	UIKit.Stroke(Color3.fromRGB(255, 200, 70), 1).Parent = strip
 	local bounty = decode("BountyJson")
@@ -366,7 +441,7 @@ function WelcomeController:Show(results)
 	end
 
 	local done = false
-	local enter = UIKit.new("TextButton", { Name = "Enter", Position = UDim2.fromOffset(0, 506), Size = UDim2.fromOffset(470, 78), BackgroundColor3 = Color3.fromRGB(255, 255, 255), AutoButtonColor = false, Text = "ENTER SAFEHOUSE   →", Font = Enum.Font.GothamBlack, TextSize = 30, TextColor3 = Color3.fromRGB(16, 30, 16), Parent = panel })
+	local enter = UIKit.new("TextButton", { Name = "Enter", Position = UDim2.fromOffset(0, 588), Size = UDim2.fromOffset(470, 78), BackgroundColor3 = Color3.fromRGB(255, 255, 255), AutoButtonColor = false, Text = "ENTER SAFEHOUSE   →", Font = Enum.Font.GothamBlack, TextSize = 30, TextColor3 = Color3.fromRGB(16, 30, 16), Parent = panel })
 	UIKit.Corner(6).Parent = enter
 	UIKit.new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(170, 255, 120), Color3.fromRGB(90, 200, 70)), Parent = enter })
 	local enterScale = UIKit.new("UIScale", { Parent = enter })

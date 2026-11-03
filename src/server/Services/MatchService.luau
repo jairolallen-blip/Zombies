@@ -41,6 +41,7 @@ local GameState = require(Shared.GameState)
 local Radio = require(Shared.Config.Radio)
 local Tutorial = require(Shared.Config.Tutorial)
 local Nightmare = require(Shared.Config.Nightmare)
+local Levels = require(Shared.Config.Levels)
 
 local MatchService = {}
 -- a reserved server is one squad's private match (QueueService teleports squads into one)
@@ -683,6 +684,8 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 				DataService:Funnel(player, 12, "Finished a squad run")
 				DataService:LogWave(player, wave)
 			end
+			local xp = Levels.RunXP(kills, wavesCleared, victory and not tutorial, nightmare)
+			local xpBefore = DataService:AddXP(player, xp) -- saved with the run below
 			local newBest = DataService:RecordRun(player, wave, kills, gems)
 			DataService:AddStat(player, "Runs")
 			DataService:AddStat(player, "BestWave", wave, true)
@@ -693,7 +696,7 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 					DataService:AddStat(player, "NightmareWins")
 				end
 			end
-			local results = { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest, Victory = victory, Tutorial = tutorial, Nightmare = nightmare }
+			local results = { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest, Victory = victory, Tutorial = tutorial, Nightmare = nightmare, XP = xp, XPBefore = xpBefore }
 			self.LastResults[tostring(player.UserId)] = results
 			Remotes.RunResults:FireClient(player, results)
 		end
