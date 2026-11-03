@@ -26,6 +26,10 @@ Sounds.Library = {
 	Kill = { Id = 125235091454234, Volume = 0.5, Pitch = 0.9 },
 	Hurt = { Id = 131125543405500, Volume = 0.6, PitchVar = 0.1 }, -- zombie swipe when you take damage
 	Click = { Id = 88442833509532, Volume = 0.6 },
+	-- welcome screen level bar (WelcomeController; ids checked 2026-11-03)
+	XPTick = { Id = 72644163309528, Volume = 0.18 }, -- Glockenspiel C6, ticked higher as the bar fills
+	LevelUp = { Id = 132574644259001, Volume = 0.6 }, -- "Complete_Rare" (Draedon Studios), the level-up sting
+	LevelUpSparkle = { Id = 79130903404606, Volume = 0.4 }, -- "crystal fx", a sparkle on top
 	Radio = { Id = 75433529280871, Volume = 0.45 }, -- radio squelch before Sgt. Voss talks
 
 	-- zombies / world (3D)

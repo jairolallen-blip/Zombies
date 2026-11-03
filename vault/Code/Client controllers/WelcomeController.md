@@ -1,6 +1,6 @@
 # WelcomeController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WelcomeController.luau` (533 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WelcomeController.luau` (573 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -29,6 +29,7 @@ now with LEVEL UP! and a pop at each level gained. The wave tile gets a gold NEW
 - [[GameState]]
 - [[Levels config]]
 - [[Remotes]]
+- [[SoundController]]
 - [[Survivors config]]
 - [[UIKit]]
 - [[Util]]

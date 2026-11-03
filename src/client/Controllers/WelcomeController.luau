@@ -30,6 +30,7 @@ local Survivors = require(Shared.Config.Survivors)
 local Util = require(Shared.Util)
 local Levels = require(Shared.Config.Levels)
 local UIKit = require(script.Parent.Parent.UI.UIKit)
+local SoundController = require(script.Parent.SoundController)
 
 local T = UIKit.Theme
 local player = Players.LocalPlayer
@@ -371,28 +372,67 @@ function WelcomeController:Show(results)
 	end
 	showXP(xpFrom)
 	if xpNow > xpFrom then
+		-- the fill (owner 2026-11-03: slower, with sound and flair): a light sheen runs along the gold, a bright
+		-- tip rides the leading edge, and glockenspiel ticks climb in pitch as the bar fills. Each level up
+		-- holds the full bar for a beat: a reward sting with a sparkle, the bar flashes white and its outline
+		-- swells, the level pops with a gold glow, LEVEL UP! rises off the bar and gold sparks burst out.
+		local gloss = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, Parent = fill })
+		UIKit.Corner(4).Parent = gloss
+		local sheen = UIKit.new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.4, 1), NumberSequenceKeypoint.new(0.5, 0.45), NumberSequenceKeypoint.new(0.6, 1), NumberSequenceKeypoint.new(1, 1) }), Parent = gloss })
+		local tip = UIKit.new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(1, 0.5), Size = UDim2.new(0, 6, 1, 6), BackgroundColor3 = Color3.fromRGB(255, 250, 220), BorderSizePixel = 0, BackgroundTransparency = 1, ZIndex = 2, Parent = fill })
+		UIKit.Corner(3).Parent = tip
+		local trackStroke = track:FindFirstChildOfClass("UIStroke")
 		task.delay(0.9, function() -- after the panel slides in
 			local last = Levels.FromXP(xpFrom)
-			local seconds = math.clamp(1 + (Levels.FromXP(xpNow) - last) * 0.7, 1.2, 4)
+			local seconds = math.clamp(2.2 + (Levels.FromXP(xpNow) - last) * 1.3, 2.5, 7)
 			local t0 = os.clock()
+			local nextTick = 0
+			tip.BackgroundTransparency = 0.1
 			while lvl.Parent do
-				local u = math.min((os.clock() - t0) / seconds, 1)
-				local level = showXP(xpFrom + (xpNow - xpFrom) * (1 - (1 - u) ^ 2))
-				if level > last then -- level up: the bar flashes white, the level pops, LEVEL UP! rises off the bar
+				local now = os.clock()
+				local u = math.min((now - t0) / seconds, 1)
+				local xp = xpFrom + (xpNow - xpFrom) * (1 - (1 - u) ^ 2)
+				local level = showXP(xp)
+				sheen.Offset = Vector2.new((now * 1.2) % 2 - 1, 0)
+				if now >= nextTick and u < 1 then -- ticks climb with the bar, slowing as it eases in
+					nextTick = now + 0.06 + 0.12 * u
+					local _, into, need = Levels.FromXP(xp)
+					SoundController:Play("XPTick", { Pitch = 1 + 0.9 * into / need })
+				end
+				if level > last then
 					last = level
+					t0 += 0.45 -- hold the moment
+					SoundController:Play("LevelUp")
+					SoundController:Play("LevelUpSparkle")
 					fill.BackgroundColor3 = Color3.new(1, 1, 1)
-					TweenService:Create(fill, TweenInfo.new(0.5), { BackgroundColor3 = GOLD }):Play()
-					pop.Scale = 1.4
-					TweenService:Create(pop, TweenInfo.new(0.4, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+					TweenService:Create(fill, TweenInfo.new(0.6), { BackgroundColor3 = GOLD }):Play()
+					if trackStroke then
+						trackStroke.Thickness = 4
+						TweenService:Create(trackStroke, TweenInfo.new(0.6), { Thickness = 1 }):Play()
+					end
+					pop.Scale = 1.5
+					TweenService:Create(pop, TweenInfo.new(0.5, Enum.EasingStyle.Back), { Scale = 1 }):Play()
+					lvlText.TextColor3 = GOLD
+					TweenService:Create(lvlText, TweenInfo.new(0.9), { TextColor3 = Color3.fromRGB(255, 255, 255) }):Play()
 					local up = UIKit.new("TextLabel", { Text = "LEVEL UP!", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0, 36), Size = UDim2.fromOffset(240, 30), BackgroundTransparency = 1, Font = Enum.Font.GothamBlack, TextSize = 28, TextColor3 = GOLD, TextStrokeTransparency = 0.4, ZIndex = 3, Parent = lvl })
-					TweenService:Create(up, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = UDim2.new(0.5, 0, 0, -6), TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
-					task.delay(1.3, up.Destroy, up)
+					local upScale = UIKit.new("UIScale", { Scale = 0.6, Parent = up })
+					TweenService:Create(upScale, TweenInfo.new(0.35, Enum.EasingStyle.Back), { Scale = 1.15 }):Play()
+					TweenService:Create(up, TweenInfo.new(1.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = UDim2.new(0.5, 0, 0, -10), TextTransparency = 1, TextStrokeTransparency = 1 }):Play()
+					task.delay(1.7, up.Destroy, up)
+					for i = 1, 16 do -- gold sparks out of the bar's end (it just hit full)
+						local a = i / 16 * math.pi * 2 + math.random() * 0.3
+						local spark = UIKit.new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromOffset(470, 46), Size = UDim2.fromOffset(6, 6), Rotation = math.deg(a), BackgroundColor3 = if i % 3 == 0 then Color3.fromRGB(255, 250, 220) else GOLD, BorderSizePixel = 0, ZIndex = 3, Parent = lvl })
+						local d = 40 + math.random() * 50
+						TweenService:Create(spark, TweenInfo.new(0.7 + math.random() * 0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { Position = spark.Position + UDim2.fromOffset(math.cos(a) * d, math.sin(a) * d * 0.6), Size = UDim2.fromOffset(2, 2), BackgroundTransparency = 1 }):Play()
+						task.delay(1.2, spark.Destroy, spark)
+					end
 				end
 				if u >= 1 then
 					break
 				end
 				task.wait()
 			end
+			TweenService:Create(tip, TweenInfo.new(0.4), { BackgroundTransparency = 1 }):Play()
 		end)
 	end
 

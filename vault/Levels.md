@@ -19,7 +19,7 @@ Level 1 to 2 needs 100 XP, and every level needs 40 more than the one before (le
 **Old saves** start where their history puts them: kills, waves cleared and wins are counted with the same rates (the owner's account came out at level 12 with 3,697 XP).
 
 ## The level header (welcome screen)
-Under the headline: **LEVEL n** with the rank title, and a gold bar with the XP inside it. On the run report it also shows the run's **+XP** in big gold letters and chips breaking it down (KILLS +n, WAVES +n, VICTORY +150, NIGHTMARE x2), then fills the bar from where you were before the run to now. Each level gained flashes the bar white, pops the level number and floats a **LEVEL UP!** off the bar. The wave tile gets a gold **NEW BEST** tag on a new best wave.
+Under the headline: **LEVEL n** with the rank title, and a gold bar with the XP inside it. On the run report it also shows the run's **+XP** in big gold letters and chips breaking it down (KILLS +n, WAVES +n, VICTORY +150, NIGHTMARE x2), then fills the bar from where you were before the run to now. The fill is slow on purpose (2.5s, plus 1.3s per level gained, up to 7s): a light sheen runs along the gold, a bright tip rides the leading edge, and glockenspiel ticks climb in pitch as it fills. Each level gained holds the full bar for a beat with a reward sting and a sparkle, flashes the bar white, swells its outline, pops the level number in gold, bursts gold sparks off the bar's end and floats a **LEVEL UP!** off the bar. The wave tile gets a gold **NEW BEST** tag on a new best wave.
 
 The owner's reference was a results screen from another game; we took the ideas (big level header with +XP, a breakdown, NEW BEST tags) and kept our own look.
 
