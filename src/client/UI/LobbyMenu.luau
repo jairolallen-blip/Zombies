@@ -3,7 +3,7 @@
 --   top centre   the game's wordmark
 --   top left     profile card: level badge, name, rank, XP bar, Gems (+ opens the Gem packs), best wave,
 --                class, and the four loadout guns as chips in their Level colours
---   left         menu tiles: SHOP, WEAPONS, CLASSES, BOUNTIES, INVITE (shops open in place, no walk needed)
+--   right        menu tiles: SHOP, WEAPONS, CLASSES, BOUNTIES, INVITE (shops open in place, no walk needed)
 --   bottom       a big pulsing QUICK PLAY over the deploy hint strip
 -- menu:Refresh() re-reads the player's attributes; menu:Enter() slides everything in (each time the lobby shows).
 
@@ -86,10 +86,12 @@ function LobbyMenu.new(root)
 	local big = text({ Text = "MILLION ZOMBIES", Position = UDim2.fromOffset(0, 16), Size = UDim2.new(1, 0, 0, 48), TextSize = 46, Font = TITLE, TextXAlignment = Enum.TextXAlignment.Center, Parent = mark })
 	new("UIStroke", { Color = Color3.fromRGB(70, 14, 12), Thickness = 3, Parent = big })
 	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(255, 120, 90)), Parent = big })
+	new("UIScale", { Scale = 0.72, Parent = mark }) -- owner: smaller
 	table.insert(self.Slides, { mark, UDim2.new(0.5, 0, 0, -80) })
 
 	-- profile card
 	local card = panel({ Name = "Profile", Position = UDim2.fromOffset(16, 64), Size = UDim2.fromOffset(404, 216), Parent = root })
+	new("UIScale", { Scale = 0.8, Parent = card }) -- owner: smaller
 	table.insert(self.Slides, { card, UDim2.fromOffset(-440, 64) })
 	local badge = new("Frame", { Position = UDim2.fromOffset(12, 12), Size = UDim2.fromOffset(64, 64), BackgroundColor3 = AMBER, BorderSizePixel = 0, Parent = card })
 	UIKit.Stroke(Color3.fromRGB(255, 226, 160), 2).Parent = badge
@@ -149,24 +151,25 @@ function LobbyMenu.new(root)
 			end
 		end },
 	}
-	for i, t in tiles do
-		local y = 294 + (i - 1) * 58
-		local tile = new("TextButton", { Name = "Tile" .. t[1], Position = UDim2.fromOffset(16, y), Size = UDim2.fromOffset(240, 50), Text = "", AutoButtonColor = false, BackgroundColor3 = INK, BackgroundTransparency = 0.12, BorderSizePixel = 0, Parent = root })
+	for i, t in tiles do -- a column down the right side, accent bar on the outer edge
+		local y = 230 + (i - 1) * 58
+		local home, hover = UDim2.new(1, -16, 0, y), UDim2.new(1, -24, 0, y)
+		local tile = new("TextButton", { Name = "Tile" .. t[1], AnchorPoint = Vector2.new(1, 0), Position = home, Size = UDim2.fromOffset(240, 50), Text = "", AutoButtonColor = false, BackgroundColor3 = INK, BackgroundTransparency = 0.12, BorderSizePixel = 0, Parent = root })
 		local stroke = UIKit.Stroke(EDGE, 1)
 		stroke.Parent = tile
-		local bar = new("Frame", { Size = UDim2.new(0, 5, 1, 0), BackgroundColor3 = t[3], BorderSizePixel = 0, Parent = tile })
+		local bar = new("Frame", { AnchorPoint = Vector2.new(1, 0), Position = UDim2.fromScale(1, 0), Size = UDim2.new(0, 5, 1, 0), BackgroundColor3 = t[3], BorderSizePixel = 0, Parent = tile })
 		icon(t[4], t[5], { Position = UDim2.fromOffset(16, 13), Size = UDim2.fromOffset(24, 24), ImageColor3 = t[3], TextColor3 = t[3], Parent = tile })
 		text({ Text = t[1], Position = UDim2.fromOffset(52, 6), Size = UDim2.fromOffset(180, 22), TextSize = 20, Font = TITLE, Parent = tile })
 		text({ Text = t[2], Position = UDim2.fromOffset(52, 28), Size = UDim2.fromOffset(180, 15), TextSize = 12, TextColor3 = DIM, Parent = tile })
 		local quick = TweenInfo.new(0.12)
 		tile.MouseEnter:Connect(function()
 			sound("UIHover")
-			TweenService:Create(tile, quick, { Position = UDim2.fromOffset(24, y), BackgroundColor3 = t[3]:Lerp(INK, 0.75) }):Play()
+			TweenService:Create(tile, quick, { Position = hover, BackgroundColor3 = t[3]:Lerp(INK, 0.75) }):Play()
 			TweenService:Create(bar, quick, { Size = UDim2.new(0, 9, 1, 0) }):Play()
 			stroke.Color = t[3]
 		end)
 		tile.MouseLeave:Connect(function()
-			TweenService:Create(tile, quick, { Position = UDim2.fromOffset(16, y), BackgroundColor3 = INK }):Play()
+			TweenService:Create(tile, quick, { Position = home, BackgroundColor3 = INK }):Play()
 			TweenService:Create(bar, quick, { Size = UDim2.new(0, 5, 1, 0) }):Play()
 			stroke.Color = EDGE
 		end)
@@ -174,7 +177,7 @@ function LobbyMenu.new(root)
 			sound("Click")
 			t[6]()
 		end)
-		table.insert(self.Slides, { tile, UDim2.fromOffset(-280, y), 0.05 * i })
+		table.insert(self.Slides, { tile, UDim2.new(1, 280, 0, y), 0.05 * i })
 	end
 
 	-- deploy: hint strip (LobbyController writes its text) under a big pulsing QUICK PLAY
@@ -183,12 +186,12 @@ function LobbyMenu.new(root)
 	self.Status = text({ Position = UDim2.fromOffset(16, 0), Size = UDim2.new(1, -28, 1, 0), TextSize = 16, TextWrapped = true, TextColor3 = Color3.fromRGB(226, 228, 232), TextXAlignment = Enum.TextXAlignment.Center, Parent = self.StatusBar })
 	table.insert(self.Slides, { self.StatusBar, UDim2.new(0.5, 0, 1, 80) })
 
-	local play = new("TextButton", { Name = "QuickPlay", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -84), Size = UDim2.fromOffset(330, 72), Text = "", AutoButtonColor = false, BackgroundColor3 = PLAY, BorderSizePixel = 0, ClipsDescendants = true, Parent = root })
+	local play = new("TextButton", { Name = "QuickPlay", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -82), Size = UDim2.fromOffset(460, 52), Text = "", AutoButtonColor = false, BackgroundColor3 = PLAY, BorderSizePixel = 0, ClipsDescendants = true, Parent = root })
 	self.QuickPlay = play
 	self.PlayStroke = new("UIStroke", { Color = Color3.fromRGB(220, 255, 200), Thickness = 2, ApplyStrokeMode = Enum.ApplyStrokeMode.Border, Parent = play })
 	new("UIGradient", { Rotation = 90, Color = ColorSequence.new(Color3.fromRGB(255, 255, 255), Color3.fromRGB(170, 190, 160)), Parent = play })
-	text({ Text = "QUICK PLAY", Position = UDim2.fromOffset(0, 8), Size = UDim2.new(1, 0, 0, 38), TextSize = 36, Font = TITLE, TextColor3 = Color3.fromRGB(16, 30, 12), TextXAlignment = Enum.TextXAlignment.Center, Parent = play })
-	text({ Text = "JUMP INTO THE NEXT SQUAD WITH ROOM", Position = UDim2.fromOffset(0, 46), Size = UDim2.new(1, 0, 0, 14), TextSize = 11, Font = TITLE, TextColor3 = Color3.fromRGB(36, 70, 26), TextXAlignment = Enum.TextXAlignment.Center, Parent = play })
+	text({ Text = "QUICK PLAY", Position = UDim2.fromOffset(0, 5), Size = UDim2.new(1, 0, 0, 28), TextSize = 28, Font = TITLE, TextColor3 = Color3.fromRGB(16, 30, 12), TextXAlignment = Enum.TextXAlignment.Center, Parent = play })
+	text({ Text = "JUMP INTO THE NEXT SQUAD WITH ROOM", Position = UDim2.fromOffset(0, 33), Size = UDim2.new(1, 0, 0, 12), TextSize = 10, Font = TITLE, TextColor3 = Color3.fromRGB(36, 70, 26), TextXAlignment = Enum.TextXAlignment.Center, Parent = play })
 	self.PlaySheen = new("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(-0.3, 0.5), Size = UDim2.new(0, 60, 2, 0), Rotation = 20, BackgroundColor3 = Color3.new(1, 1, 1), BorderSizePixel = 0, ZIndex = 2, Parent = play })
 	new("UIGradient", { Transparency = NumberSequence.new({ NumberSequenceKeypoint.new(0, 1), NumberSequenceKeypoint.new(0.5, 0.6), NumberSequenceKeypoint.new(1, 1) }), Parent = self.PlaySheen })
 	self.PlayScale = new("UIScale", { Parent = play })
