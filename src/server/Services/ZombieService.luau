@@ -22,7 +22,8 @@
 --   ZombieService:PickType(wave, nightmare?) -> typeId (weighted by MinWave/Weight; a Nightmare run picks only
 --     the Nightmare types, a normal run never does)
 -- Nightmare extras (Config/Zombies): Split (the Husk's halves crawl out in Kill), Wail (_wail: a scream that
--- calls the horde; clients blur and play it in NightmareController).
+-- calls the horde; clients blur and play it in NightmareController), Burrow (_burrow: the Skitter goes under
+-- and comes up behind a player).
 --   ZombieService:GetAliveCount(), ZombieService:ClearAll()
 --   ZombieService.Killed  Signal(state, attacker)
 --   ZombieService.BossEnraged  Signal(state)   boss crossed Def.Enrage.At (see _enrage)
@@ -609,6 +610,64 @@ local function doLeap(z, now, targetPos)
 	end)
 end
 
+-- Skitter burrow (Def.Burrow): it sinks into the street (out of reach of bullets) and stays under, then a
+-- red warning circle opens behind the nearest player (or beside them, if that spot is blocked) and it rises
+-- out of it there, facing them.
+function ZombieService:_burrow(z)
+	local b = z.Def.Burrow
+	local W = GameConfig.Waves
+	local s = z.Def.Scale or 1
+	local root = z.Root
+	local groundY = Services.MapService.GroundY
+	z.Burrowed = true
+	z.StunnedUntil = math.huge -- no moves or attacks while it travels underground
+	z.LV.Enabled = false
+	root.Anchored = true
+	Remotes.Effect:FireAllClients("Shockwave", { Position = Vector3.new(root.Position.X, groundY, root.Position.Z), Radius = 4 })
+	TweenService:Create(root, TweenInfo.new(b.Down, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { CFrame = root.CFrame - Vector3.new(0, 5 * s, 0) }):Play()
+	task.delay(b.Down + b.Under, function()
+		if z.Dead then
+			return
+		end
+		local prey = findTarget(root.Position)
+		local spot = root.Position
+		if prey then
+			local back = -prey.CFrame.LookVector * Vector3.new(1, 0, 1)
+			back = if back.Magnitude > 0.1 then back.Unit else Vector3.xAxis
+			for _, turn in { 0, 0.6, -0.6, 1.2, -1.2, math.pi } do
+				local try = prey.Position + rotateFlat(back, turn) * b.Behind
+				if NavGrid.IsWalkable(try) then
+					spot = try
+					break
+				end
+			end
+		end
+		Remotes.Effect:FireAllClients("SpawnWarning", { Position = Vector3.new(spot.X, groundY, spot.Z), Radius = 2.4 * s, Time = W.SpawnWarning })
+		task.delay(W.SpawnWarning, function()
+			if z.Dead or not root.Parent then
+				return
+			end
+			local up = CFrame.new(spot.X, groundY + 2.5 * s + 0.05, spot.Z)
+			if prey and prey.Parent then
+				up = CFrame.lookAt(up.Position, Vector3.new(prey.Position.X, up.Position.Y, prey.Position.Z))
+			end
+			root.CFrame = up - Vector3.new(0, 5 * s, 0)
+			local rise = TweenService:Create(root, TweenInfo.new(W.RiseTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), { CFrame = up })
+			rise.Completed:Connect(function()
+				if root.Parent and not z.Dead then
+					root.Anchored = false
+					root:SetNetworkOwner(nil)
+					z.Burrowed = false
+					z.StunnedUntil = 0
+					z.LastPos = root.Position
+					z.NextBurrow = os.clock() + b.Cooldown
+				end
+			end)
+			rise:Play()
+		end)
+	end)
+end
+
 -- Wailer scream (Def.Wail): it stands still and screams for Windup ("WailStart": clients play the scream),
 -- then players within Radius get their sight blurred ("Wail") and every zombie within Pull of it rushes the
 -- nearest player for RushTime.
@@ -750,6 +809,12 @@ function ZombieService:_step(_dt)
 				z.NextWail = z.NextWail or now + 2
 				if now >= z.NextWail and dist <= def.Wail.Range then
 					self:_wail(z)
+				end
+			end
+			if def.Burrow and not z.Burrowed then
+				z.NextBurrow = z.NextBurrow or now + 3
+				if now >= z.NextBurrow and dist >= def.Burrow.MinRange then
+					self:_burrow(z)
 				end
 			end
 			if def.Slam and now >= z.NextSlam and dist <= def.Slam.TriggerRange and now >= (z.NextSpecial or 0) then

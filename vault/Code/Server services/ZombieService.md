@@ -1,6 +1,6 @@
 # ZombieService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/ZombieService.luau` (782 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/ZombieService.luau` (847 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -31,7 +31,8 @@ Public:
   ZombieService:PickType(wave, nightmare?) -> typeId (weighted by MinWave/Weight; a Nightmare run picks only
     the Nightmare types, a normal run never does)
 Nightmare extras (Config/Zombies): Split (the Husk's halves crawl out in Kill), Wail (_wail: a scream that
-calls the horde; clients blur and play it in NightmareController).
+calls the horde; clients blur and play it in NightmareController), Burrow (_burrow: the Skitter goes under
+and comes up behind a player).
   ZombieService:GetAliveCount(), ZombieService:ClearAll()
   ZombieService.Killed  Signal(state, attacker)
   ZombieService.BossEnraged  Signal(state)   boss crossed Def.Enrage.At (see _enrage)

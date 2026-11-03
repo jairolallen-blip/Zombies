@@ -31,6 +31,10 @@
 -- Nightmare types (Config/Nightmare; the NIGHTMARE row of the enemy index):
 --   Nightmare = true   spawns only in Nightmare runs, and Nightmare runs spawn only these (ZombieService:PickType)
 --   Pack               spawned in a group of this many (MatchService)
+--   Burrow = { MinRange, Cooldown, Down, Under, Behind }
+--                     when its target is MinRange+ studs away it sinks into the ground (Down seconds, can't be
+--                     shot), stays under for Under, then a red warning circle opens Behind studs behind the target
+--                     and it rises out of it (ZombieService:_burrow; GameConfig.Waves SpawnWarning / RiseTime)
 --   Split = { Into, Count }   on death, Count zombies of type Into crawl out where it fell (ZombieService:Kill)
 --   Wail = { Range, Radius, Pull, Windup, Cooldown, Blur, RushMult, RushTime }
 --                     within Range of a player it stops and screams for Windup: players within Radius get their
@@ -180,18 +184,18 @@ Zombies.Types = {
 	Skitter = {
 		DisplayName = "Skitter",
 		Nightmare = true,
-		Index = { Gems = 125, Special = "Hunts in packs of three, lunges", Lore = "Its skin went first, then it stopped standing. Low and fast, Skitters come in threes and you rarely hear them first." },
+		Index = { Gems = 125, Special = "Burrows, then bursts up behind you", Lore = "Its skin went first, then it took to the ground. A Skitter goes under where you can't shoot it and comes up at your back. Watch for the red circle behind you." },
 		Health = 45,
-		Speed = 21,
-		Damage = 8,
+		Speed = 9, -- a slow crawl: the threat is the ambush, not the chase (2026-11-03, was a fast lunger)
+		Damage = 10,
 		AttackRange = 2.5,
-		AttackCooldown = 0.6,
+		AttackCooldown = 0.8,
 		Cash = 25,
 		Scale = 0.85,
 		MinWave = 2,
 		Weight = 4,
-		Pack = 3,
-		Lunge = { Range = 14, SpeedMult = 2.2, Duration = 0.5, Cooldown = 2.5 },
+		Pack = 2,
+		Burrow = { MinRange = 18, Cooldown = 8, Down = 0.6, Under = 1.4, Behind = 6 },
 		Look = {
 			Build = "Crawler",
 			Horror = "Skitter",
