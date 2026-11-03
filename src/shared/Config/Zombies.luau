@@ -117,13 +117,14 @@ Zombies.Types = {
 		AttackCooldown = 1.5,
 		Cash = 1500,
 		Scale = 3.4,
-		Slam = { Radius = 20, Damage = 45, Windup = 1.3, Cooldown = 6, TriggerRange = 28 },
+		Slam = { Radius = 20, Damage = 35, Windup = 1.3, Cooldown = 6, TriggerRange = 28 },
 		-- Charge: plants its feet (red lane on the ground), then barrels straight down it, flattening
 		-- anyone in the way. Leap: crouches, jumps onto a far-away player's spot (red ring) and lands
 		-- with a shockwave. SpecialGap = minimum seconds between any two special attacks.
-		Charge = { Windup = 1.1, Speed = 75, Distance = 70, Width = 9, Damage = 40, Knockback = 90, Cooldown = 9, MinRange = 22, MaxRange = 85 },
-		Leap = { Windup = 0.8, AirTime = 1.1, Height = 30, Radius = 18, Damage = 45, Cooldown = 13, MinRange = 32 },
+		Charge = { Windup = 1.1, Speed = 75, Distance = 70, Width = 9, Damage = 30, Knockback = 90, Cooldown = 9, MinRange = 22, MaxRange = 85 },
+		Leap = { Windup = 0.8, AirTime = 1.1, Height = 30, Radius = 18, Damage = 35, Cooldown = 13, MinRange = 32 },
 		SpecialGap = 2.5,
+		-- 2026-11-02: Slam 45 -> 35, Charge 40 -> 30, Leap 45 -> 35 (the bot took ~1.7x a full health bar on this wave)
 		-- entrance cutscene before the final wave (MatchService:_bossIntro, Client BossController)
 		Intro = { Time = 7, RiseAt = 1.2, RiseTime = 3.2, RoarAt = 4.8 },
 		Enrage = { At = 0.5, SpeedMult = 1.4, SlamCooldownMult = 0.5, Summon = "Runner", SummonCount = 6, SummonRadius = 14 },

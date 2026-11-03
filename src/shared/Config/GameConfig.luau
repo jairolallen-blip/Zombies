@@ -71,7 +71,7 @@ GameConfig.Waves = {
 	HealthScalePerWave = 0.10, -- zombie health +10% per wave
 	-- the run (vault: Waves and Boss.md): clear TotalWaves to win; the last wave is the boss wave
 	TotalWaves = 10,
-	BossWaveHordeMult = 0.6, -- the boss wave's horde is this share of a normal wave's count
+	BossWaveHordeMult = 0.4, -- the boss wave's horde is this share of a normal wave's count (was 0.6; eased 2026-11-02)
 }
 
 GameConfig.Economy = {
