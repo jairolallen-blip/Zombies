@@ -2,6 +2,7 @@
 -- MatchService picks a random line for an event and sends it to run players (Remotes.Radio);
 -- Client/Controllers/RadioController shows it next to the commander's portrait.
 -- "{wave}" is replaced with the wave number. The tutorial's step lines live in Config/Tutorial.
+-- Tutorial and Nightmare runs use "Tutorial<event>" / "Nightmare<event>" over "<event>" when it exists.
 
 local Radio = {}
 
@@ -66,6 +67,56 @@ Radio.Lines = {
 	},
 	TutorialVictory = {
 		"That's how it's done, rookie. Bird's coming to take you to the safehouse. Gear up there, then pick a pad on the Flight Line.",
+	},
+	-- Nightmare runs (Config/Nightmare): the radio breaks up and Voss stops pretending there's a plan.
+	-- At the boss the signal dies; he only comes back if the Titan falls.
+	NightmareDeploy = {
+		"Overwatch to squad... we've lost contact with every other team. If you hear this, you're all that's left.",
+		"This drop isn't on any map. Command stopped answering an hour ago. I'm flying you in anyway.",
+	},
+	NightmareDrop = {
+		"Go. And... I'm sorry.",
+		"Jump. Don't look down for long.",
+	},
+	NightmareLanded = {
+		"You're down. The lights went out over the whole city. Whatever's out there can see better than you.",
+		"Boots on the ground. The Bloom's been here too long. Nothing in there is what it used to be.",
+	},
+	NightmareIncoming = {
+		"Thermal's whiting out. There are too many to count.",
+	},
+	NightmareFirstWave = {
+		"They're coming. Don't waste a single round.",
+	},
+	NightmareWaveStart = {
+		"Wave {wave}. ...I don't have anything else to tell you.",
+		"Wave {wave}. They're bigger than they were yesterday.",
+		"Signal's... *static* ...wave {wave}... *static*",
+		"Wave {wave}. Keep each other alive. Nobody else will.",
+	},
+	NightmareWaveCleared = {
+		"Wave {wave}... you're still breathing. I didn't think you would be.",
+		"Quiet again. It won't be for long.",
+		"*static* ...still reading you. Barely.",
+	},
+	NightmareAirdrop = {
+		"Last crate on the carrier. Make it count.",
+	},
+	NightmareBossIncoming = {
+		"Something's moving under the square... it's the Titan, but wrong. Bigger. I'm losing the sig— *static*",
+	},
+	NightmareBossEnraged = {
+		"*static*",
+	},
+	NightmareBossDown = {
+		"*static* ...squad? Squad, the reading's gone. Did you... did you actually kill it?",
+	},
+	NightmareVictory = {
+		"I'd stopped writing your names down. Bird's coming. You're coming home.",
+	},
+	NightmareOverrun = {
+		"...",
+		"Overwatch... out.",
 	},
 	TutorialOverrun = {
 		"Rough first day, rookie. Pulling you out to the safehouse. Gear up and try again from the Flight Line.",

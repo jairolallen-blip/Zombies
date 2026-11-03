@@ -44,6 +44,7 @@ Attributes:
 - [[LobbyAudioController]]
 - [[LobbyController]]
 - [[MatchService]]
+- [[NightmareController]]
 - [[QueueService]]
 - [[SkipController]]
 - [[SoundController]]

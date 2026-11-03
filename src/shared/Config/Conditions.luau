@@ -4,6 +4,7 @@
 -- keep the sunset values). Client/Controllers/ConditionsController draws Rain around the camera and puts a
 -- flashlight on every player while Flashlights is set. PostFXController's sunset grade only runs on Sunset.
 -- OFF for now (2026-11-02, the owner prefers the sunset look): every weather but Sunset has Weight 0.
+-- "Nightmare" is never rolled: MatchService uses it for every Nightmare run (Config/Nightmare).
 
 local Conditions = {}
 
@@ -63,6 +64,26 @@ Conditions.List = {
 			HazeColor = Color3.fromRGB(95, 104, 115),
 			TintColor = Color3.fromRGB(210, 220, 235),
 			Saturation = -0.35,
+		},
+	},
+	{
+		Id = "Nightmare",
+		Name = "NIGHTMARE",
+		Desc = "Survive all 10 waves for 3x Gems. Fall and you leave with nothing.",
+		Weight = 0, -- Nightmare runs only
+		Flashlights = true,
+		Atmosphere = {
+			ClockTime = 0,
+			Brightness = 0.6,
+			Ambient = Color3.fromRGB(46, 30, 32),
+			OutdoorAmbient = Color3.fromRGB(78, 48, 50),
+			Density = 0.55,
+			Haze = 2.2,
+			AtmosphereColor = Color3.fromRGB(96, 44, 42),
+			HazeColor = Color3.fromRGB(32, 12, 14),
+			TintColor = Color3.fromRGB(255, 205, 200),
+			Saturation = -0.4,
+			Contrast = 0.15,
 		},
 	},
 }

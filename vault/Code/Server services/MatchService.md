@@ -1,6 +1,6 @@
 # MatchService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/MatchService.luau` (638 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/MatchService.luau` (659 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -22,6 +22,8 @@ A run (:RunMatch(players, options); options = Difficulty, Map, Tutorial from the
   the last wave (GameConfig.Waves.TotalWaves) is the boss wave; clearing it wins the run
   (tutorial: Config/Tutorial: fewer waves, a weaker boss, its own Gems reward; TutorialService walks
   the player through the mechanics)
+  (Nightmare: Config/Nightmare: tougher zombies, the Nightmare weather and radio, Gems only on a win;
+  played only when every participant has unlocked it)
   ends on victory or when every participant is dead or gone -> Results (Gems, saved) -> lobby
 The commander comments on each step over Remotes.Radio (lines in Shared/Config/Radio).
 
@@ -46,6 +48,7 @@ Public:
 - [[GameConfig]]
 - [[GameState]]
 - [[MapService]]
+- [[Nightmare config]]
 - [[QueueService]]
 - [[Radio config]]
 - [[Remotes]]

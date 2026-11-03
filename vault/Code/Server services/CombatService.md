@@ -19,7 +19,7 @@ Public:
   CombatService:EquipLoadout(player)   give the Loadout gun for the current WeaponTier (= Level), full ammo
   CombatService:RefreshWeapon(player)  re-apply after a Level upgrade
   CombatService:Reload(player)
-  CombatService:DamagePlayer(player, amount)          applies class DamageTakenMult
+  CombatService:DamagePlayer(player, amount)          applies class DamageTakenMult and MatchService.ZombieDamageMult (Nightmare)
   CombatService:Explode(position, radius, damage, attacker?, { PlayerDamage = n? })
   CombatService.EffectsFolder          Workspace.Effects (non-queryable server visuals)
 ```

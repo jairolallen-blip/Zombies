@@ -27,6 +27,7 @@ See [[Roadmap]] for status.
 - [[Achievements]]: the Commendations board
 - [[Bounties]]: daily tasks, one tracked at a time
 - [[Store]]: the Robux shop and game passes
+- [[Nightmare Mode]]: the hard mode (unlock at 3 wins, caged pad, pays only survivors)
 - [[Lore]]: Port Harrow, the Bloom, Overwatch and the safehouse people
 - [[Phones and Gamepads]]: touch buttons and controller mapping
 

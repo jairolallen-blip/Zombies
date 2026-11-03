@@ -2,7 +2,7 @@
 --   top-left   compact chip: Gems, best wave, current class + loadout, and where the shops are
 --              (class and gun choices happen in the Armory / Barracks shops: ShopController)
 --   bottom     take-off status; on a Flight Line pad (player attribute PadId) it becomes the squad
---              panel: squad count, countdown and the mission (squad size, difficulty, map), which
+--              panel: squad count, countdown and the mission (squad size, map; the caged Nightmare pad plays Nightmare), which
 --              only the pad's host can change (Remotes.SetPadOptions; QueueService)
 --   centre     results overlay after a run (Remotes.RunResults)
 --   full       "waiting for your squad" cover on a match server until the drop starts
@@ -44,9 +44,9 @@ end
 function LobbyController:ShowResults(results)
 	ui.ResultsTitle.Text = if results.Tutorial then "TRAINING DONE" elseif results.Victory then "VICTORY" elseif results.NewBest and results.Wave > 1 then "NEW BEST!" else "OVERRUN"
 	ui.ResultsTitle.TextColor3 = if results.Tutorial then T.Accent elseif results.Victory then T.Cash elseif results.NewBest and results.Wave > 1 then T.Accent else T.Danger
-	local reached = if results.Victory then string.format("Survived all %d waves", results.WavesCleared) else string.format("Reached wave %d", results.Wave)
+	local reached = if results.Victory and results.Nightmare then "You survived the Nightmare" elseif results.Victory then string.format("Survived all %d waves", results.WavesCleared) else string.format("Reached wave %d", results.Wave)
 	ui.ResultsBody.Text = string.format("%s\nZombies killed: %s", reached, Util.FormatNumber(results.Kills))
-	ui.ResultsGems.Text = "+ ◆ " .. Util.FormatNumber(results.Gems) .. " Gems"
+	ui.ResultsGems.Text = if results.Nightmare and not results.Victory then "NO GEMS THIS TIME" else "+ ◆ " .. Util.FormatNumber(results.Gems) .. " Gems"
 	ui.Results.Visible = true
 	task.delay(15, function()
 		ui.Results.Visible = false
@@ -56,13 +56,12 @@ end
 -- Squad panel (shown on a pad): one row of choice buttons per mission setting
 local ROWS = {
 	{ Key = "Size", Label = "SQUAD SIZE" },
-	{ Key = "Difficulty", Label = "DIFFICULTY", List = GameConfig.Lobby.Difficulties },
 	{ Key = "Map", Label = "MAP", List = GameConfig.Lobby.Maps },
 }
 
 function LobbyController:_buildSquadPanel()
 	local cfg = GameConfig.Lobby
-	ui.Squad = UIKit.Panel({ Name = "Squad", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(560, 236), Visible = false, Parent = ui.Root })
+	ui.Squad = UIKit.Panel({ Name = "Squad", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(560, 196), Visible = false, Parent = ui.Root })
 	UIKit.Padding(14).Parent = ui.Squad
 	ui.SquadTitle = UIKit.Label({ Size = UDim2.new(0.6, 0, 0, 30), TextSize = 26, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = ui.Squad })
 	ui.SquadTimer = UIKit.Label({ Position = UDim2.fromScale(0.6, 0), Size = UDim2.new(0.4, 0, 0, 30), TextSize = 24, TextColor3 = T.Cash, TextXAlignment = Enum.TextXAlignment.Right, Parent = ui.Squad })
@@ -97,7 +96,7 @@ end
 -- pad: decoded GameState "Pad<id>" (QueueService:_publish)
 function LobbyController:_showSquad(padId, pad)
 	ui.IsHost = pad.HostId == player.UserId
-	ui.SquadTitle.Text = string.format("PAD %d  ·  SQUAD %d/%d", padId, pad.Count, pad.Size)
+	ui.SquadTitle.Text = string.format("%s  ·  SQUAD %d/%d", if pad.Difficulty == "Nightmare" then "NIGHTMARE" else "PAD " .. padId, pad.Count, pad.Size)
 	ui.SquadTimer.Text = if pad.Status == "Launching" then "TAKING OFF..." elseif pad.Status == "Waiting" then "RUN IN PROGRESS" else "TAKE-OFF IN " .. pad.Timer .. "s"
 	for _, choice in ui.Choices do
 		local selected = pad[choice.Key] == choice.Value
@@ -106,7 +105,7 @@ function LobbyController:_showSquad(padId, pad)
 		button.TextColor3 = if selected then Color3.fromRGB(35, 35, 40) elseif choice.Locked then T.SubText else T.Text
 		button.AutoButtonColor = ui.IsHost and not choice.Locked
 	end
-	ui.SquadHint.Text = if ui.IsHost then "You're the host: pick the mission. Full squad = take-off in " .. GameConfig.Lobby.AllReadyTime .. "s"
+	ui.SquadHint.Text = if pad.Difficulty == "Nightmare" then "NIGHTMARE: win for 3x Gems. Die and you get nothing." elseif ui.IsHost then "You're the host: pick the mission. Full squad = take-off in " .. GameConfig.Lobby.AllReadyTime .. "s"
 		else pad.Host .. " is the host and picks the mission"
 end
 

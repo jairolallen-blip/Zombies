@@ -2,6 +2,7 @@
 -- through a gate where the middle north ruin stood: four helipads in a 2 x 2 grid, one squad each
 -- (Server/Services/QueueService). Pads are copies of the courtyard's original Helipad model, so the
 -- look (deploy glow, edge lights, sign) stays the same; each pad model has attribute PadId = 1..4.
+-- In the middle, a caged red Nightmare pad (PadId 5) behind a chained gate (buildNightmare).
 -- OurLobby.Build calls this last. Safe to re-run on a baked lobby: it replaces its own parts.
 --   local m = game.ServerScriptService.Server.Map.FlightLine
 --   local c = m:Clone(); c.Parent = m.Parent; require(c).Build(workspace.OurMap.Lobby); c:Destroy()
@@ -202,6 +203,97 @@ local function placePads(lobby)
 	end
 end
 
+-- The Nightmare pad (Config/Nightmare): a smaller red copy of pad 1 (PadId 5, attribute Nightmare) in a
+-- fenced cage between the four pads, entered through a chained gate on the south side. The gate stays
+-- shut for everyone on the server; Client/Controllers/NightmareController opens it locally (no
+-- collision, chains gone) for players who've unlocked the mode and writes the sign for each player.
+local NIGHTMARE_SPOT, CAGE = Vector2.new(0, -132), 14 -- cage half-width; pads 1-4 start at x = +-17
+local RED = Color3.fromRGB(200, 30, 30)
+
+local function buildNightmare(m, lobby)
+	local cage = Instance.new("Model")
+	cage.Name = "Nightmare"
+	cage.Parent = m
+	local front, back = NIGHTMARE_SPOT.Y + CAGE, NIGHTMARE_SPOT.Y - CAGE
+	local function fence(x1, z1, x2, z2)
+		local from, to = Vector2.new(x1, z1), Vector2.new(x2, z2)
+		local mid, length = (from + to) / 2, (to - from).Magnitude
+		local look = CFrame.lookAt(Vector3.zero, Vector3.new(to.X - from.X, 0, to.Y - from.Y))
+		part(cage, "Mesh", Vector3.new(0.2, 10, length), at(mid.X, GROUND_Y + 5, mid.Y) * look, Color3.fromRGB(40, 30, 30), Enum.Material.DiamondPlate, { Transparency = 0.45 })
+		part(cage, "Wire", Vector3.new(0.3, 0.3, length), at(mid.X, GROUND_Y + 10.2, mid.Y) * look, C.Metal, Enum.Material.Metal)
+	end
+	fence(-CAGE, back, CAGE, back)
+	fence(-CAGE, front, -CAGE, back)
+	fence(CAGE, front, CAGE, back)
+	fence(-CAGE, front, -5, front)
+	fence(5, front, CAGE, front)
+	-- corner and gate posts with red warning lamps
+	for _, p in { Vector2.new(-CAGE, front), Vector2.new(CAGE, front), Vector2.new(-CAGE, back), Vector2.new(CAGE, back), Vector2.new(-5, front), Vector2.new(5, front) } do
+		part(cage, "Post", Vector3.new(0.8, 11, 0.8), at(p.X, GROUND_Y + 5.5, p.Y), C.Metal, Enum.Material.Metal)
+		local lamp = part(cage, "Lamp", Vector3.new(1, 0.6, 1), at(p.X, GROUND_Y + 11.3, p.Y), RED, Enum.Material.Neon, { CanCollide = false })
+		local light = Instance.new("PointLight")
+		light.Color = RED
+		light.Range = 14
+		light.Brightness = 1.2
+		light.Parent = lamp
+	end
+	-- the gate: two panels, chains crossed over them and a padlock
+	local gate = Instance.new("Model")
+	gate.Name = "Gate"
+	gate.Parent = cage
+	for _, x in { -2.5, 2.5 } do
+		part(gate, "Panel", Vector3.new(4.9, 9.5, 0.3), at(x, GROUND_Y + 4.85, front), Color3.fromRGB(70, 20, 20), Enum.Material.DiamondPlate, { Transparency = 0.2 })
+	end
+	local chain = { CanCollide = false }
+	for _, tilt in { 32, -32 } do
+		part(gate, "Chain", Vector3.new(11, 0.35, 0.35), at(0, GROUND_Y + 5, front + 0.35) * CFrame.Angles(0, 0, math.rad(tilt)), Color3.fromRGB(110, 105, 100), Enum.Material.Metal, chain)
+	end
+	part(gate, "Padlock", Vector3.new(1.2, 1.4, 0.5), at(0, GROUND_Y + 5, front + 0.7), Color3.fromRGB(190, 150, 60), Enum.Material.Metal, chain)
+	-- sign over the gate (text per player: NightmareController)
+	local board = part(cage, "Sign", Vector3.new(14, 2.6, 0.4), at(0, GROUND_Y + 12.4, front), Color3.fromRGB(30, 10, 10), Enum.Material.Metal)
+	local gui = Instance.new("SurfaceGui")
+	gui.Face = Enum.NormalId.Back -- read from the gate side (south)
+	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+	gui.PixelsPerStud = 40
+	gui.Parent = board
+	local label = Instance.new("TextLabel")
+	label.Name = "Text"
+	label.Size = UDim2.fromScale(1, 1)
+	label.BackgroundColor3 = Color3.fromRGB(30, 10, 10)
+	label.Text = "NIGHTMARE"
+	label.TextScaled = true
+	label.Font = Enum.Font.GothamBlack
+	label.TextColor3 = Color3.fromRGB(235, 60, 50)
+	label.Parent = gui
+
+	-- the pad: pad 1 shrunk and turned red, its own signpost dropped (the gate sign replaces it)
+	local first
+	for _, child in lobby:GetChildren() do
+		if child.Name == "Helipad" and child:GetAttribute("PadId") == 1 then
+			first = child
+		end
+	end
+	local pad = first:Clone()
+	pad:SetAttribute("PadId", 5)
+	pad:SetAttribute("Nightmare", true)
+	pad:ScaleTo(0.7)
+	local offset = Vector3.new(origin.X + NIGHTMARE_SPOT.X, 0, origin.Z + NIGHTMARE_SPOT.Y) - pad.Pad.Position * Vector3.new(1, 0, 1)
+	pad:PivotTo(pad:GetPivot() + offset)
+	pad:PivotTo(pad:GetPivot() + Vector3.new(0, first.Pad.Position.Y - pad.Pad.Position.Y, 0)) -- scaling lifts it off the deck
+	for _, d in pad:GetDescendants() do
+		if d.Name == "Sign" or d.Name == "SignPost" then
+			d:Destroy()
+		elseif d:IsA("BasePart") and (d.Name == "Ring" or d.Name == "Base") then
+			d.Color = RED
+		elseif d:IsA("BasePart") and (d.Name == "Pad" or d.Name == "Inner") then
+			d.Color = Color3.fromRGB(44, 32, 32)
+		elseif d:IsA("Beam") then
+			d.Color = ColorSequence.new(RED)
+		end
+	end
+	pad.Parent = lobby
+end
+
 function FlightLine.Build(lobby)
 	origin = GameConfig.OurMap.LobbyCenter
 	local old = lobby:FindFirstChild("FlightLine")
@@ -219,6 +311,7 @@ function FlightLine.Build(lobby)
 	end
 	m.Parent = lobby
 	placePads(lobby)
+	buildNightmare(m, lobby)
 	return m
 end
 

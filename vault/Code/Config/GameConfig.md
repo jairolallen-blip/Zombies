@@ -1,6 +1,6 @@
 # GameConfig
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Config/GameConfig.luau` (179 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Config/GameConfig.luau` (180 lines). Don't edit it here: rerun the script.
 
 Part of [[Config]].
 
@@ -48,6 +48,10 @@ Read by both server and client (ReplicatedStorage.Shared.Config.GameConfig).
 - [[ViewmodelController]]
 - [[WeaponController]]
 - [[ZombieService]]
+
+## Mentions
+
+- [[Nightmare config]]
 
 ## Design notes
 

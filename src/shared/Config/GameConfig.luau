@@ -13,10 +13,11 @@ GameConfig.Lobby = {
 	SquadSizes = { 1, 2, 3, 4 }, -- the host's squad-size choices
 	DefaultSquadSize = 4,
 	SquadWaitTime = 20, -- match server: seconds to wait for the rest of the squad after the first arrives
-	-- Locked entries show as "SOON" and can't be picked (MatchService:RunMatch falls back to the first)
+	-- The pad sets the difficulty: the caged Nightmare pad (Map/FlightLine, Config/Nightmare) plays "Nightmare".
+	-- Locked maps show as "SOON" and can't be picked (MatchService:RunMatch falls back to the first)
 	Difficulties = {
 		{ Id = "Normal", Name = "NORMAL" },
-		{ Id = "Hard", Name = "HARD", Locked = true },
+		{ Id = "Nightmare", Name = "NIGHTMARE" },
 	},
 	Maps = {
 		{ Id = "City", Name = "DEAD CITY" },

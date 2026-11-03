@@ -72,7 +72,7 @@ The lobby was quiet and purely functional, so it got a place to hang out and som
 The lobby is for many players now, so no one waits for a pad and every squad gets its **own private server**.
 - **The Flight Line:** a fenced deck north of the courtyard, through a gate where the middle north ruin stood (a "FLIGHT LINE" sign over it). It has **4 helipads** in a 2 × 2 grid, joined by taxi lines, with floodlights at the corners. Pad 1 is the old courtyard helipad, moved; pads 2–4 are copies of it (same glow, edge lights and sign). Each pad model has the attribute `PadId`. Built by `Server/Map/FlightLine`, which `OurLobby.Build` calls last.
 - **One squad per pad:**
-  - The **first player to step on an empty pad is the host.** They pick the mission on the squad panel: squad size 1–4, difficulty (Normal; **Hard is locked, "SOON"**), and map (Dead City; a locked **???** slot for future maps). Choices live in `GameConfig.Lobby`.
+  - The **first player to step on an empty pad is the host.** They pick the mission on the squad panel: squad size 1–4 and map (Dead City; a locked **???** slot for future maps). Choices live in `GameConfig.Lobby`. The pad decides the difficulty: in the middle of the deck a caged red pad behind a chained gate is the [[Nightmare Mode]] queue (opens after 3 normal wins).
   - Others step on until the squad is full; later arrivals get "Pad n is full". If the host steps off, the next in line takes over. An empty pad goes back to the defaults.
   - **The countdown** runs 15s while anyone is on the pad, or 4s once the squad is full. Step off to leave.
   - The pad's sign shows `PAD n · OPEN` or `PAD n · 2/4`.

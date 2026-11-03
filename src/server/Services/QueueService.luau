@@ -1,10 +1,12 @@
 -- QueueService: the Flight Line pads of a lobby server (vault: Lobby.md, map: Server/Map/FlightLine).
 -- Each pad is its own queue:
 --   * the first player to step onto an empty pad is its HOST and picks the mission with
---     Remotes.SetPadOptions (squad size, difficulty, map; choices in GameConfig.Lobby). If the host
+--     Remotes.SetPadOptions (squad size, map; choices in GameConfig.Lobby). If the host
 --     steps off, the next in line takes over. An empty pad goes back to the defaults.
 --   * others can step on until the squad is full; anyone after that is told the pad is full
 --   * the countdown (GameConfig.Lobby) runs while anyone is on the pad and snaps short when it's full
+--   * the pad sets the difficulty: the Nightmare pad (model attribute Nightmare, behind its gate) only
+--     boards players who have unlocked it (Config/Nightmare) and is left out of QUICK PLAY
 --   * at 0 that squad takes off. Live: teleported together into a new reserved server of this place
 --     (MatchService runs the match there). Studio has no teleports, so the run plays in this server
 --     instead, one at a time (the other pads wait).
@@ -25,15 +27,16 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local GameConfig = require(Shared.Config.GameConfig)
 local Remotes = require(Shared.Remotes)
 local GameState = require(Shared.GameState)
+local Nightmare = require(Shared.Config.Nightmare)
 
 local QueueService = {}
 local Services
 local cfg = GameConfig.Lobby
-local pads = {} -- [PadId] = { Id, Part, Members = {Player}, Options, Timer?, Launching }
+local pads = {} -- [PadId] = { Id, Part, Nightmare, Members = {Player}, Options, Timer?, Launching }
 local warnedFull = {} -- [Player] = PadId they were told is full (told once per visit)
 
-local function defaultOptions()
-	return { Size = cfg.DefaultSquadSize, Difficulty = cfg.Difficulties[1].Id, Map = cfg.Maps[1].Id }
+local function defaultOptions(pad)
+	return { Size = cfg.DefaultSquadSize, Difficulty = if pad.Nightmare then "Nightmare" else "Normal", Map = cfg.Maps[1].Id }
 end
 
 local function allowed(list, id)
@@ -99,7 +102,8 @@ function QueueService:Init(services)
 		return
 	end
 	for id, part in Services.MapService:GetPads() do
-		pads[id] = { Id = id, Part = part, Members = {}, Options = defaultOptions() }
+		pads[id] = { Id = id, Part = part, Nightmare = part.Parent:GetAttribute("Nightmare") == true, Members = {} }
+		pads[id].Options = defaultOptions(pads[id])
 	end
 	Services.DataService.ProfileLoaded:Connect(function(player, profile)
 		if profile.TutorialDone then
@@ -124,7 +128,7 @@ function QueueService:Start()
 	end
 end
 
--- Host only. options: any of Size, Difficulty, Map (each checked against GameConfig.Lobby).
+-- Host only. options: any of Size, Map (each checked against GameConfig.Lobby). The pad sets Difficulty.
 function QueueService:SetOptions(player, options)
 	local pad = pads[player:GetAttribute("PadId") or 0]
 	if not pad or pad.Members[1] ~= player or pad.Launching or type(options) ~= "table" then
@@ -135,9 +139,6 @@ function QueueService:SetOptions(player, options)
 		for i = #pad.Members, options.Size + 1, -1 do -- squad shrank below its members: latest off first
 			table.remove(pad.Members, i):SetAttribute("PadId", 0)
 		end
-	end
-	if allowed(cfg.Difficulties, options.Difficulty) then
-		pad.Options.Difficulty = options.Difficulty
 	end
 	if allowed(cfg.Maps, options.Map) then
 		pad.Options.Map = options.Map
@@ -154,7 +155,7 @@ function QueueService:QuickPlay(player)
 	end
 	local best
 	for _, pad in pads do
-		local room = not pad.Launching and #pad.Members < pad.Options.Size
+		local room = not pad.Nightmare and not pad.Launching and #pad.Members < pad.Options.Size
 		if room and (not best or #pad.Members > #best.Members or (#pad.Members == #best.Members and pad.Id < best.Id)) then
 			best = pad
 		end
@@ -178,7 +179,7 @@ function QueueService:_tick(dt)
 			end
 		end
 		if #pad.Members == 0 then
-			pad.Options = defaultOptions()
+			pad.Options = defaultOptions(pad)
 			pad.Timer = nil
 		end
 	end
@@ -189,7 +190,13 @@ function QueueService:_tick(dt)
 		if not pad or not Services.DataService:Get(player) or MatchService:IsInRun(player) then
 			warnedFull[player] = nil
 		elseif (player:GetAttribute("PadId") or 0) == 0 and not pad.Launching then
-			if #pad.Members < pad.Options.Size then
+			local stats = Services.DataService:Get(player).Stats
+			if pad.Nightmare and not Nightmare.Unlocked(stats) then
+				if warnedFull[player] ~= id then
+					warnedFull[player] = id
+					Remotes.Notify:FireClient(player, string.format("Nightmare opens after %d normal wins (%d/%d).", Nightmare.WinsToUnlock, stats.Victories or 0, Nightmare.WinsToUnlock), "Danger")
+				end
+			elseif #pad.Members < pad.Options.Size then
 				table.insert(pad.Members, player)
 				player:SetAttribute("PadId", id)
 				warnedFull[player] = nil
@@ -262,7 +269,7 @@ function QueueService:_publish(pad, busy)
 		Timer = math.max(0, math.ceil(pad.Timer or cfg.IntermissionTime)),
 		Status = status,
 	}))
-	local label = pad.Part.Parent:FindFirstChild("Sign")
+	local label = not pad.Nightmare and pad.Part.Parent:FindFirstChild("Sign") -- NightmareController writes that sign per player
 	label = label and label:FindFirstChildWhichIsA("SurfaceGui")
 	label = label and label:FindFirstChildWhichIsA("TextLabel")
 	if label then

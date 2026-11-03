@@ -13,6 +13,8 @@
 --   the last wave (GameConfig.Waves.TotalWaves) is the boss wave; clearing it wins the run
 --   (tutorial: Config/Tutorial: fewer waves, a weaker boss, its own Gems reward; TutorialService walks
 --   the player through the mechanics)
+--   (Nightmare: Config/Nightmare: tougher zombies, the Nightmare weather and radio, Gems only on a win;
+--   played only when every participant has unlocked it)
 --   ends on victory or when every participant is dead or gone -> Results (Gems, saved) -> lobby
 -- The commander comments on each step over Remotes.Radio (lines in Shared/Config/Radio).
 --
@@ -38,6 +40,7 @@ local Remotes = require(Shared.Remotes)
 local GameState = require(Shared.GameState)
 local Radio = require(Shared.Config.Radio)
 local Tutorial = require(Shared.Config.Tutorial)
+local Nightmare = require(Shared.Config.Nightmare)
 
 local MatchService = {}
 -- a reserved server is one squad's private match (QueueService teleports squads into one)
@@ -48,6 +51,8 @@ local dead = {} -- [Player] = true if their character died during this run
 local spawnToken = {} -- [Player] = latest spawn request (ignore stale Died handlers)
 local running = false
 local tutorial = false -- the current run is a first-time player's tutorial
+local nightmare = false -- the current run is a Nightmare run
+MatchService.ZombieDamageMult = 1 -- read by CombatService:DamagePlayer
 
 local skipVotes = {} -- [Player] = true: voted to skip the cutscene that's playing
 
@@ -217,9 +222,11 @@ function MatchService:SpawnInArena(player, cframe)
 	end)
 end
 
--- Commander line to every run participant (a tutorial uses the "Tutorial<event>" lines where there are any)
+-- Commander line to every run participant (a tutorial / Nightmare run uses its "Tutorial<event>" /
+-- "Nightmare<event>" lines where there are any)
 function MatchService:_radio(event, vars)
-	local text = Radio.Pick(if tutorial and Radio.Lines["Tutorial" .. event] then "Tutorial" .. event else event, vars)
+	local prefix = if tutorial then "Tutorial" elseif nightmare then "Nightmare" else ""
+	local text = Radio.Pick(if Radio.Lines[prefix .. event] then prefix .. event else event, vars)
 	if not text then
 		return
 	end
@@ -447,14 +454,14 @@ function MatchService:_playWave(wave, isBoss)
 	local MapService = Services.MapService
 	local players = #self:GetRunPlayers()
 	local playerMult = 1 + cfg.ExtraPlayerMultiplier * math.max(0, players - 1)
-	local total = math.floor((cfg.BaseCount + cfg.CountPerWave * (wave - 1)) * playerMult * (if isBoss then cfg.BossWaveHordeMult else 1))
-	local healthMult = 1 + cfg.HealthScalePerWave * (wave - 1)
+	local total = math.floor((cfg.BaseCount + cfg.CountPerWave * (wave - 1)) * playerMult * (if isBoss then cfg.BossWaveHordeMult else 1) * (if nightmare then Nightmare.CountMult else 1))
+	local healthMult = (1 + cfg.HealthScalePerWave * (wave - 1)) * (if nightmare then Nightmare.HealthMult else 1)
 	local burst = 1 + math.floor(wave / cfg.BurstEvery) -- zombies per spawn group (vault: Spawning.md)
 	local spawnWindow = cfg.SpawnSeconds + cfg.SpawnSecondsPerWave * wave
 	local interval = math.clamp(spawnWindow * burst / math.max(total, 1), cfg.MinSpawnInterval, cfg.SpawnInterval)
 
 	if isBoss then
-		self:_bossIntro(playerMult * (if tutorial then Tutorial.BossHealthMult else 1)) -- the tutorial's "young" Titan
+		self:_bossIntro(playerMult * (if tutorial then Tutorial.BossHealthMult elseif nightmare then Nightmare.BossHealthMult else 1)) -- the tutorial's "young" Titan
 	end
 
 	local toSpawn = total
@@ -483,7 +490,8 @@ end
 
 -- Plays one run with these players. options (all optional, from the pad or the teleport data):
 -- Difficulty, Map (validated against GameConfig.Lobby), Tutorial (honoured only for one player whose
--- profile hasn't done it, so it can't be farmed). Returns when the run is over and Results are done.
+-- profile hasn't done it, so it can't be farmed). Difficulty "Nightmare" needs every participant to
+-- have unlocked it (Config/Nightmare), else the run is Normal. Returns when the run is over and Results are done.
 function MatchService:RunMatch(participants, options)
 	options = options or {}
 	local cfg = GameConfig.Waves
@@ -502,12 +510,18 @@ function MatchService:RunMatch(participants, options)
 		end
 		return list[1].Id
 	end
-	GameState:SetAttribute("Difficulty", pick(lobbyCfg.Difficulties, options.Difficulty))
+	nightmare = not tutorial and pick(lobbyCfg.Difficulties, options.Difficulty) == "Nightmare"
+	for _, player in participants do
+		local p = Services.DataService:Get(player)
+		nightmare = nightmare and p ~= nil and Nightmare.Unlocked(p.Stats)
+	end
+	self.ZombieDamageMult = if nightmare then Nightmare.ZombieDamageMult else 1
+	GameState:SetAttribute("Difficulty", if nightmare then "Nightmare" else "Normal")
 	GameState:SetAttribute("MapId", pick(lobbyCfg.Maps, options.Map))
 	GameState:SetAttribute("Tutorial", tutorial)
 	-- this run's weather (Config/Conditions). The attribute goes first so PostFXController steps aside
 	-- before the new lighting arrives.
-	local condition = if tutorial then Conditions.List[1] else Conditions.Pick()
+	local condition = if tutorial then Conditions.List[1] elseif nightmare then Conditions.ById.Nightmare else Conditions.Pick()
 	GameState:SetAttribute("Condition", condition.Id)
 	task.delay(0.5, Services.MapService.ApplyAtmosphere, Services.MapService, condition)
 	if condition ~= Conditions.List[1] then -- only announce weather that isn't the usual sunset
@@ -518,7 +532,7 @@ function MatchService:RunMatch(participants, options)
 	if tutorial then
 		task.spawn(Services.TutorialService.Run, Services.TutorialService, participants[1])
 	end
-	local totalWaves = if tutorial then Tutorial.Waves else cfg.TotalWaves
+	local totalWaves = if tutorial then Tutorial.Waves elseif nightmare then Nightmare.TotalWaves else cfg.TotalWaves
 	GameState:SetAttribute("TotalWaves", totalWaves)
 
 	running = true
@@ -575,7 +589,8 @@ function MatchService:RunMatch(participants, options)
 		end
 	end
 	self:_endRun(wave, wavesCleared, wavesCleared >= totalWaves)
-	running, tutorial = false, false
+	running, tutorial, nightmare = false, false, false
+	self.ZombieDamageMult = 1
 	GameState:SetAttribute("Tutorial", false)
 	GameState:SetAttribute("Phase", "Lobby")
 	GameState:SetAttribute("Wave", 0)
@@ -595,6 +610,9 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 		if player.Parent then
 			local kills = player:GetAttribute("Kills") or 0
 			local gems = if tutorial then Tutorial.RewardGems else math.floor(wavesCleared * econ.GemsPerWaveCleared + kills * econ.GemsPerKill + (if victory then econ.VictoryGems else 0))
+			if nightmare then
+				gems = if victory then math.floor(gems * Nightmare.GemsMult) else 0 -- Nightmare pays survivors only
+			end
 			if not tutorial and player:GetAttribute("Pass_DoubleGems") then
 				gems *= 2 -- 2x GEMS game pass (StoreService)
 			end
@@ -612,8 +630,11 @@ function MatchService:_endRun(wave, wavesCleared, victory)
 			if victory and not tutorial then -- a training run isn't a win
 				DataService:AddStat(player, "Victories")
 				DataService:AddStat(player, "Wins_" .. (player:GetAttribute("ClassId") or "Survivor"))
+				if nightmare then
+					DataService:AddStat(player, "NightmareWins")
+				end
 			end
-			Remotes.RunResults:FireClient(player, { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest, Victory = victory, Tutorial = tutorial })
+			Remotes.RunResults:FireClient(player, { Wave = wave, WavesCleared = wavesCleared, Kills = kills, Gems = gems, NewBest = newBest, Victory = victory, Tutorial = tutorial, Nightmare = nightmare })
 		end
 	end
 	task.wait(if tutorial then Tutorial.ResultsTime else GameConfig.Match.ResultsTime)

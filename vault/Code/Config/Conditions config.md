@@ -1,6 +1,6 @@
 # Conditions config
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Config/Conditions.luau` (91 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Config/Conditions.luau` (112 lines). Don't edit it here: rerun the script.
 
 Part of [[Config]].
 
@@ -13,6 +13,7 @@ MapService:ApplyAtmosphere lays its Atmosphere fields over GameConfig.OurMap.Atm
 keep the sunset values). Client/Controllers/ConditionsController draws Rain around the camera and puts a
 flashlight on every player while Flashlights is set. PostFXController's sunset grade only runs on Sunset.
 OFF for now (2026-11-02, the owner prefers the sunset look): every weather but Sunset has Weight 0.
+"Nightmare" is never rolled: MatchService uses it for every Nightmare run (Config/Nightmare).
 ```
 
 ## Uses
@@ -23,6 +24,10 @@ OFF for now (2026-11-02, the owner prefers the sunset look): every weather but S
 
 - [[ConditionsController]]
 - [[MatchService]]
+
+## Mentions
+
+- [[Nightmare config]]
 
 ## Design notes
 
