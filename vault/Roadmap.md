@@ -36,3 +36,5 @@ These come from the current Studio game and can be searched in Graphify.
 - `MODEL REFERENCES/`: guns (pistol, SMG, shotgun, AR/AK, sniper, Uzi) and zombies for phases 4 and 5.
 
 **Store page art** (2026-11-04): three icon concepts and a 1920x1080 thumbnail, all real in-game shots, are in `thumbnails/` (made with `tools/thumbnail-compose.ps1`). Final pick (owner): **last stand**, `icon-last-stand-final.png` and `thumbnail-last-stand-final.png`. Suggested title: **[🧟] Survive 1,000,000 Zombies**, swapping the emoji for an update tag on each update.
+
+**Gameplay trailer** (2026-11-04): `tools/TrailerDirector.luau` (in Studio: `ReplicatedStorage.DevTools.TrailerDirector`) plays a 61s scripted trailer in Play for screen recording. Shots: foggy street, lone zombie, rising from the ground, dusk flyover, crossroads last stand, crane over the horde, Grave Titan, Bloom Mother, title card. Music: APM "Growing Tension (a 60)". Record it, crop to the 16:9 box, upload as a video thumbnail (Roblox wants real gameplay; title cards are fine).
