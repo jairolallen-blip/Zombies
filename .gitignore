@@ -10,3 +10,6 @@ ServerPackages/
 vault/.obsidian/workspace*.json
 vault/.obsidian/cache
 vault/.trash/
+
+# rendered trailer videos (deliverables, too big for git)
+thumbnails/*.mp4

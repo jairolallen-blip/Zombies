@@ -113,14 +113,14 @@ local function animate(p, pose, speed, extraY)
 	end
 end
 
--- a shot zombie topples back and sinks
+-- a shot zombie pitches forward and sinks
 local function topple(p)
 	p.Dead = true
 	local start = os.clock()
 	task.spawn(function()
 		while os.clock() - start < 0.55 and p.Model.Parent do
 			local u = (os.clock() - start) / 0.55
-			p.Tilt = CFrame.Angles(math.rad(-85) * u, 0, 0)
+			p.Tilt = CFrame.Angles(math.rad(80) * u, 0, 0) -- forward, away from the column behind
 			animate(p, "idle", 0, -u * 1.2)
 			RunService.RenderStepped:Wait()
 		end
@@ -168,10 +168,10 @@ end
 
 local function shoot(s, at)
 	local dir = (at - s.Tip).Unit
-	local flash = new("Part", { Anchored = true, CanCollide = false, CanQuery = false, Shape = Enum.PartType.Ball, Material = Enum.Material.Neon, Color = Color3.fromRGB(255, 225, 150), Size = Vector3.one * 0.9, CFrame = CFrame.new(s.Tip + dir * 0.4), Parent = stage })
-	new("PointLight", { Color = Color3.fromRGB(255, 190, 110), Range = 14, Brightness = 4, Parent = flash })
+	local flash = new("Part", { Anchored = true, CanCollide = false, CanQuery = false, Shape = Enum.PartType.Ball, Material = Enum.Material.Neon, Color = Color3.fromRGB(255, 225, 150), Size = Vector3.one * 0.45, CFrame = CFrame.new(s.Tip + dir * 0.3), Parent = stage })
+	new("PointLight", { Color = Color3.fromRGB(255, 190, 110), Range = 12, Brightness = 2.5, Parent = flash })
 	local length = (at - s.Tip).Magnitude
-	local tracer = new("Part", { Anchored = true, CanCollide = false, CanQuery = false, Material = Enum.Material.Neon, Color = Color3.fromRGB(255, 225, 150), Size = Vector3.new(0.09, 0.09, length), CFrame = CFrame.lookAt(s.Tip + dir * length / 2, at), Parent = stage })
+	local tracer = new("Part", { Anchored = true, CanCollide = false, CanQuery = false, Material = Enum.Material.Neon, Color = Color3.fromRGB(255, 225, 150), Size = Vector3.new(0.06, 0.06, length), CFrame = CFrame.lookAt(s.Tip + dir * length / 2, at), Parent = stage })
 	task.delay(0.05, flash.Destroy, flash)
 	task.delay(0.07, tracer.Destroy, tracer)
 end
@@ -285,7 +285,7 @@ local function move(t, t0, t1, pos0, pos1, look0, look1, shake)
 	camera.CFrame = cf
 end
 
-function TrailerDirector.Play(startAt)
+function TrailerDirector.Play(startAt, hold) -- hold: seconds of black before and after (for recording)
 	previews = ReplicatedStorage:WaitForChild("ZombiePreviews", 15)
 	assert(previews, "TrailerDirector: no ZombiePreviews (run it in Play)")
 
@@ -320,6 +320,50 @@ function TrailerDirector.Play(startAt)
 	local cc = new("ColorCorrectionEffect", { Name = "TRAILER_CC", Contrast = 0.25, Saturation = 0.18, Parent = Lighting })
 	stage = new("Folder", { Name = "TRAILER_STAGE", Parent = workspace })
 	buildGui()
+
+	-- no clipping into the city: hide (locally, put back at the end) the parked cars and grass clumps that
+	-- stand in a horde lane, the Titan's walk or the Bloom Mother's spot (found with a geometry check)
+	local arena = workspace:FindFirstChild("OurMap") and workspace.OurMap:FindFirstChild("Arena")
+	if arena then
+		local overlap = OverlapParams.new()
+		overlap.FilterType = Enum.RaycastFilterType.Include
+		overlap.FilterDescendantsInstances = { arena }
+		local hidden = {}
+		local function hide(inst)
+			if hidden[inst] then
+				return
+			end
+			hidden[inst] = true
+			for _, d in inst:GetDescendants() do
+				if d:IsA("BasePart") or d:IsA("Decal") or d:IsA("Texture") then
+					saveProps(d, { "Transparency" })
+					d.Transparency = 1
+				elseif d:IsA("SurfaceGui") or d:IsA("BillboardGui") or d:IsA("Light") then
+					saveProps(d, { "Enabled" })
+					d.Enabled = false
+				end
+			end
+			if inst:IsA("BasePart") then
+				saveProps(inst, { "Transparency" })
+				inst.Transparency = 1
+			end
+		end
+		for _, box in {
+			{ Vector3.new(932, 5, 114), Vector3.new(130, 10, 12.4) }, -- west lane
+			{ Vector3.new(1050, 5, 114), Vector3.new(84, 10, 12.4) }, -- east lane
+			{ Vector3.new(1000, 5, 79), Vector3.new(12.4, 10, 54) }, -- north lane
+			{ Vector3.new(1086, 11, 114), Vector3.new(32, 22, 20) }, -- the Titan (and the lamp arm over its walk)
+			{ Vector3.new(1000, 11, 62.5), Vector3.new(20, 20, 20) }, -- the Bloom Mother
+		} do
+			for _, p in workspace:GetPartBoundsInBox(CFrame.new(box[1]), box[2], overlap) do
+				if p.Parent and (p.Parent.Name == "Car" or (p.Parent.Name == "StreetLamp" and box[1].X > 1080)) then
+					hide(p.Parent)
+				elseif p.Name == "Grass" then
+					hide(p)
+				end
+			end
+		end
+	end
 	setLook({})
 
 	-- fires along the streets, as in the icon
@@ -334,32 +378,41 @@ function TrailerDirector.Play(startAt)
 
 	-- the cast
 	local lone = puppet("Shambler", Vector3.new(942, GROUND, 113), Vector3.new(1000, GROUND, 114))
-	local risers = { puppet("Rotter", Vector3.new(936, GROUND, 111.5)), puppet("Shambler", Vector3.new(941, GROUND, 116)) }
+	local risers = { puppet("Rotter", Vector3.new(936, GROUND, 111.5)), puppet("Shambler", Vector3.new(944, GROUND, 117)) }
 	for _, r in risers do
 		r.Look = Vector3.new(925, GROUND, 109)
 		r.Model.Parent = nil
 	end
 	local squad = {
-		survivor("Survivor", CROSS + Vector3.new(-1.2, 0, 0.4), CROSS + Vector3.new(-40, 0, 0)),
-		survivor("Engineer", CROSS + Vector3.new(0.9, 0, 1.3), CROSS + Vector3.new(40, 0, 0)),
-		survivor("Bruiser", CROSS + Vector3.new(0.3, 0, -1.3), CROSS + Vector3.new(0, 0, -40)),
+		-- back to back, a body's width apart so nobody overlaps
+		survivor("Survivor", CROSS + Vector3.new(-2.8, 0, 1.4), CROSS + Vector3.new(-40, 0, 0)),
+		survivor("Engineer", CROSS + Vector3.new(2.8, 0, 1.9), CROSS + Vector3.new(40, 0, 0)),
+		survivor("Bruiser", CROSS + Vector3.new(0.2, 0, -3.2), CROSS + Vector3.new(0, 0, -40)),
 	}
 	for _, s in squad do
 		s.Model.Parent = nil
 	end
 	-- horde lanes into the crossroads: west and east along the ring road, north down the avenue
 	local lanes = {
-		{ Dir = Vector3.new(-1, 0, 0), Side = Vector3.new(0, 0, 1), Shooter = 1, Count = 70, Far = 115 },
-		{ Dir = Vector3.new(1, 0, 0), Side = Vector3.new(0, 0, 1), Shooter = 2, Count = 30, Far = 80 },
-		{ Dir = Vector3.new(0, 0, -1), Side = Vector3.new(1, 0, 0), Shooter = 3, Count = 30, Far = 50 },
+		{ Dir = Vector3.new(-1, 0, 0), Side = Vector3.new(0, 0, 1), Shooter = 1, Count = 40, Far = 100 },
+		{ Dir = Vector3.new(1, 0, 0), Side = Vector3.new(0, 0, 1), Shooter = 2, Count = 32, Far = 79 },
+		{ Dir = Vector3.new(0, 0, -1), Side = Vector3.new(1, 0, 0), Shooter = 3, Count = 20, Far = 50 },
 	}
-	local mix = { "Shambler", "Shambler", "Runner", "Runner", "Bloater", "Brute", "Shambler" }
+	local mix = { "Shambler", "Shambler", "Runner", "Rotter" } -- the slim ones (measured: <= 4.2 wide, ~4.6 deep with arms out)
+	-- no clipping: each lane is a grid of 4 columns 2.2 studs apart (clear of the lamp poles; same-phase columns 4.4 apart), neighbouring columns staggered half a
+	-- row, and the whole lane moves at one speed, so nobody can walk into anybody; the front is shot down
+	-- before it reaches the squad, and the fallen rejoin at the back of their own column
+	local COLS = 4
 	local horde = {}
 	for li, lane in lanes do
+		lane.Gap = 10 -- rows 10 apart, neighbouring columns 5 apart: more than one body depth
+		lane.Speed = 7
 		for i = 1, lane.Count do
+			local col, row = (i - 1) % COLS, (i - 1) // COLS
 			local p = puppet(mix[math.random(#mix)], CROSS, CROSS)
-			p.Lane, p.D, p.Lat, p.Hold = li, 12 + (i / lane.Count) * lane.Far + math.random() * 4, (math.random() - 0.5) * 11, 9 + math.random() * 4
-			p.Speed = if p.Id == "Runner" then 11 elseif p.Id == "Brute" then 5 else 7
+			p.Lane, p.Col = li, col
+			p.Lat = (col - (COLS - 1) / 2) * 2.2 + (math.random() - 0.5) * 0.2
+			p.D = 16 + row * lane.Gap + (col % 2) * lane.Gap * 0.5
 			p.Model.Parent = nil
 			table.insert(horde, p)
 		end
@@ -380,6 +433,7 @@ function TrailerDirector.Play(startAt)
 	at(0, function() fade(0, 0) fade(1, 2.2) end)
 	at(1.4, function() caption("PORT HARROW", 3.6, { Size = 0.05, Position = UDim2.fromScale(0.5, 0.5) }) end)
 	at(3.2, function() caption("41 DAYS AFTER THE BLOOM", 2.6, { Size = 0.028, Position = UDim2.fromScale(0.5, 0.58), Font = Enum.Font.GothamBold }) end)
+	at(6.5, function() lone.Pos = Vector3.new(940, GROUND, 113) end) -- shot 2: it walks in from here
 	at(7.5, function() sfx("Groan1", 1.4, 0.9) end)
 	at(8.6, function() caption("NO ONE CAME BACK.", 2.6) end)
 	at(10.5, function() sfx("Groan2", 1.2, 0.8) end)
@@ -391,7 +445,7 @@ function TrailerDirector.Play(startAt)
 		setLook({ Clock = 18.1, Brightness = 1.8, Outdoor = Color3.fromRGB(150, 110, 120), Ambient = Color3.fromRGB(70, 55, 70), Fog = Color3.fromRGB(170, 125, 125), Decay = Color3.fromRGB(90, 60, 80), Exposure = 0.1 })
 	end)
 	at(19.2, function() caption("UNTIL NOW.", 2.4) end)
-	at(23, function() setLook({}) if heli then heli:Destroy() end for _, s in squad do s.Model.Parent = stage end for _, p in horde do p.Model.Parent = stage end end)
+	at(23, function() setLook({}) lone.Model.Parent = nil for _, r in risers do r.Model.Parent = nil end if heli then heli:Destroy() end for _, s in squad do s.Model.Parent = stage end for _, p in horde do p.Model.Parent = stage end end)
 	at(25, function() caption("HOLD THE LINE.", 2.6) end)
 	at(34.4, function() caption("1,000,000 OF THEM.", 2.8, { Size = 0.07 }) end)
 	at(38, function() -- the street empties for the Titan
@@ -418,6 +472,9 @@ function TrailerDirector.Play(startAt)
 	at(56.2, function() caption("PLAY NOW", 3.6, { Size = 0.045, Position = UDim2.fromScale(0.5, 0.74), Color = Color3.fromRGB(255, 200, 70) }) end)
 	table.sort(cues, function(a, b) return a.T < b.T end)
 
+	if hold then
+		task.wait(hold) -- black leader while the recorder starts
+	end
 	music.TimePosition = startAt or 0
 	music:Play()
 	clock0 = os.clock() - (startAt or 0)
@@ -440,7 +497,7 @@ function TrailerDirector.Play(startAt)
 		elseif t < 12 then -- 2: the lone zombie shambles up to a low camera
 			camera.FieldOfView = 50
 			move(t, 6.5, 12, Vector3.new(962, 1.7, 113.5), Vector3.new(959, 1.5, 113.6), Vector3.new(945, 4.5, 113), Vector3.new(945, 4.2, 113))
-			lone.Pos = lone.Pos + Vector3.new(dt * 1.5, 0, 0)
+			lone.Pos = Vector3.new(math.min(954, lone.Pos.X + dt * 1.5), lone.Pos.Y, lone.Pos.Z) -- stops short of the lens
 			animate(lone, "run", 0.45)
 		elseif t < 17 then -- 3: they claw out of the ground
 			camera.FieldOfView = 48
@@ -468,14 +525,30 @@ function TrailerDirector.Play(startAt)
 			-- the horde comes on; the squad cuts down the front of each lane
 			for _, p in horde do
 				local lane = lanes[p.Lane]
-				if p.Respawn then
-					p.Respawn, p.D = false, lane.Far * (0.7 + math.random() * 0.3)
+				if p.Respawn then -- rejoin one grid slot behind the back of its own column, once that slot is inside the lane
+					local back
+					for _, q in horde do
+						if q ~= p and q.Lane == p.Lane and q.Col == p.Col and not q.Respawn then
+							back = math.max(back or 0, q.D)
+						end
+					end
+					local d = (back or (lane.Far + 21 - lane.Gap)) + lane.Gap
+					if d <= lane.Far + 21 then -- the lane end (the west lane meets a building at 124)
+						p.Respawn, p.D = false, d
+						p.Model.Parent = stage
+					else
+						p.Model.Parent = nil -- no free slot yet: waits off screen
+					end
 				end
-				if not p.Dead then
-					p.D = math.max(p.Hold, p.D - p.Speed * dt)
+				if not p.Dead and not p.Respawn then
+					p.D -= lane.Speed * dt
 					p.Pos = CROSS + lane.Dir * p.D + lane.Side * p.Lat
 					p.Look = CROSS + lane.Side * p.Lat * 0.3
-					animate(p, "run", p.Speed / 9)
+					animate(p, "run", lane.Speed / 9)
+					if p.D < 10 then -- never reaches the squad
+						shoot(squad[lane.Shooter], p.Pos + Vector3.new(0, 3.5, 0))
+						topple(p)
+					end
 				end
 			end
 			if t - lastShot > 0.09 then
@@ -506,7 +579,7 @@ function TrailerDirector.Play(startAt)
 			titan.Pos = titan.Pos + Vector3.new(-dt * 1.4, 0, 0)
 			titanGlow.Position = titan.Pos + Vector3.new(-13, 7, -3) -- firelight on its face
 			animate(titan, "run", 0.25)
-		elseif t < 50.6 then -- 8: the Nightmare
+		elseif t < 51 then -- 8: the Nightmare (held until the fade to the title is done)
 			camera.FieldOfView = 58
 			move(t, 45, 50.6, Vector3.new(1000, 3, 98), Vector3.new(1000, 4.5, 84), Vector3.new(1000, 12, 66), Vector3.new(1000, 13, 66), 0.003)
 			animate(mother, "idle", 0.4)
@@ -523,6 +596,9 @@ function TrailerDirector.Play(startAt)
 	repeat
 		task.wait(0.5)
 	until done
+	if hold then
+		task.wait(hold) -- black tail while the recorder stops
+	end
 	-- put everything back
 	music:Destroy()
 	stage:Destroy()
