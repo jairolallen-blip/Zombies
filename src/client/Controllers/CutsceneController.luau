@@ -393,13 +393,20 @@ local function dropView(camera, doorDir, Sound)
 	end)
 end
 
-function CutsceneController:Play()
+function CutsceneController:Play(late)
 	local start, duration = GameState:GetAttribute("DeployStart"), GameState:GetAttribute("DeployDuration")
 	local ok, raw = pcall(HttpService.JSONDecode, HttpService, GameState:GetAttribute("DeployPath") or "")
 	if playing or not ok or type(raw) ~= "table" or #raw < 4 or not start or not duration then
 		return
 	end
 	playing = true
+	-- the ride runs on this client's own clock: GetServerTimeNow() can be seconds off right after joining a
+	-- server (a squad has just teleported in), which ended the ride on its first frame and left players
+	-- hanging above the map. Server time only says how late we are, capped: next to nothing when we saw
+	-- Deploying flip, up to most of the ride when this client finished loading after the drop began.
+	local lateBy = math.clamp(workspace:GetServerTimeNow() - start, 0, if late then duration - 2 else 0.5)
+	local localStart = os.clock() - lateBy
+	print(string.format("[Cutscene] ride starts (%s), %.1fs in", if late then "late join" else "on time", lateBy))
 	local points = {}
 	for i, p in raw do
 		points[i] = Vector3.new(p[1], p[2], p[3])
@@ -464,8 +471,12 @@ function CutsceneController:Play()
 
 	RunService:BindToRenderStep("SAMZ_Cutscene", Enum.RenderPriority.Camera.Value + 2, function()
 		local now = workspace:GetServerTimeNow()
-		start = GameState:GetAttribute("DeployStart") or start -- a squad skip moves it back (MatchService:_skippableWait)
-		local t = math.clamp((now - start) / duration, 0, 1)
+		local moved = GameState:GetAttribute("DeployStart") or start
+		if moved ~= start then -- a squad skip moves DeployStart back (MatchService:_skippableWait): jump as far
+			localStart -= start - moved
+			start = moved
+		end
+		local t = math.clamp((os.clock() - localStart) / duration, 0, 1)
 		if t >= 1 or player:GetAttribute("InRun") ~= true or player:GetAttribute("Deploying") ~= true then
 			finish()
 			return
@@ -538,11 +549,11 @@ function CutsceneController:Init(controllers)
 end
 
 -- A squad member whose client finished loading after the drop began (live match servers start once every
--- profile has loaded on the server, not every client) never sees Deploying change: join the ride now. Play
--- follows DeployStart, so they pick it up at the right moment instead of hanging above the map.
+-- profile has loaded on the server, not every client) never sees Deploying change: join the ride now, as
+-- far in as it already is, instead of hanging above the map.
 function CutsceneController:Start()
 	if player:GetAttribute("Deploying") then
-		self:Play()
+		self:Play(true)
 	end
 end
 

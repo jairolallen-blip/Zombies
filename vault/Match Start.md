@@ -43,4 +43,4 @@ Players who have finished a run can hold Space (gamepad X, or the on-screen butt
 
 Back to [[Home]].
 
-**Late-loading squad members** (2026-11-04): on a live match server the drop starts once every profile has loaded, which can be before a slow client finishes loading. `CutsceneController:Start` checks for a ride already under way and joins it at the right moment, so nobody hangs above the map waiting for the drop.
+**Late-loading squad members** (2026-11-04): on a live match server the drop starts once every profile has loaded, which can be before a slow client finishes loading. `CutsceneController:Start` checks for a ride already under way and joins it at the right moment, so nobody hangs above the map waiting for the drop. The ride is timed on each player's own clock, since a client's server clock can be seconds off just after joining a server; the console shows `[Cutscene] ride starts (...)` on every ride.
