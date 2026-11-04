@@ -89,13 +89,18 @@ end
 local function torsoDetails(torso, look, build, s, rng)
 	local size = torso.Size
 	local front = -(size.Z / 2 + 0.03 * s)
+	-- front details stack on separate depth layers (0.015 x scale apart) so none share a plane: coplanar
+	-- overlapping faces z-fight. Front faces: torn chest 0.025, stains 0.04 / 0.055, ribs 0.075, cracks 0.085+
+	local function layer(depth)
+		return front - depth * s
+	end
 	if build == "Normal" or build == "Lean" or build == "Hulk" then
 		-- torn shirt: exposed ribs on one side of the chest
 		if rng:NextNumber() < 0.65 then
 			local x = (if rng:NextNumber() < 0.5 then -1 else 1) * size.X * 0.22
 			stick(torso, "TornChest", Vector3.new(size.X * 0.42, size.Y * 0.5, 0.05 * s), CFrame.new(x, size.Y * 0.08, front), BLOOD)
 			for r = 0, 2 do
-				stick(torso, "Rib", Vector3.new(size.X * 0.36, 0.1 * s, 0.06 * s), CFrame.new(x, size.Y * (0.24 - r * 0.15), front - 0.02 * s), BONE)
+				stick(torso, "Rib", Vector3.new(size.X * 0.36, 0.1 * s, 0.06 * s), CFrame.new(x, size.Y * (0.24 - r * 0.15), layer(0.045)), BONE)
 			end
 		end
 		-- ragged hem hanging over the hips
@@ -107,8 +112,8 @@ local function torsoDetails(torso, look, build, s, rng)
 			end
 		end
 	end
-	for _ = 1, rng:NextInteger(1, 2) do -- blood stains, front or back
-		local z = if rng:NextNumber() < 0.6 then front else -front
+	for k = 1, rng:NextInteger(1, 2) do -- blood stains, front or back, each on its own layer
+		local z = if rng:NextNumber() < 0.6 then layer(0.015 * k) else -layer(0.015 * k)
 		local w = rng:NextNumber(0.35, 0.6) * s
 		stick(torso, "Stain", Vector3.new(w, w * 0.8, 0.05 * s), CFrame.new(rng:NextNumber(-0.5, 0.5) * size.X * 0.6, rng:NextNumber(-0.4, 0.3) * size.Y, z), BLOOD)
 	end
@@ -129,8 +134,8 @@ local function torsoDetails(torso, look, build, s, rng)
 		for _, x in { -1, 1 } do
 			stick(torso, "BonePlate", Vector3.new(size.X * 0.42, 0.6 * s, size.Z * 1.15), CFrame.new(x * size.X * 0.42, size.Y * 0.5, 0) * CFrame.Angles(0, 0, -x * 0.3), BONE, Enum.Material.Slate)
 		end
-		for n = 1, 4 do -- glowing cracks
-			local crack = stick(torso, "Crack", Vector3.new(0.12 * s, rng:NextNumber(0.5, 1.1) * s, 0.05 * s), CFrame.new(rng:NextNumber(-0.4, 0.4) * size.X, rng:NextNumber(-0.3, 0.3) * size.Y, front) * CFrame.Angles(0, 0, rng:NextNumber(-0.8, 0.8)), look.Eyes, Enum.Material.Neon)
+		for n = 1, 4 do -- glowing cracks, each on its own layer (they cross each other)
+			local crack = stick(torso, "Crack", Vector3.new(0.12 * s, rng:NextNumber(0.5, 1.1) * s, 0.05 * s), CFrame.new(rng:NextNumber(-0.4, 0.4) * size.X, rng:NextNumber(-0.3, 0.3) * size.Y, layer(0.06 + 0.015 * n)) * CFrame.Angles(0, 0, rng:NextNumber(-0.8, 0.8)), look.Eyes, Enum.Material.Neon)
 			crack.CastShadow = false
 		end
 	end
@@ -604,7 +609,9 @@ function ZombieModels.Build(typeId, def, cf)
 		local limb = motor(newPart(side[1], arm, look.Skin), joint, joint * CFrame.Angles(-(b.ArmPitch or 0), 0, 0) * CFrame.new(0, 0, -arm.Z / 2 + 0.45 * s))
 		local sleeve = if buildName == "Normal" or buildName == "Titan" then rng:NextNumber(0.25, 0.55) else 0
 		if sleeve > 0 then -- torn sleeve near the shoulder
-			stick(limb, "Sleeve", Vector3.new(arm.X + 0.04, arm.Y + 0.04, arm.Z * sleeve), CFrame.new(0, 0, arm.Z / 2 - arm.Z * sleeve / 2), shirt, Enum.Material.Fabric)
+			-- 0.04 longer than the arm at the shoulder end: its end face must not share the arm's end plane
+			-- (coplanar faces z-fight; it flickered at the shoulders)
+			stick(limb, "Sleeve", Vector3.new(arm.X + 0.04, arm.Y + 0.04, arm.Z * sleeve + 0.04), CFrame.new(0, 0, arm.Z / 2 - arm.Z * sleeve / 2 + 0.02), shirt, Enum.Material.Fabric)
 		end
 		if rng:NextNumber() < 0.35 then
 			stick(limb, "Stain", Vector3.new(arm.X + 0.02, arm.Y * 0.5, arm.Z * 0.2), CFrame.new(0, -arm.Y * 0.2, rng:NextNumber(-0.3, 0.2) * arm.Z), BLOOD)
@@ -619,7 +626,10 @@ function ZombieModels.Build(typeId, def, cf)
 		if rng:NextNumber() < 0.35 then
 			stick(limb, "Shin", Vector3.new(leg.X + 0.02, leg.Y * 0.32, leg.Z + 0.02), CFrame.new(0, -leg.Y * 0.22, 0), look.Skin)
 		end
-		stick(limb, "Shoe", Vector3.new(leg.X + 0.06, 0.32 * s, leg.Z + 0.3 * s), CFrame.new(0, -leg.Y / 2 + 0.16 * s, -0.12 * s), SHOE)
+		-- shifted 0.035 outward: its inner side tucks 0.005 inside the leg, so the two shoes never overlap
+		-- between the feet and it can't share a plane with the leg or the torn-shin patch; 0.02 lower so the
+		-- sole doesn't share the leg's bottom plane (or the floor's). Coplanar overlapping faces z-fight.
+		stick(limb, "Shoe", Vector3.new(leg.X + 0.06, 0.32 * s, leg.Z + 0.3 * s), CFrame.new(0.035 * side[2], -leg.Y / 2 + 0.16 * s - 0.02, -0.12 * s), SHOE)
 	end
 
 	horror(model, look, buildName, s, rng)

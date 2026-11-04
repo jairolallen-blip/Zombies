@@ -14,7 +14,7 @@
 --   ZombieService:Spawn(typeId, position, healthMult?, riseTime?) -> Model
 --   ZombieService:SpawnWarned(typeId, position, healthMult?)   red circle first, then it rises (vault: Spawning.md)
 --   ZombieService:GetPendingCount()   warned spawns that haven't risen yet
---   ZombieService:Damage(model, amount, attacker?) -> killed: boolean
+--   ZombieService:Damage(model, amount, attacker?, hitPosition?) -> killed: boolean
 --   ZombieService:Kill(model, attacker?)
 --   ZombieService:Knockback(model, fromPosition, power, stunTime?)
 --   ZombieService:GetInRadius(position, radius) -> {{Model, State, Distance, Position}}
@@ -215,7 +215,7 @@ function ZombieService:GetPendingCount()
 	return pendingCount
 end
 
-function ZombieService:Damage(model, amount, attacker)
+function ZombieService:Damage(model, amount, attacker, hitPosition)
 	local z = alive[model]
 	if not z or z.Dead then
 		return false
@@ -233,6 +233,16 @@ function ZombieService:Damage(model, amount, attacker)
 	if z.Health <= 0 then
 		self:Kill(model, attacker)
 		return true
+	end
+	-- hit feedback: one "ZombieHit" per zombie per 0.08s max (clients flinch + flash the zombie;
+	-- bosses don't flinch but still flash). Skipped on kills - "ZombieDeath" covers those.
+	if os.clock() >= (z.NextHitFx or 0) then
+		z.NextHitFx = os.clock() + 0.08
+		Remotes.Effect:FireAllClients("ZombieHit", {
+			Model = model,
+			Position = hitPosition or z.Root.Position,
+			Flinch = not z.Def.Boss,
+		})
 	end
 	local enrage = z.Def.Enrage
 	if enrage and not z.Enraged and z.Health <= z.MaxHealth * enrage.At then
@@ -409,6 +419,7 @@ end
 -- Fallback: if it hasn't moved for ~0.6s while trying to, it detours sideways briefly.
 local NAV_INTERVAL = 0.25
 local SURROUND_RANGE = 14 -- studs: inside this, zombies spread into slots around their target
+local MIN_GAP = 2.6 -- studs (x zombie scale): closest a zombie may stand to its target
 local losParams = RaycastParams.new()
 losParams.FilterType = Enum.RaycastFilterType.Exclude
 losParams.RespectCanCollide = true
@@ -946,7 +957,7 @@ function ZombieService:_step(_dt)
 				-- surround: near the player, close in on an own slot around them instead of the centre
 				if dist < SURROUND_RANGE and not def.Boss then
 					z.Slot = z.Slot or pickSlot(z, target, math.atan2(-dir.Z, -dir.X))
-					goal = target.Position + Vector3.new(math.cos(z.Slot), 0, math.sin(z.Slot)) * (z.SlotRing or 0) * 4 + Vector3.new(math.cos(z.Slot), 0, math.sin(z.Slot)) * reach * 0.7
+					goal = target.Position + Vector3.new(math.cos(z.Slot), 0, math.sin(z.Slot)) * (z.SlotRing or 0) * 4 + Vector3.new(math.cos(z.Slot), 0, math.sin(z.Slot)) * reach * 0.85
 					local toGoal = Vector3.new(goal.X - root.Position.X, 0, goal.Z - root.Position.Z)
 					goalDist = toGoal.Magnitude
 					if goalDist > 0.05 then
@@ -964,7 +975,9 @@ function ZombieService:_step(_dt)
 						dir = toGoal / goalDist
 					end
 				end
-				local wantsMove = dist > reach * 0.6 and goalDist > 0.6
+				-- stand-off: stop at 0.8 x reach (still inside attack reach) so a zombie's face never ends up
+				-- inside the first-person camera; zombies don't collide with players, so this is the only spacing
+				local wantsMove = dist > reach * 0.8 and goalDist > 0.6
 				local moveDir = if wantsMove then navigate(z, dir, goalDist, goal, now) else flat / dist
 				local spread = if wantsMove and z.Sep then moveDir + z.Sep * 0.9 else nil
 				if spread and spread.Magnitude > 0.2 then
@@ -988,6 +1001,16 @@ function ZombieService:_step(_dt)
 						speed *= 0.4
 					end
 					velocity = Vector2.new(moveDir.X, moveDir.Z) * speed
+				elseif dist < reach * 0.6 and not def.Boss then
+					-- too close (the player walked into it, or it overshot): back out while facing them
+					velocity = Vector2.new(-flat.X / dist, -flat.Z / dist) * def.Speed
+				end
+				-- hard floor: zombies don't collide with players and crowds shove each other inward, so
+				-- never let one stand closer than MIN_GAP x its size (still inside its attack reach); keeps
+				-- its face out of the first-person camera
+				local minGap = MIN_GAP * math.max(s, 1)
+				if dist < minGap and not def.Boss then
+					root.CFrame = root.CFrame + (flat / dist) * (dist - minGap)
 				end
 			end
 			if def.Damage > 0 and dist <= reach and math.abs(offset.Y) < 6 * s and now >= z.NextAttack then

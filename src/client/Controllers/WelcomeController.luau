@@ -12,6 +12,7 @@
 -- Level header (Config/Levels) under the headline: LEVEL n, its rank title and the XP bar; the run report
 -- adds the run's +XP, chips breaking it down, and fills the bar from before the run (results.XPBefore) to
 -- now with LEVEL UP! and a pop at each level gained. The wave tile gets a gold NEW BEST tag.
+-- ReplicatedFirst.JoinCover hides the world until this is built (releaseCover), so the avatar isn't seen first.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -282,6 +283,33 @@ local function tile(parent, label, value, color, order)
 	return f
 end
 
+-- JoinCover (ReplicatedFirst) hides the world from the first frame of the join; fade it once there is
+-- something to see
+local function releaseCover()
+	local cover = player.PlayerGui:FindFirstChild("JoinCover")
+	if not cover then
+		return
+	end
+	local fade = TweenInfo.new(0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	for _, d in cover:GetDescendants() do
+		if d:IsA("Frame") then
+			TweenService:Create(d, fade, { BackgroundTransparency = 1 }):Play()
+		elseif d:IsA("TextLabel") then
+			TweenService:Create(d, fade, { TextTransparency = 1 }):Play()
+		end
+	end
+	task.delay(0.55, cover.Destroy, cover)
+end
+
+-- no welcome screen this join: drop the cover as soon as the character is there to look at
+local function releaseWhenReady()
+	local started = os.clock()
+	while not player.Character and os.clock() - started < 10 do
+		task.wait(0.1)
+	end
+	releaseCover()
+end
+
 -- results: a finished run's RunResults (the run report), or nil for the plain welcome
 function WelcomeController:Show(results)
 	local gui = UIKit.Screen("Welcome")
@@ -520,6 +548,7 @@ function WelcomeController:Show(results)
 	end
 
 	local conn = RunService.RenderStepped:Connect(step)
+	releaseCover() -- the welcome scene is built: fade the join cover off it
 	while not done and not player:GetAttribute("InRun") and gui.Parent do
 		task.wait(0.1)
 	end
@@ -539,6 +568,7 @@ end
 function WelcomeController:Start()
 	-- lobby servers only, once per join, and only for players past the tutorial
 	if GameState:GetAttribute("ServerKind") == "Match" then
+		releaseWhenReady()
 		return
 	end
 	-- a run played on this server (Studio): the report once you're back at the safehouse
@@ -560,6 +590,7 @@ function WelcomeController:Start()
 		task.wait(0.2)
 	end
 	if (not report and ((decode("AchievementsJson").Stats or {}).Runs or 0) < 1) or player:GetAttribute("InRun") then
+		releaseWhenReady()
 		return
 	end
 	if not player.Character then

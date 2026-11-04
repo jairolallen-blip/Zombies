@@ -233,7 +233,7 @@ local function overlay()
 	o.Fade = UIKit.new("Frame", { Size = UDim2.fromScale(1, 1), BackgroundColor3 = Color3.new(0, 0, 0), BorderSizePixel = 0, ZIndex = 5, Parent = gui })
 	o.Title = UIKit.Label({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 40, 1, -26), Size = UDim2.fromOffset(600, 34), Text = "DROP ZONE — CITY SQUARE", TextSize = 30, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 1, ZIndex = 2, Parent = text })
 	o.Sub = UIKit.Label({ AnchorPoint = Vector2.new(0, 1), Position = UDim2.new(0, 40, 1, -60), Size = UDim2.fromOffset(600, 22), Text = "OPERATION LAST LIGHT", TextSize = 18, TextColor3 = UIKit.Theme.Accent, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 1, ZIndex = 2, Parent = text })
-	o.Line = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0.89, -18), Size = UDim2.fromOffset(700, 30), Text = 'PILOT:  "Good luck down there."', TextSize = 26, TextStrokeTransparency = 0.4, TextTransparency = 1, ZIndex = 2, Parent = text })
+	o.Line = UIKit.Label({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 0.89, -18), Size = UDim2.fromOffset(700, 30), Text = 'PILOT:  "Good luck down there."', TextSize = 26, Outline = true, TextTransparency = 1, ZIndex = 2, Parent = text })
 	return o
 end
 
@@ -393,6 +393,19 @@ local function dropView(camera, doorDir, Sound)
 	end)
 end
 
+-- The Deploy* attributes replicate with the join state. A client whose scripts run after the server
+-- already set them (a squad join that lands mid-ride) would otherwise bail out of Play on the missing
+-- values and hang anchored above the map. Wait briefly for all three; give up if the player has landed.
+function CutsceneController:_awaitDeployData()
+	local deadline = os.clock() + 8
+	while player:GetAttribute("Deploying")
+		and (not GameState:GetAttribute("DeployStart") or not GameState:GetAttribute("DeployDuration")
+			or not GameState:GetAttribute("DeployPath"))
+		and os.clock() < deadline do
+		task.wait(0.2)
+	end
+end
+
 function CutsceneController:Play(late)
 	local start, duration = GameState:GetAttribute("DeployStart"), GameState:GetAttribute("DeployDuration")
 	local ok, raw = pcall(HttpService.JSONDecode, HttpService, GameState:GetAttribute("DeployPath") or "")
@@ -543,7 +556,12 @@ function CutsceneController:Init(controllers)
 	Controllers = controllers
 	player:GetAttributeChangedSignal("Deploying"):Connect(function()
 		if player:GetAttribute("Deploying") then
-			task.spawn(self.Play, self)
+			task.spawn(function()
+				self:_awaitDeployData() -- the deploy attributes can lag the Deploying flip on a fresh client
+				if player:GetAttribute("Deploying") then
+					self.Play(self)
+				end
+			end)
 		end
 	end)
 end
@@ -553,8 +571,12 @@ end
 -- far in as it already is, instead of hanging above the map.
 function CutsceneController:Start()
 	if player:GetAttribute("Deploying") then
-		self:Play(true)
+		self:_awaitDeployData() -- a client that finished loading mid-ride may not have the deploy attributes yet
+		if player:GetAttribute("Deploying") then
+			self:Play(true)
+		end
 	end
 end
+
 
 return CutsceneController

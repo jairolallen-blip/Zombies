@@ -158,6 +158,18 @@ function ThrowController:Init(controllers)
 			return
 		end
 		local windup, duration = data.Windup or 0.32, data.Duration or 0.8
+		-- pin pull now, whoosh at release (2D for you, 3D at other throwers)
+		local Sound = Controllers.SoundController
+		local root = character:FindFirstChild("HumanoidRootPart")
+		local function play(name)
+			if character == player.Character then
+				Sound:Play(name)
+			elseif root and root.Parent then
+				Sound:PlayAt(name, root.Position)
+			end
+		end
+		play("GrenadePin")
+		task.delay(windup * 0.85, play, "Throw")
 		if character == player.Character and Controllers.CameraController:IsActive() then
 			Controllers.ViewmodelController:PlayThrow(windup, duration)
 		else

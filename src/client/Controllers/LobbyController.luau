@@ -30,16 +30,27 @@ function LobbyController:Rebuild()
 	ui.Menu:Refresh()
 end
 
+local resultsShownAt = 0
+
 function LobbyController:ShowResults(results)
 	ui.ResultsTitle.Text = if results.Tutorial then "TRAINING DONE" elseif results.Victory then "VICTORY" elseif results.NewBest and results.Wave > 1 then "NEW BEST!" else "OVERRUN"
 	ui.ResultsTitle.TextColor3 = if results.Tutorial then T.Accent elseif results.Victory then T.Cash elseif results.NewBest and results.Wave > 1 then T.Accent else T.Danger
 	local reached = if results.Victory and results.Nightmare then "You survived the Nightmare" elseif results.Victory then string.format("Survived all %d waves", results.WavesCleared) else string.format("Reached wave %d", results.Wave)
 	ui.ResultsBody.Text = string.format("%s\nZombies killed: %s", reached, Util.FormatNumber(results.Kills))
-	ui.ResultsGems.Text = if results.Nightmare and not results.Victory then "NO GEMS THIS TIME" else "+ ◆ " .. Util.FormatNumber(results.Gems) .. " Gems"
+	ui.ResultsGems.Text = if results.Nightmare and not results.Victory then "NO GEMS THIS TIME" else "+ " .. Util.FormatNumber(results.Gems) .. " Gems"
 	ui.Results.Visible = true
+	local shown = os.clock()
+	resultsShownAt = shown
 	task.delay(15, function()
-		ui.Results.Visible = false
+		if resultsShownAt == shown then -- a newer result keeps its own 15s
+			ui.Results.Visible = false
+		end
 	end)
+end
+
+-- CameraController frees the cursor while this is open, so CONTINUE is clickable mid-run too
+function LobbyController:IsResultsOpen()
+	return ui.Results ~= nil and ui.Results.Visible
 end
 
 -- Squad panel (shown on a pad): one row of choice buttons per mission setting
@@ -52,7 +63,7 @@ function LobbyController:_buildSquadPanel()
 	local cfg = GameConfig.Lobby
 	ui.Squad = UIKit.Panel({ Name = "Squad", AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -24), Size = UDim2.fromOffset(560, 196), Visible = false, Parent = ui.Root })
 	UIKit.Padding(14).Parent = ui.Squad
-	ui.SquadTitle = UIKit.Label({ Size = UDim2.new(0.6, 0, 0, 30), TextSize = 26, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = ui.Squad })
+	ui.SquadTitle = UIKit.Label({ Size = UDim2.new(0.6, 0, 0, 30), TextSize = 26, TextColor3 = T.N100, TextXAlignment = Enum.TextXAlignment.Left, Parent = ui.Squad })
 	ui.SquadTimer = UIKit.Label({ Position = UDim2.fromScale(0.6, 0), Size = UDim2.new(0.4, 0, 0, 30), TextSize = 24, TextColor3 = T.Cash, TextXAlignment = Enum.TextXAlignment.Right, Parent = ui.Squad })
 	ui.Choices = {} -- { Button, Key, Value, Locked }
 	ROWS[1].List = {}
@@ -85,7 +96,7 @@ end
 -- pad: decoded GameState "Pad<id>" (QueueService:_publish)
 function LobbyController:_showSquad(padId, pad)
 	ui.IsHost = pad.HostId == player.UserId
-	ui.SquadTitle.Text = string.format("%s  ·  SQUAD %d/%d", if pad.Difficulty == "Nightmare" then "NIGHTMARE" else "PAD " .. padId, pad.Count, pad.Size)
+	ui.SquadTitle.Text = string.format("%s  ·  SQUAD %d/%d", if pad.Difficulty == "Nightmare" then "NIGHTMARE" elseif pad.Mode == "Outbreak" then "OUTBREAK" else "PAD " .. padId, pad.Count, pad.Size)
 	ui.SquadTimer.Text = if pad.Status == "Launching" then "TAKING OFF..." elseif pad.Status == "Waiting" then "RUN IN PROGRESS" else "TAKE-OFF IN " .. pad.Timer .. "s"
 	for _, choice in ui.Choices do
 		local selected = pad[choice.Key] == choice.Value
@@ -94,7 +105,7 @@ function LobbyController:_showSquad(padId, pad)
 		button.TextColor3 = if selected then Color3.fromRGB(35, 35, 40) elseif choice.Locked then T.SubText else T.Text
 		button.AutoButtonColor = ui.IsHost and not choice.Locked
 	end
-	ui.SquadHint.Text = if pad.Difficulty == "Nightmare" then "NIGHTMARE: win for 3x Gems. Die and you get nothing." elseif ui.IsHost then "You're the host: pick the mission. Full squad = take-off in " .. GameConfig.Lobby.AllReadyTime .. "s"
+	ui.SquadHint.Text = if pad.Difficulty == "Nightmare" then "NIGHTMARE: win for 3x Gems. Die and you get nothing." elseif pad.Mode == "Outbreak" then "OUTBREAK: the horde is a million deep. Survive it." elseif ui.IsHost then "You're the host: pick the mission. Full squad = take-off in " .. GameConfig.Lobby.AllReadyTime .. "s"
 		else pad.Host .. " is the host and picks the mission"
 end
 
@@ -116,7 +127,7 @@ function LobbyController:Init()
 	local resultsRoot = UIKit.new("Frame", { BackgroundTransparency = 1, Parent = gui })
 	UIKit.AutoScale(resultsRoot)
 	ui.Results = UIKit.Panel({ AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.fromScale(0.5, 0.42), Size = UDim2.fromOffset(380, 230), Visible = false, ZIndex = 5, Parent = resultsRoot })
-	ui.ResultsTitle = UIKit.Label({ Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 50), TextSize = 46, ZIndex = 5, Parent = ui.Results })
+	ui.ResultsTitle = UIKit.Label({ Position = UDim2.fromOffset(0, 14), Size = UDim2.new(1, 0, 0, 50), TextSize = 46, Font = T.FontTitle, ZIndex = 5, Parent = ui.Results })
 	ui.ResultsBody = UIKit.Label({ Position = UDim2.fromOffset(0, 70), Size = UDim2.new(1, 0, 0, 56), TextSize = 22, ZIndex = 5, Parent = ui.Results })
 	ui.ResultsGems = UIKit.Label({ Position = UDim2.fromOffset(0, 128), Size = UDim2.new(1, 0, 0, 34), TextSize = 28, TextColor3 = T.Gem, ZIndex = 5, Parent = ui.Results })
 	UIKit.Button({ AnchorPoint = Vector2.new(0.5, 1), Position = UDim2.new(0.5, 0, 1, -14), Size = UDim2.fromOffset(140, 40), Text = "CONTINUE", ZIndex = 5, Parent = ui.Results }, function()

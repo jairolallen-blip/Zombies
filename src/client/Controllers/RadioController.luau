@@ -71,8 +71,8 @@ function RadioController:Init()
 	ui.Gui = gui
 	local root = UIKit.new("Frame", { BackgroundTransparency = 1, Parent = gui })
 	UIKit.AutoScale(root)
-	ui.Panel = UIKit.Panel({ AnchorPoint = Vector2.new(0, 0.5), Position = HIDDEN, Size = UDim2.fromOffset(420, 100), Parent = root })
-	UIKit.Stroke(T.Accent, 1.5).Parent = ui.Panel
+	ui.Panel = UIKit.Panel({ AnchorPoint = Vector2.new(0, 0.5), Position = HIDDEN, Size = UDim2.fromOffset(420, 100), BackgroundTransparency = 0.08, Parent = root }) -- near-solid: dialogue over busy walls
+	UIKit.Stroke(T.N600, 1.5).Parent = ui.Panel
 	local viewport = UIKit.new("ViewportFrame", {
 		Position = UDim2.fromOffset(10, 10),
 		Size = UDim2.fromOffset(80, 80),
@@ -84,12 +84,12 @@ function RadioController:Init()
 	})
 	UIKit.Corner(8).Parent = viewport
 	ui.Mouth = buildPortrait(viewport)
-	UIKit.Label({ Text = Radio.Speaker.Name .. "  ·  " .. Radio.Speaker.Callsign, Position = UDim2.fromOffset(100, 8), Size = UDim2.new(1, -180, 0, 22), TextSize = 18, TextColor3 = T.Accent, TextXAlignment = Enum.TextXAlignment.Left, Parent = ui.Panel })
+	UIKit.Label({ Text = Radio.Speaker.Name .. "  ·  " .. Radio.Speaker.Callsign, Position = UDim2.fromOffset(100, 8), Size = UDim2.new(1, -180, 0, 22), TextSize = 15, TextColor3 = T.N400, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = ui.Panel })
 	ui.Live = UIKit.Label({ Text = "● LIVE", AnchorPoint = Vector2.new(1, 0), Position = UDim2.new(1, -12, 0, 8), Size = UDim2.fromOffset(70, 22), TextSize = 15, TextColor3 = T.Danger, TextXAlignment = Enum.TextXAlignment.Right, Parent = ui.Panel })
 	ui.Text = UIKit.Label({
 		Position = UDim2.fromOffset(100, 32),
 		Size = UDim2.new(1, -112, 0, 62),
-		TextSize = 17,
+		TextSize = 18,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Top,

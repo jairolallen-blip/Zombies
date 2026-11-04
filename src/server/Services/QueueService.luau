@@ -28,6 +28,7 @@ local GameConfig = require(Shared.Config.GameConfig)
 local Remotes = require(Shared.Remotes)
 local GameState = require(Shared.GameState)
 local Nightmare = require(Shared.Config.Nightmare)
+local Outbreak = require(Shared.Config.Outbreak)
 
 local QueueService = {}
 local Services
@@ -36,7 +37,7 @@ local pads = {} -- [PadId] = { Id, Part, Nightmare, Members = {Player}, Options,
 local warnedFull = {} -- [Player] = PadId they were told is full (told once per visit)
 
 local function defaultOptions(pad)
-	return { Size = cfg.DefaultSquadSize, Difficulty = if pad.Nightmare then "Nightmare" else "Normal", Map = cfg.Maps[1].Id }
+	return { Size = cfg.DefaultSquadSize, Difficulty = if pad.Nightmare then "Nightmare" else "Normal", Mode = pad.Mode, Map = cfg.Maps[1].Id }
 end
 
 local function allowed(list, id)
@@ -64,8 +65,9 @@ local function saveAll(players)
 end
 
 -- Teleports players together to this place: a new reserved server (a match) when reserve is set,
--- else a public server (a lobby). Returns true once Roblox accepted the request.
-local function teleport(players, data, reserve)
+-- else a public server (a lobby). placeId overrides the destination (Outbreak mode teleports to its
+-- own place; ReturnToLobby from there comes back to the lobby place). Returns true once Roblox accepted the request.
+local function teleport(players, data, reserve, placeId)
 	saveAll(players)
 	local options = Instance.new("TeleportOptions")
 	options.ShouldReserveServer = reserve
@@ -73,7 +75,7 @@ local function teleport(players, data, reserve)
 		options:SetTeleportData(data)
 	end
 	for attempt = 1, 3 do
-		local ok, err = pcall(TeleportService.TeleportAsync, TeleportService, game.PlaceId, players, options)
+		local ok, err = pcall(TeleportService.TeleportAsync, TeleportService, placeId or game.PlaceId, players, options)
 		if ok then
 			return true
 		end
@@ -99,7 +101,7 @@ function QueueService:Init(services)
 		warnedFull[player] = nil
 	end)
 	for id, part in Services.MapService:GetPads() do -- (unused on a match server: Start never ticks them)
-		pads[id] = { Id = id, Part = part, Nightmare = part.Parent:GetAttribute("Nightmare") == true, Members = {} }
+		pads[id] = { Id = id, Part = part, Nightmare = part.Parent:GetAttribute("Nightmare") == true, Mode = part.Parent:GetAttribute("ModeId"), Members = {} }
 		pads[id].Options = defaultOptions(pads[id])
 	end
 	Services.DataService.ProfileLoaded:Connect(function(player, profile)
@@ -156,7 +158,7 @@ function QueueService:QuickPlay(player)
 	end
 	local best
 	for _, pad in pads do
-		local room = not pad.Nightmare and not pad.Launching and #pad.Members < pad.Options.Size
+		local room = not pad.Nightmare and not pad.Mode and not pad.Launching and #pad.Members < pad.Options.Size
 		if room and (not best or #pad.Members > #best.Members or (#pad.Members == #best.Members and pad.Id < best.Id)) then
 			best = pad
 		end
@@ -242,7 +244,10 @@ function QueueService:_launch(pad)
 			table.insert(ids, player.UserId)
 		end
 		options.Squad = ids
-		if not teleport(squad, options, true) then
+		-- the Outbreak pad takes its squad to the mode's OWN place (Config/Outbreak.PlaceId),
+		-- a fresh reserved server there; every other pad uses a reserved server of this place
+		local placeId = if pad.Mode == "Outbreak" then Outbreak.PlaceId else nil
+		if not teleport(squad, options, true, placeId) then
 			for _, player in squad do
 				Remotes.Notify:FireClient(player, "Take-off failed. Stay on the pad to try again.", "Danger")
 			end
@@ -292,7 +297,7 @@ function QueueService:ReturnToLobby(players, data)
 		if #here == 0 then
 			return
 		end
-		teleport(here, data, false)
+		teleport(here, data, false, if GameState:GetAttribute("Mode") == "Outbreak" then Outbreak.LobbyPlaceId else nil)
 		task.wait(15)
 	end
 	for _, player in players do

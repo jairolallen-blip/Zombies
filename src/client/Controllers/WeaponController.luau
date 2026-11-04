@@ -6,8 +6,10 @@
 --
 -- First person: shots originate at the camera (eye) through the crosshair; the flash, tracers,
 -- shells and recoil jolt come from ViewmodelController's gun. Sounds via SoundController.
+-- Hold Keybinds.Aim (right mouse) to aim down sights: ViewmodelController blends the gun to the
+-- centre and spread shrinks by GameConfig.Camera.AimSpreadMultiplier.
 --
--- Public: WeaponController:GetState() -> { Stats, Ammo, Reloading }, :Reload()
+-- Public: WeaponController:GetState() -> { Stats, Ammo, Reloading }, :Reload(), :IsAimHeld()
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -27,14 +29,26 @@ local stats = nil
 local ammo = 0
 local reloading = false
 local firing = false
+local aimHeld = false
 local lastShot = 0
 local recoil = 0 -- current camera kick, radians (decays every frame)
 local recoilYaw = 0
+local punch = 0 -- fast snap on top of the climb (GameConfig.Camera.RecoilPunch)
+local recoilRoll = 0 -- random roll shake per shot
+local fovPunch = 0 -- degrees added to the FOV, read by CameraController
 local spin = 0 -- 0..1 spin-up progress for SpinUp guns
 local spinAngle = 0
 
 function WeaponController:GetState()
 	return { Stats = stats, Ammo = ammo, Reloading = reloading }
+end
+
+function WeaponController:IsAimHeld()
+	return aimHeld and player:GetAttribute("InRun") == true
+end
+
+function WeaponController:GetFovPunch()
+	return fovPunch
 end
 
 local function refreshStats()
@@ -82,7 +96,8 @@ function WeaponController:Reload()
 	end
 	reloading = true
 	Remotes.Reload:FireServer()
-	Controllers.SoundController:PlayUI("Reload")
+	Controllers.ViewmodelController:PlayReload(stats.ReloadTime)
+	Controllers.SoundController:PlayReload(stats.ReloadTime, Controllers.ViewmodelController:GetModel())
 end
 
 function WeaponController:TryFire()
@@ -114,9 +129,11 @@ function WeaponController:TryFire()
 		aimDir = workspace.CurrentCamera.CFrame.LookVector
 	end
 	aimDir = aimDir.Unit
+	local aim = Controllers.ViewmodelController:GetAim()
+	local spread = stats.Spread * (1 + (GameConfig.Camera.AimSpreadMultiplier - 1) * aim)
 	local dirs = table.create(stats.Pellets)
 	for i = 1, stats.Pellets do
-		dirs[i] = spreadDirection(aimDir, stats.Spread)
+		dirs[i] = spreadDirection(aimDir, spread)
 	end
 	Remotes.FireWeapon:FireServer(origin, dirs)
 
@@ -129,28 +146,45 @@ function WeaponController:TryFire()
 		local result = workspace:Raycast(origin, dir * stats.Range, params)
 		Effects:WeaponTracer(stats.Id, from, if result then result.Position else origin + dir * stats.Range)
 	end
-	Effects:MuzzleFlash(muzzle, from, stats.Flash, stats.FlashColor)
+	-- the first-person gun is scaled down, so its flash and shells are too
+	local vmScale = if Controllers.ViewmodelController:GetModel() then GameConfig.Camera.ViewmodelScale else 1
+	Effects:MuzzleFlash(muzzle, from, (stats.Flash or 1) * vmScale, stats.FlashColor)
 	local port = muzzle and muzzle.Parent:FindFirstChild("EjectPort")
 	if port and not stats.NoShells then
-		Effects:Shell(port.WorldPosition, workspace.CurrentCamera.CFrame.RightVector)
+		Effects:Shell(port.WorldPosition, workspace.CurrentCamera.CFrame.RightVector, vmScale)
+		Controllers.SoundController:PlayShell()
 	end
-	Controllers.ViewmodelController:Kick(stats.Recoil)
+	Controllers.ViewmodelController:Kick(stats.Recoil, rate)
 	Controllers.SoundController:PlayGunshot(stats.Id, from)
 	local kick = math.rad(stats.Recoil or 1)
-	recoil = math.min(recoil + kick * (0.85 + math.random() * 0.3), math.rad(12))
-	recoilYaw += kick * (math.random() - 0.5) * 0.5
+	local cam = GameConfig.Camera
+	-- the camera only nudges (easy to aim); hipfire hides it behind the viewmodel kick, and
+	-- ADS keeps almost all of it since the viewmodel is small on screen and can't sell it
+	local steady = 1 - 0.1 * aim -- aiming down sights tames it a little
+	recoil = math.min(recoil + kick * cam.RecoilCamera * (0.85 + math.random() * 0.3) * steady, math.rad(1.5))
+	recoilYaw += kick * cam.RecoilCamera * (math.random() - 0.5) * 0.4
+	punch = math.min(punch + kick * cam.RecoilPunch * steady, math.rad(3))
+	recoilRoll += kick * (math.random() - 0.5) * cam.RecoilShake
+	fovPunch = math.min(fovPunch + (stats.Recoil or 1) * cam.RecoilFovPunch, 4)
 	Controllers.HUDController:KickCrosshair()
 	if ammo <= 0 then
 		self:Reload()
 	end
 end
 
--- the trigger for touch buttons and gamepads (Client/Controllers/TouchController)
+-- the trigger and aim for touch buttons and gamepads (Client/Controllers/TouchController)
 function WeaponController:SetTrigger(on)
 	firing = on
 	if on then
 		self:TryFire()
 	end
+end
+
+function WeaponController:SetAim(on)
+	if on and not aimHeld and player:GetAttribute("InRun") then
+		Controllers.SoundController:Play("Aim")
+	end
+	aimHeld = on
 end
 
 function WeaponController:Init(controllers)
@@ -173,6 +207,14 @@ function WeaponController:Init(controllers)
 	refreshStats()
 
 	UserInputService.InputBegan:Connect(function(input, processed)
+		-- aim is read even if the camera marked the right button as processed
+		if input.UserInputType == GameConfig.Keybinds.Aim then
+			aimHeld = true
+			if player:GetAttribute("InRun") then
+				Controllers.SoundController:Play("Aim")
+			end
+			return
+		end
 		if processed then
 			return
 		end
@@ -186,6 +228,8 @@ function WeaponController:Init(controllers)
 	UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 then
 			firing = false
+		elseif input.UserInputType == GameConfig.Keybinds.Aim then
+			aimHeld = false
 		end
 	end)
 	RunService.RenderStepped:Connect(function(dt)
@@ -215,12 +259,16 @@ function WeaponController:Init(controllers)
 	-- recoil: kick the camera after it updates; the default camera re-derives its CFrame every
 	-- frame, so the offset never accumulates and decays smoothly back to the aim
 	RunService:BindToRenderStep("SAMZ_Recoil", Enum.RenderPriority.Camera.Value + 3, function(dt)
-		local decay = math.exp(-14 * dt)
+		-- climb recovers steadily; the punch, roll shake and FOV kick snap back fast
+		local decay = math.exp(-20 * dt)
 		recoil *= decay
 		recoilYaw *= decay
-		if Controllers.CameraController:IsActive() and (recoil > 1e-4 or math.abs(recoilYaw) > 1e-4) then
+		punch *= math.exp(-45 * dt) -- snap: gone in ~70ms
+		recoilRoll *= math.exp(-35 * dt)
+		fovPunch *= math.exp(-35 * dt)
+		if Controllers.CameraController:IsActive() and (recoil + punch > 1e-4 or math.abs(recoilYaw) + math.abs(recoilRoll) > 1e-4) then
 			local camera = workspace.CurrentCamera
-			camera.CFrame *= CFrame.Angles(recoil, recoilYaw, 0)
+			camera.CFrame *= CFrame.Angles(recoil + punch, recoilYaw, recoilRoll)
 		end
 	end)
 end

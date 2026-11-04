@@ -2,6 +2,7 @@
 --   * Server effects arrive via Remotes.Effect(kind, data) and dispatch to EffectsController.Handlers[kind]
 --   * Damage numbers from Remotes.HitConfirm
 --   * Zombie walk animation: swings each zombie's limb Motor6Ds locally (no server cost)
+--   * Zombie hit reaction: "ZombieHit" makes the zombie flinch and flash red (animateZombies)
 -- To add an effect: add Handlers.MyEffect = function(data) ... end and fire it from the server with
 --   Remotes.Effect:FireAllClients("MyEffect", { ... })
 
@@ -91,28 +92,44 @@ function EffectsController:WeaponTracer(weaponId, from, to)
 	end
 end
 
+-- A star-shaped flash: bright core, a spike out of the barrel and four petals at a random roll.
+-- `attachment` (the Muzzle) gives the barrel direction; gone in a couple of frames.
 function EffectsController:MuzzleFlash(attachment, position, scale, color)
 	scale = scale or 1
-	local p = fxPart({
+	color = color or Color3.fromRGB(255, 200, 90)
+	local base = if attachment then CFrame.new(position) * attachment.WorldCFrame.Rotation else CFrame.new(position)
+	local core = fxPart({
 		Shape = Enum.PartType.Ball,
-		Size = Vector3.one * 0.9 * scale,
+		Size = Vector3.one * 0.6 * scale,
 		Position = position,
-		Color = color or Color3.fromRGB(255, 200, 90),
-		Transparency = 0.1,
+		Color = color,
+		Transparency = 0.05,
 	})
+	local parts = { core }
+	if attachment then
+		table.insert(parts, fxPart({ Size = Vector3.new(0.16, 0.16, 1.2) * scale, CFrame = base * CFrame.new(0, 0, -0.55 * scale), Color = color, Transparency = 0.2 }))
+		local roll = math.random() * math.pi
+		for i = 0, 3 do
+			local petal = base * CFrame.Angles(0, 0, roll + i * math.pi / 2) * CFrame.new(0, 0.32 * scale, -0.12 * scale)
+			table.insert(parts, fxPart({ Size = Vector3.new(0.1, 0.6, 0.1) * scale, CFrame = petal, Color = color, Transparency = 0.25 }))
+		end
+	end
 	local light = Instance.new("PointLight")
-	light.Color = p.Color
-	light.Range = 10 * scale
+	light.Color = color
+	light.Range = 12 * math.max(scale, 0.6)
 	light.Brightness = 3
-	light.Parent = p
-	tween(p, 0.06, { Transparency = 1, Size = Vector3.one * 0.2 * scale })
-	Debris:AddItem(p, 0.07)
+	light.Parent = core
+	for _, p in parts do
+		tween(p, 0.05, { Transparency = 1 })
+		Debris:AddItem(p, 0.06)
+	end
 end
 
--- A brass casing flicked out to the right of the gun
-function EffectsController:Shell(position, right)
+-- A brass casing flicked out to the right of the gun (scale < 1 for the first-person viewmodel)
+function EffectsController:Shell(position, right, scale)
+	scale = scale or 1
 	local shell = fxPart({
-		Size = Vector3.new(0.08, 0.08, 0.2),
+		Size = Vector3.new(0.08, 0.08, 0.2) * scale,
 		Position = position,
 		Color = Color3.fromRGB(200, 160, 60),
 		Material = Enum.Material.Metal,
@@ -338,29 +355,42 @@ end
 
 -- Zombie limb animation (local only). The stride advances with the zombie's real ground speed, so
 -- runners pump their legs and a stalled zombie stands still; arms reach forward with a lazy bob and
--- swipe down when the server stamps "AttackAt" (ZombieService).
+-- swipe down when the server stamps "AttackAt" (ZombieService). A "ZombieHit" effect makes the
+-- zombie flinch (arms fling up, legs stagger back) and flash red for a moment.
 local ATTACK_TIME = 0.35
+local FLINCH_TIME = 0.2
+local FLASH_TIME = 0.12
+local FLASH_COLOR = Color3.fromRGB(255, 60, 40)
 local motorCache = setmetatable({}, { __mode = "k" })
+local function getMotors(model)
+	local motors = motorCache[model]
+	if not motors then
+		local root = model:FindFirstChild("Root")
+		if not root then
+			return nil
+		end
+		motors = {
+			Root = root,
+			LeftLeg = root:FindFirstChild("LeftLeg"),
+			RightLeg = root:FindFirstChild("RightLeg"),
+			LeftArm = root:FindFirstChild("LeftArm"),
+			RightArm = root:FindFirstChild("RightArm"),
+			Phase = (model:GetAttribute("ZombieId") or 0) * 1.7,
+			Scale = root.Size.Y / 5,
+			FlinchUntil = 0,
+			FlashBase = {},
+		}
+		motorCache[model] = motors
+	end
+	return motors
+end
 local function animateZombies(zombieFolder, dt)
 	local t = os.clock()
 	local serverNow = workspace:GetServerTimeNow()
 	for _, model in zombieFolder:GetChildren() do
-		local motors = motorCache[model]
+		local motors = getMotors(model)
 		if not motors then
-			local root = model:FindFirstChild("Root")
-			if not root then
-				continue
-			end
-			motors = {
-				Root = root,
-				LeftLeg = root:FindFirstChild("LeftLeg"),
-				RightLeg = root:FindFirstChild("RightLeg"),
-				LeftArm = root:FindFirstChild("LeftArm"),
-				RightArm = root:FindFirstChild("RightArm"),
-				Phase = (model:GetAttribute("ZombieId") or 0) * 1.7,
-				Scale = root.Size.Y / 5,
-			}
-			motorCache[model] = motors
+			continue
 		end
 		local v = motors.Root.AssemblyLinearVelocity
 		local speed = Vector2.new(v.X, v.Z).Magnitude / motors.Scale
@@ -370,17 +400,18 @@ local function animateZombies(zombieFolder, dt)
 		local bob = math.sin(t * 3 + motors.Phase * 0.3) * 0.12
 		local attackAge = serverNow - (model:GetAttribute("AttackAt") or -1e9)
 		local swipe = if attackAge < ATTACK_TIME then -math.sin(attackAge / ATTACK_TIME * math.pi) * 1.1 else 0
+		local flinch = math.clamp((motors.FlinchUntil - t) / FLINCH_TIME, 0, 1)
 		if motors.LeftLeg then
-			motors.LeftLeg.Transform = CFrame.Angles(swing, 0, 0)
+			motors.LeftLeg.Transform = CFrame.Angles(swing - flinch * 0.35, 0, 0)
 		end
 		if motors.RightLeg then
-			motors.RightLeg.Transform = CFrame.Angles(-swing, 0, 0)
+			motors.RightLeg.Transform = CFrame.Angles(-swing - flinch * 0.35, 0, 0)
 		end
 		if motors.LeftArm then
-			motors.LeftArm.Transform = CFrame.Angles(bob + swipe + swing * 0.15, 0, 0)
+			motors.LeftArm.Transform = CFrame.Angles(bob + swipe + swing * 0.15 + flinch * 1.0, 0, 0)
 		end
 		if motors.RightArm then
-			motors.RightArm.Transform = CFrame.Angles(-bob + swipe - swing * 0.15, 0, 0)
+			motors.RightArm.Transform = CFrame.Angles(-bob + swipe - swing * 0.15 + flinch * 1.0, 0, 0)
 		end
 		-- server-stamped poses (ZombieService; model attributes Pose + PoseAt) take over the arms: "Rise" reaches
 		-- up and claws out of the ground, "Burrow" digs down into it, "Scream" (Wailer) flings them up, shaking
@@ -400,7 +431,51 @@ local function animateZombies(zombieFolder, dt)
 				motors.RightArm.Transform = CFrame.Angles(1.4 - shake, 0, 0.45)
 			end
 		end
+		-- damage flash: tint every visible part toward red, restore exactly when it expires
+		if motors.FlashUntil then
+			local f = math.clamp((motors.FlashUntil - t) / FLASH_TIME, 0, 1)
+			if f <= 0 then
+				for p, color in motors.FlashBase do
+					if p.Parent then
+						p.Color = color
+					end
+				end
+				table.clear(motors.FlashBase)
+				motors.FlashUntil = nil
+			else
+				for p, color in motors.FlashBase do
+					if p.Parent then
+						p.Color = color:Lerp(FLASH_COLOR, 0.65 * f)
+					end
+				end
+			end
+		end
 	end
+end
+
+-- Hit reaction state is set here; animateZombies applies and restores it every frame.
+Handlers.ZombieHit = function(data)
+	local model = data.Model
+	if typeof(model) ~= "Instance" or not model.Parent then
+		return
+	end
+	local motors = getMotors(model)
+	if not motors then
+		return
+	end
+	local now = os.clock()
+	if data.Flinch then
+		motors.FlinchUntil = now + FLINCH_TIME
+	end
+	if not motors.FlashUntil or now >= motors.FlashUntil then
+		table.clear(motors.FlashBase) -- a flash already running: restart the snapshot
+		for _, p in model:GetDescendants() do
+			if p:IsA("BasePart") and p.Transparency < 1 then
+				motors.FlashBase[p] = p.Color
+			end
+		end
+	end
+	motors.FlashUntil = now + FLASH_TIME
 end
 
 function EffectsController:Init()

@@ -146,7 +146,7 @@ function CombatService:_traceShot(player, origin, dir, stats, hits)
 		-- when the same ray goes on through any head part (Head, Head* details, Eye) of that zombie (2026-11-03)
 		local headshot = partName:sub(1, 4) == "Head" or partName == "Eye" or hitsHead(model, result.Position - dir * 0.05, dir)
 		local damage = stats.Damage * (if headshot then stats.HeadshotMultiplier else 1) * Services.AirdropService:DamageMult(player)
-		local killed = ZombieService:Damage(model, damage, player)
+		local killed = ZombieService:Damage(model, damage, player, result.Position)
 		if killed and headshot then
 			Services.DataService:AddStat(player, "Headshots")
 		end

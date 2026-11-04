@@ -1,6 +1,6 @@
 -- Repo -> Studio restore. Run tools/pack-scripts.ps1, serve the JSON with tools/serve.ps1, then
 -- paste this into execute_luau (datamodel Edit). Writes every repo script into Studio (creating
--- missing ones and folders), and DELETES scripts under the four code roots that the repo doesn't
+-- missing ones and folders), and DELETES scripts under the five code roots that the repo doesn't
 -- have. Use after someone overwrote the place, or to roll Studio back to a commit.
 local Http = game:GetService("HttpService")
 local SES = game:GetService("ScriptEditorService")
@@ -10,6 +10,7 @@ local roots = {
 	shared = game.ReplicatedStorage:FindFirstChild("Shared"),
 	client = game.StarterPlayer.StarterPlayerScripts:FindFirstChild("Client"),
 	character = game.StarterPlayer.StarterCharacterScripts,
+	first = game.ReplicatedFirst,
 }
 local wanted, written, created, unchanged = {}, 0, 0, 0
 for rel, source in files do

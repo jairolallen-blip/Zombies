@@ -9,6 +9,8 @@
 --     The receipt's recipient is remembered, so a retry pays the same person; if they've left, the buyer.
 --   Game Passes: checked on join and after a purchase; owned passes become player attributes Pass_<Id>
 --     (MatchService doubles run Gems with DoubleGems; DailyService and LobbyService read VIP).
+--     A bundle pass (Gems / Classes in its entry, e.g. the Starter Pack) pays them ONCE per account: the
+--     profile flag named by its Flag is set and saved with the reward, so later joins only re-check it.
 
 local Players = game:GetService("Players")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -69,10 +71,33 @@ function StoreService:_refreshPasses(player)
 			local ok, owns = pcall(MarketplaceService.UserOwnsGamePassAsync, MarketplaceService, player.UserId, pass.PassId)
 			if ok and owns and not player:GetAttribute("Pass_" .. pass.Id) then
 				player:SetAttribute("Pass_" .. pass.Id, true)
-				Remotes.Notify:FireClient(player, pass.Name .. " is active. Thank you!", "Good")
+				if not (pass.Gems or pass.Classes) then
+					Remotes.Notify:FireClient(player, pass.Name .. " is active. Thank you!", "Good")
+				end
+			end
+			if ok and owns and (pass.Gems or pass.Classes) then
+				self:_payBundle(player, pass)
 			end
 		end
 	end
+end
+
+-- a bundle pass's Gems and classes, once per account (profile[pass.Flag] marks it paid)
+function StoreService:_payBundle(player, pass)
+	local DataService = Services.DataService
+	local profile = DataService:Get(player)
+	if not profile or profile[pass.Flag] then
+		return
+	end
+	for _, classId in pass.Classes or {} do
+		profile.OwnedClasses[classId] = true
+	end
+	profile.Gems += pass.Gems or 0
+	profile[pass.Flag] = true
+	DataService:Replicate(player)
+	player:SetAttribute("StarterBought", profile.StarterPack == true)
+	DataService:Save(player)
+	Remotes.Notify:FireClient(player, pass.Name .. ": +◆" .. (pass.Gems or 0) .. ". Thank you!", "Good")
 end
 
 function StoreService:_processReceipt(receipt)

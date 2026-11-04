@@ -1,10 +1,16 @@
 -- SoundController: all game audio, client-side (ids + volumes in Shared/Config/Sounds).
 -- Nothing on the server changes: sounds hang off events the client already receives.
---   your gun          WeaponController -> :PlayGunshot (2D), :SetSpin (minigun loop), reload
+--   your gun          WeaponController -> :PlayGunshot (2D), :SetSpin (minigun loop),
+--                     :PlayReload (mag out / mag in / bolt timed to the viewmodel reload), :PlayShell,
+--                     equip + aim cloth rustle (ViewmodelController / WeaponController)
+--   movement          footsteps for every character by distance walked (Roblox's default walking
+--                     sounds are disabled by the empty StarterPlayerScripts.RbxCharacterSounds),
+--                     your jump + landing
 --   others' guns      Remotes.Effect "Tracer" (WeaponId) -> 3D gunshot at the muzzle
 --   hits / kills      Remotes.HitConfirm -> hitmarker / kill tick
 --   zombies           ambient groans from nearby zombies, "ZombieDeath" death cries,
---                     "SpawnWarning" groan as one rises, hurt swipe when your health drops
+--                     "ZombieHit" hurt grunt as one takes a bullet, "SpawnWarning" groan
+--                     as one rises, hurt swipe when your health drops
 --   explosions        "Explosion" boom, "Shockwave" ground slam (boss slam, Bruiser stomp)
 --   match             Remotes.Radio event names: radio squelch on every line, wave sting on
 --                     WaveStart/FirstWave, boss roar on BossIncoming/BossEnraged, Victory jingle,
@@ -13,7 +19,7 @@
 --   UI                click on every GuiButton
 --
 -- Public: :Play(name, opts?) 2D, :PlayAt(name, position, opts?) 3D, :PlayGunshot(weaponId, pos),
---         :SetSpin(0..1), :PlayUI(name)
+--         :SetSpin(0..1), :PlayUI(name), :PlayReload(seconds, viewmodel?), :PlayShell()
 --         :Loop(name) -> a looped Sound for the caller to drive (CutsceneController's deploy audio)
 
 local Players = game:GetService("Players")
@@ -141,6 +147,39 @@ local function pick(list)
 	return list[math.random(1, #list)]
 end
 
+-- Reload sounds timed to ViewmodelController's reload (fractions of the reload time). Guns with a
+-- revolver cylinder or a shotgun tube load shell by shell; everything else swaps a mag.
+function SoundController:PlayReload(seconds, viewmodel)
+	local hasMag = not (viewmodel and (viewmodel:FindFirstChild("Cylinder") or viewmodel:FindFirstChild("MagTube")))
+	local function at(fraction, name, opts)
+		task.delay(seconds * fraction, function()
+			if player:GetAttribute("Reloading") ~= false then
+				self:Play(name, opts)
+			end
+		end)
+	end
+	if hasMag then
+		at(0.18, "MagOut")
+		at(0.72, "MagIn")
+		at(0.86, "Bolt")
+	else
+		-- shotgun / revolver: shells pushed in one by one, then the action closes
+		for i = 0, 2 do
+			at(0.25 + i * 0.18, "MagIn", { Pitch = 1.45, Volume = 0.7 })
+		end
+		at(0.84, "Bolt", { Pitch = 0.9 })
+	end
+end
+
+-- Brass hitting the ground a moment after it is ejected
+function SoundController:PlayShell()
+	if not throttled("Shell", 0.09) then
+		task.delay(0.3 + math.random() * 0.15, function()
+			self:Play("Shell")
+		end)
+	end
+end
+
 local function localRoot()
 	local character = player.Character
 	return character and character:FindFirstChild("HumanoidRootPart")
@@ -155,8 +194,49 @@ local function setLoop(name, on)
 	end
 end
 
+-- Roblox's default character sounds (plastic footsteps, jump, land...) are replaced by ours. The empty
+-- StarterPlayerScripts.RbxCharacterSounds override is meant to stop them, but Studio can still
+-- insert the default script, so also switch it off here and strip the sounds it already made.
+local DEFAULT_SOUNDS = { "Climbing", "Died", "FreeFalling", "GettingUp", "Jumping", "Landing", "Running", "Splash", "Swimming" }
+local function stripDefaultSounds(character)
+	local root = character:WaitForChild("HumanoidRootPart", 10)
+	if not root then
+		return
+	end
+	task.wait(0.5) -- let the default script (if it ran) create them first
+	for _, name in DEFAULT_SOUNDS do
+		local s = root:FindFirstChild(name)
+		if s and s:IsA("Sound") then
+			s:Destroy()
+		end
+	end
+end
+local function disableDefaultCharacterSounds()
+	local scripts = player:WaitForChild("PlayerScripts")
+	local function check(child)
+		if child.Name == "RbxCharacterSounds" and child:IsA("LocalScript") then -- (ours is empty, so this is safe)
+			child.Enabled = false
+		end
+	end
+	for _, child in scripts:GetChildren() do
+		check(child)
+	end
+	scripts.ChildAdded:Connect(check)
+	local function watch(other)
+		if other.Character then
+			task.spawn(stripDefaultSounds, other.Character)
+		end
+		other.CharacterAdded:Connect(stripDefaultSounds)
+	end
+	for _, other in Players:GetPlayers() do
+		watch(other)
+	end
+	Players.PlayerAdded:Connect(watch)
+end
+
 function SoundController:Init(controllers)
 	Controllers = controllers
+	task.spawn(disableDefaultCharacterSounds)
 	group = Instance.new("SoundGroup")
 	group.Name = "SAMZ_Sounds"
 	group.Volume = 1
@@ -181,6 +261,11 @@ function SoundController:Init(controllers)
 			if not throttled("ZombieDeath", 0.12) then
 				self:PlayAt(pick(Sounds.Deaths), data.Position, { Pitch = 1 / math.sqrt(data.Scale or 1) })
 			end
+		elseif kind == "ZombieHit" and data.Position then
+			-- hurt grunt on only some hits and throttled globally, so a crowd stays a crowd
+			if math.random() < 0.3 and not throttled("ZombieHurt", 0.12) then
+				self:PlayAt(pick(Sounds.Groans), data.Position, { Volume = 0.6, Pitch = 1.2 })
+			end
 		elseif kind == "SpawnWarning" and data.Position then
 			if math.random() < 0.5 then
 				task.delay(data.Time or 1.2, function()
@@ -199,6 +284,9 @@ function SoundController:Init(controllers)
 			self:Play("Kill")
 		elseif not throttled("Hit", 0.05) then
 			self:Play("Hit")
+		end
+		if not throttled("Impact", 0.06) then
+			self:Play(pick(Sounds.Impacts))
 		end
 	end)
 
@@ -221,6 +309,26 @@ function SoundController:Init(controllers)
 		if not humanoid then
 			return
 		end
+		-- your jump + landing
+		local root = character:FindFirstChild("HumanoidRootPart")
+		local fallSpeed = 0
+		humanoid.StateChanged:Connect(function(_, new)
+			if new == Enum.HumanoidStateType.Jumping then
+				self:Play("Jump")
+			elseif new == Enum.HumanoidStateType.Freefall then
+				fallSpeed = 0
+			elseif new == Enum.HumanoidStateType.Landed and not throttled("Land", 0.25) then
+				self:Play("Land", { Volume = math.clamp(fallSpeed / 40, 0.4, 1.2) })
+			end
+		end)
+		local fallConn
+		fallConn = RunService.Heartbeat:Connect(function()
+			if not (root and root.Parent) then
+				fallConn:Disconnect()
+				return
+			end
+			fallSpeed = math.max(fallSpeed, -root.AssemblyLinearVelocity.Y)
+		end)
 		local last = humanoid.Health
 		humanoid.HealthChanged:Connect(function(health)
 			if health < last - 0.5 and health > 0 and player:GetAttribute("InRun") and not throttled("Hurt", 0.35) then
@@ -251,7 +359,45 @@ end
 
 function SoundController:Start()
 	local nextGroan = os.clock() + 2
+	local walked = {} -- [character] = { Last = Vector3, Distance = studs since the last step }
 	RunService.Heartbeat:Connect(function()
+		-- footsteps for every character: one step per StepStride studs walked on the ground
+		local seen = {}
+		for _, other in Players:GetPlayers() do
+			local character = other.Character
+			local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+			local root = character and character:FindFirstChild("HumanoidRootPart")
+			if humanoid and root and humanoid.Health > 0 and other:GetAttribute("Deploying") ~= true then
+				seen[character] = true
+				local pos = root.Position
+				local w = walked[character]
+				if not w then
+					w = { Last = pos, Distance = 0 }
+					walked[character] = w
+				end
+				local step = Vector3.new(pos.X - w.Last.X, 0, pos.Z - w.Last.Z).Magnitude
+				w.Last = pos
+				if humanoid.FloorMaterial ~= Enum.Material.Air and step < 5 then
+					w.Distance += step
+					if w.Distance >= Sounds.StepStride then
+						w.Distance = 0
+						if other == player then
+							self:Play(pick(Sounds.Steps))
+						else
+							self:PlayAt(pick(Sounds.Steps), pos - Vector3.new(0, 2.5, 0))
+						end
+					end
+				else
+					w.Distance = math.min(w.Distance, Sounds.StepStride * 0.6) -- first step lands soon after touching down
+				end
+			end
+		end
+		for character in walked do
+			if not seen[character] then
+				walked[character] = nil
+			end
+		end
+
 		local inRun = player:GetAttribute("InRun") == true
 		local deploying = player:GetAttribute("Deploying") == true
 		setLoop("Helicopter", deploying)

@@ -1,5 +1,5 @@
 -- Studio -> repo export. Paste into execute_luau (datamodel Edit) while tools/receiver.ps1 is running.
--- Sends every script under the four code roots to the receiver, which writes src/<root>/... files
+-- Sends every script under the five code roots to the receiver, which writes src/<root>/... files
 -- (Rojo suffixes: .server.luau Script, .client.luau LocalScript, .luau ModuleScript).
 -- Clear src/ first (Remove-Item src -Recurse) so deleted/renamed scripts don't linger.
 -- "problems" lists scripts outside the four roots (they would NOT be saved) and odd parents.
@@ -9,6 +9,7 @@ local maps = {
 	{ game.ReplicatedStorage:FindFirstChild("Shared"), "shared" },
 	{ game.StarterPlayer.StarterPlayerScripts:FindFirstChild("Client"), "client" },
 	{ game.StarterPlayer.StarterCharacterScripts, "character" },
+	{ game.ReplicatedFirst, "first" }, -- JoinCover (the black cover before the welcome screen)
 }
 local suffix = { Script = ".server.luau", LocalScript = ".client.luau", ModuleScript = ".luau" }
 local covered = {}

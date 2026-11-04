@@ -64,7 +64,7 @@ GameConfig.Waves = {
 	MinSpawnInterval = 0.3,
 	BurstEvery = 3, -- zombies per spawn group = 1 + floor(wave / BurstEvery) (wave 10 = 4)
 	-- where and how they appear
-	SpawnMinDistance = 22, -- studs from every player
+	SpawnMinDistance = 50, -- studs from every player
 	SpawnMaxDistance = 75, -- studs from the player it spawns around
 	SpawnWarning = 1.2, -- seconds the red circle shows before the zombie rises
 	RiseTime = 0.9, -- seconds to climb out of the ground (was 0.6; slower so the crawl-out reads, 2026-11-03)
@@ -98,10 +98,10 @@ GameConfig.Upgrades = {
 -- Per-Level multipliers on a weapon's base stats (see Util.GetWeaponStats) and the Level colour
 -- (gun stripe + HUD). Each Level is its own gun now, so the multipliers stay at 1.
 GameConfig.WeaponTiers = {
-	{ Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(150, 150, 155) },
-	{ Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(80, 210, 100) },
-	{ Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(70, 150, 255) },
-	{ Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(255, 190, 40) },
+	{ Name = "COMMON", Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(168, 171, 182) }, -- StoneLight
+	{ Name = "RARE", Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(122, 194, 82) }, -- GrassLight
+	{ Name = "EPIC", Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(105, 160, 220) }, -- steel blue (stone family)
+	{ Name = "LEGENDARY", Damage = 1, FireRate = 1, MagSize = 1, ReloadTime = 1, Color = Color3.fromRGB(245, 200, 60) }, -- warm sign Yellow
 }
 
 GameConfig.Ultimate = {
@@ -125,9 +125,28 @@ GameConfig.Camera = {
 	-- centre, gun drawn by ViewmodelController. Hold Keybinds.FreeCursor to free the mouse.
 	FieldOfView = 80, -- first-person FOV during runs (lobby uses Roblox's default 70)
 	LobbyMaxZoom = 30, -- third-person zoom limit in the lobby
-	-- Viewmodel placement in camera space (studs): right, down, forward
-	ViewmodelOffset = Vector3.new(0.85, -0.95, -1.6),
-	ViewmodelKick = 0.18, -- how far the gun jolts back per shot (scaled by the gun's Recoil)
+	-- Viewmodel (ViewmodelController). The gun is the real GunModels model scaled down, so it sits
+	-- close to the eye without filling the screen or poking through walls.
+	ViewmodelScale = 0.55,
+	ViewmodelOffset = Vector3.new(0.55, -0.75, -1.3), -- hip position of the grip, camera space (right, up, back)
+	ViewmodelYaw = 7, -- degrees the barrel angles in toward the crosshair at the hip
+	-- Recoil = mostly FEEL, little aim disturbance: the viewmodel kicks hard (pushes back, muzzle
+	-- rises, settles with a spring) while the camera barely moves and recovers fast.
+	ViewmodelKick = 9.5, -- viewmodel punch multiplier (scaled by the gun's Recoil and fire rate)
+	RecoilCamera = 0.1, -- camera climb per shot (fraction of the gun's Recoil degrees; capped at 1.5)
+	RecoilPunch = 0.3, -- instant camera snap, gone in ~70ms (feel, not aim)
+	RecoilShake = 0.25, -- random camera roll per shot
+	RecoilFovPunch = 0.6, -- degrees of FOV punch per point of Recoil (capped at 4, snaps back fast)
+	SleeveColor = Color3.fromRGB(74, 84, 58), -- olive jacket
+	GloveColor = Color3.fromRGB(150, 112, 76), -- tan leather (reads against black guns)
+	-- Aim down sights (hold right mouse): gun moves to the centre, FOV zooms, spread tightens.
+	AimDistance = -1.55, -- how far in front of the eye the grip sits while aiming
+	AimSpeed = 14, -- higher = faster in/out
+	AimFieldOfView = 62,
+	ScopeFieldOfView = 34, -- guns with a Scope part (Marksman, Auto Sniper) show a scope overlay
+	AimSpreadMultiplier = 0.4,
+	LookSensitivity = 1, -- overall look speed (scriptable first-person look)
+	AimSensitivity = 0.45, -- look speed while aiming down sights (scoped: x0.6 more)
 }
 
 -- Grenade throw animation (ThrowController / ViewmodelController); the server releases the grenade
@@ -144,6 +163,7 @@ GameConfig.Keybinds = {
 	UpgradeWeapon = Enum.KeyCode.One,
 	UpgradeVitality = Enum.KeyCode.Two,
 	FreeCursor = Enum.KeyCode.LeftAlt, -- hold to free the mouse in first person (click HUD buttons)
+	Aim = Enum.UserInputType.MouseButton2, -- hold to aim down sights
 }
 
 -- The map: Workspace.OurMap (vault: Lobby.md, City Map.md), built and baked in Edit mode by
@@ -169,6 +189,26 @@ GameConfig.OurMap = {
 		Saturation = -0.18,
 		Contrast = 0.08,
 	},
+}
+
+-- Client "shaders" (Client/Controllers/PostFXController): a moody, cinematic grade layered on top of
+-- the server's sunset (OurMap.Atmosphere). Off while Deploying, so the deploy cutscene is unchanged.
+GameConfig.PostFX = {
+	Enabled = true,
+	-- Lighting overrides (restored when the grade switches off)
+	Lighting = {
+		ExposureCompensation = -0.3, -- darker overall
+		Ambient = Color3.fromRGB(62, 52, 46), -- deeper indoor/under-cover shadows
+		OutdoorAmbient = Color3.fromRGB(118, 96, 80), -- warm shade instead of flat grey
+		EnvironmentDiffuseScale = 0.45, -- less blue sky light in shadows
+		EnvironmentSpecularScale = 0.8, -- a bit of sheen on smooth surfaces
+	},
+	Atmosphere = { Density = 0.52, Haze = 2.8, Glare = 1.1, Offset = 0.2, Color = Color3.fromRGB(206, 170, 132), Decay = Color3.fromRGB(150, 104, 74) },
+	Grade = { Contrast = 0.2, Saturation = -0.1, Brightness = 0, TintColor = Color3.fromRGB(255, 234, 214) },
+	Bloom = { Intensity = 0.6, Size = 36, Threshold = 1.2 }, -- adds to the server's soft bloom
+	-- autofocus depth of field: focuses on whatever is under the crosshair, blurs far away
+	DepthOfField = { FarIntensity = 0.12, AimFarIntensity = 0.3, MaxFocus = 300 },
+	Vignette = 0.5, -- edge darkness 0..1 (0 = off)
 }
 
 GameConfig.Data = {

@@ -123,10 +123,17 @@ local function shopPrompt(parent, cframe, shop, action)
 end
 
 local function fire(p, size)
+	-- parent the Fire to an attachment at the barrel's top: on the part itself it renders at
+	-- the centre (half-sunk in the cylinder) and looks like it burns on the side
+	local spot = Instance.new("Attachment")
+	spot.Name = "FireSpot"
+	spot.Position = Vector3.new(p.Size.X / 2, 0, 0)
+	spot.Parent = p
+	spot.WorldCFrame = CFrame.new(spot.WorldPosition) -- upright: the barrel cylinder is rolled 90 degrees, so flames went sideways
 	local f = Instance.new("Fire")
 	f.Size = size or 5
 	f.Heat = 9
-	f.Parent = p
+	f.Parent = spot
 	local light = Instance.new("PointLight")
 	light.Color = C.Fire
 	light.Range = 18
@@ -302,6 +309,44 @@ local function buildHelipad(parent)
 		glow.Color = light.Color
 		glow.Range = 8
 		glow.Parent = light
+	end
+	-- deploy-zone glow: a yellow light wall that fades out upwards, on a neon base strip at the pad edge
+	-- (radius 15 = MapService:IsOnHelipad). Vertical Beams, one per chord of a 64-gon, each exactly one
+	-- chord wide so they meet edge to edge with no visible seams (flat panels with SurfaceGuis showed
+	-- lines). Visual only: no collision/query/touch.
+	local glow = Instance.new("Folder")
+	glow.Name = "DeployGlow"
+	glow.Parent = m
+	local GLOW_R, GLOW_H, GLOW_N = 15, 7, 64
+	local GLOW = Color3.fromRGB(255, 214, 60)
+	local chord = 2 * GLOW_R * math.sin(math.pi / GLOW_N)
+	local apothem = GLOW_R * math.cos(math.pi / GLOW_N)
+	local ghost = { CanCollide = false, CanQuery = false, CanTouch = false, CastShadow = false }
+	local anchor = part(glow, "Anchor", Vector3.new(1, 1, 1), c * CFrame.new(0, 0.4, 0), GLOW, Enum.Material.SmoothPlastic, ghost)
+	anchor.Transparency = 1
+	local fade = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.1), NumberSequenceKeypoint.new(0.35, 0.6), NumberSequenceKeypoint.new(1, 1) })
+	for i = 0, GLOW_N - 1 do
+		local a = (i + 0.5) * 2 * math.pi / GLOW_N
+		local out = Vector3.new(math.cos(a), 0, math.sin(a))
+		local tangent = Vector3.new(-out.Z, 0, out.X)
+		local foot = Instance.new("Attachment")
+		foot.CFrame = CFrame.fromMatrix(out * apothem, Vector3.yAxis, tangent) -- beam width runs along the Y axis = tangent
+		foot.Parent = anchor
+		local top = Instance.new("Attachment")
+		top.CFrame = CFrame.fromMatrix(out * apothem + Vector3.new(0, GLOW_H, 0), Vector3.yAxis, tangent)
+		top.Parent = anchor
+		local beam = Instance.new("Beam")
+		beam.Attachment0, beam.Attachment1 = foot, top
+		beam.Width0, beam.Width1 = chord, chord
+		beam.FaceCamera = false
+		beam.Segments = 1
+		beam.Color = ColorSequence.new(GLOW, Color3.fromRGB(255, 240, 150))
+		beam.LightEmission = 1
+		beam.LightInfluence = 0
+		beam.Transparency = fade
+		beam.Parent = anchor
+		local at = anchor.CFrame.Position + out * apothem + Vector3.new(0, 0.06, 0)
+		part(glow, "Base", Vector3.new(chord + 0.02, 0.12, 0.3), CFrame.lookAt(at, at + out), GLOW, Enum.Material.Neon, ghost)
 	end
 	local post = part(m, "SignPost", Vector3.new(0.5, 8, 0.5), c * CFrame.new(-18, 4, 10), C.Metal, Enum.Material.Metal)
 	local board = part(m, "Sign", Vector3.new(10, 3, 0.3), post.CFrame * CFrame.new(0, 3, 0.4), C.Line, Enum.Material.Metal)
@@ -622,7 +667,24 @@ end
 
 -- Rebuilds one area inside the baked lobby (keeps every other hand edit):
 --   require(<clone of this module>).Rebuild("Barracks")   -- or "Armory", "Commendations"
-local AREAS = { Armory = buildArmory, Barracks = buildBarracks, Commendations = buildCommendations }
+-- Wayfinder post on the plaza's south edge: three arrow boards so the shops and the
+-- commendations board are findable without walking past them first (prompts only show on screen).
+local function buildWayfinder(parent)
+	local m = model(parent, "Wayfinder")
+	local c = at(5, GROUND_Y, 12)
+	part(m, "Post", Vector3.new(0.7, 9, 0.7), c * CFrame.new(0, 4.5, 0), C.Wood, Enum.Material.WoodPlanks)
+	local rows = {
+		{ y = 7.6, text = "ACHIEVEMENTS  ^" },
+		{ y = 6.1, text = "GUNS  <" },
+		{ y = 4.6, text = "CLASSES  >" },
+	}
+	for _, row in rows do
+		local board = part(m, "Board", Vector3.new(6.4, 1.1, 0.3), c * CFrame.new(0.4, row.y, -0.5) * CFrame.Angles(0, math.rad(8), 0), C.Charred, Enum.Material.Metal)
+		sign(board, Enum.NormalId.Front, row.text, Color3.fromRGB(30, 34, 28), Color3.fromRGB(150, 255, 90))
+	end
+end
+
+local AREAS = { Armory = buildArmory, Barracks = buildBarracks, Commendations = buildCommendations, Wayfinder = buildWayfinder }
 function OurLobby.Rebuild(name)
 	origin = GameConfig.OurMap.LobbyCenter
 	rng = Random.new(2611)
@@ -754,6 +816,7 @@ function OurLobby.Build()
 	buildArmory(lobby)
 	buildBarracks(lobby)
 	buildCommendations(lobby)
+	buildWayfinder(lobby)
 	buildFloodlight(lobby, -44, -46)
 	buildFloodlight(lobby, 44, -46)
 	buildPlaza(lobby)
@@ -761,6 +824,7 @@ function OurLobby.Build()
 	buildBounds(lobby)
 	lobby.Parent = root
 	require(script.Parent.FlightLine).Build(lobby) -- the 4-pad take-off deck north of the courtyard
+	require(script.Parent.ModePad).Build(lobby) -- OUTBREAK pad: the million-zombie mode's take-off spot (PadId 6)
 	require(script.Parent.Commons).Build(lobby) -- the hangout area south of the courtyard
 	require(script.Parent.Survivors).Build(lobby) -- the safehouse's people (Config/Survivors)
 	require(script.Parent.DailyCache).Build(lobby) -- DAILY RATIONS by the flag (Services/DailyService)

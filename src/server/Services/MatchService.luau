@@ -607,6 +607,7 @@ function MatchService:RunMatch(participants, options)
 	end
 	self.ZombieDamageMult = if nightmare then Nightmare.ZombieDamageMult else 1
 	GameState:SetAttribute("Difficulty", if nightmare then "Nightmare" else "Normal")
+	GameState:SetAttribute("Mode", if options.Mode then options.Mode else "Normal") -- "Outbreak": the million-zombie mode's own reserved server (pad 6)
 	GameState:SetAttribute("MapId", pick(lobbyCfg.Maps, options.Map))
 	GameState:SetAttribute("Tutorial", tutorial)
 	-- this run's weather (Config/Conditions). The attribute goes first so PostFXController steps aside
