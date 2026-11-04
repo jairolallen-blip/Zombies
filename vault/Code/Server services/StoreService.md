@@ -1,6 +1,6 @@
 # StoreService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/StoreService.luau` (141 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/StoreService.luau` (166 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -18,6 +18,8 @@ StoreService: Robux purchases (vault: Store.md; catalogue in Shared/Config/Store
     The receipt's recipient is remembered, so a retry pays the same person; if they've left, the buyer.
   Game Passes: checked on join and after a purchase; owned passes become player attributes Pass_<Id>
     (MatchService doubles run Gems with DoubleGems; DailyService and LobbyService read VIP).
+    A bundle pass (Gems / Classes in its entry, e.g. the Starter Pack) pays them ONCE per account: the
+    profile flag named by its Flag is set and saved with the reward, so later joins only re-check it.
 ```
 
 ## Uses

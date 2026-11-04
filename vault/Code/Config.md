@@ -14,6 +14,7 @@ Back to [[Home]].
 - [[GameConfig]]: global tunables for match flow, waves, economy, upgrades, player, camera, map.
 - [[Levels config]]: account XP and levels (owner design 2026-11-03; vault: Levels.md). PURE DATA + math.
 - [[Nightmare config]]: the hard mode (vault: Nightmare Mode.md). PURE DATA plus the unlock check.
+- [[Outbreak config]]: the million-zombie mode. Pad 6 on the Flight Line (Map/ModePad) queues it; QueueService
 - [[Radio config]]: the commander's lines (vault: Match Start.md). PURE DATA.
 - [[Sounds config]]: every sound in the game (pure data; played by Client/Controllers/SoundController).
 - [[Store config]]: what the Robux shop sells (vault: Store.md). PURE DATA. Server/Services/StoreService grants it,

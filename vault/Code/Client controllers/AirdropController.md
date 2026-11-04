@@ -1,6 +1,6 @@
 # AirdropController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/AirdropController.luau` (50 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/AirdropController.luau` (57 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 

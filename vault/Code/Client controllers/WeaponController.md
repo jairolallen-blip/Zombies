@@ -1,6 +1,6 @@
 # WeaponController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WeaponController.luau` (229 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WeaponController.luau` (277 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -15,8 +15,10 @@ shells, and SpinUp guns (minigun) that ramp their fire rate while the barrel hub
 
 First person: shots originate at the camera (eye) through the crosshair; the flash, tracers,
 shells and recoil jolt come from ViewmodelController's gun. Sounds via SoundController.
+Hold Keybinds.Aim (right mouse) to aim down sights: ViewmodelController blends the gun to the
+centre and spread shrinks by GameConfig.Camera.AimSpreadMultiplier.
 
-Public: WeaponController:GetState() -> { Stats, Ammo, Reloading }, :Reload()
+Public: WeaponController:GetState() -> { Stats, Ammo, Reloading }, :Reload(), :IsAimHeld()
 ```
 
 ## Uses
@@ -32,8 +34,10 @@ Public: WeaponController:GetState() -> { Stats, Ammo, Reloading }, :Reload()
 
 ## Used by
 
+- [[CameraController]]
 - [[HUDController]]
 - [[TouchController]]
+- [[ViewmodelController]]
 
 ## Design notes
 

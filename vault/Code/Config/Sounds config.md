@@ -1,6 +1,6 @@
 # Sounds config
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Config/Sounds.luau` (109 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Config/Sounds.luau` (138 lines). Don't edit it here: rerun the script.
 
 Part of [[Config]].
 
@@ -8,9 +8,11 @@ Part of [[Config]].
 
 ```text
 Sounds: every sound in the game (pure data; played by Client/Controllers/SoundController).
-All ids are public Creator Store audio that loads in this place (checked 2026-11-01). Most are from
-the Roblox-licensed libraries "ProSoundEffects" (Pro Sound Effects) and "APMOfficial" (APM
-Music); swap any id here to change a sound everywhere.
+All ids are public Creator Store audio that loads in this place (checked 2026-11-01 with
+ContentProvider:PreloadAsync). Guns, reload parts, footsteps, impacts, grenade and explosion are
+from the Roblox-licensed "ProSoundEffects" library (Pro Sound Effects); stingers from "APMOfficial".
+Swap any id here to change a sound everywhere. Roblox's default walking/jumping sounds are
+switched off (StarterPlayerScripts.RbxCharacterSounds is an empty override); footsteps below.
 
 Library entry: { Id, Volume, Pitch = 1, PitchVar = 0 (random +/-), MaxDistance (3D roll-off), Looped }
 ```

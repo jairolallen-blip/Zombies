@@ -45,6 +45,7 @@ Attributes:
 - [[LobbyController]]
 - [[MatchService]]
 - [[NightmareController]]
+- [[PostFXController]]
 - [[QueueService]]
 - [[SkipController]]
 - [[SoundController]]

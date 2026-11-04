@@ -20,6 +20,7 @@ const GROUPS = [
 	{ dir: "shared/Config", group: "Config", blurb: "Pure data tables read by server and client. Tune numbers here." },
 	{ dir: "shared", group: "Shared modules", blurb: "Modules both sides require: state, remotes, helpers, model builders." },
 	{ dir: "character", group: "Shared modules", blurb: null },
+	{ dir: "first", group: "Client controllers", blurb: null }, // ReplicatedFirst (JoinCover)
 ];
 
 function walk(dir) {

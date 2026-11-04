@@ -1,6 +1,6 @@
 # LobbyController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/LobbyController.luau` (171 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/LobbyController.luau` (182 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -29,4 +29,4 @@ LobbyController: lobby screen (visible while InRun is false) and the end-of-run 
 
 ## Used by
 
-- (none)
+- [[CameraController]]

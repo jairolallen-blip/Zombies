@@ -1,6 +1,6 @@
 # Store config
 
-> Made by `tools/vault-code-notes.js` from `src/shared/Config/Store.luau` (44 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/Config/Store.luau` (46 lines). Don't edit it here: rerun the script.
 
 Part of [[Config]].
 
@@ -13,8 +13,10 @@ Client/Controllers/StoreController shows it (the SHOP button in the lobby, or th
 ProductId / PassId come from the Creator Dashboard (Monetization > Developer Products / Passes).
 0 = not created yet: the card shows "SOON" and can't be bought. Prices are read from Roblox at runtime;
 Price here is only the fallback shown before that (or while the id is 0).
-Products (Developer Products, buy again any time): Gems, or a bundle (Gems + Classes, OneTime per account).
-Passes (Game Passes, owned forever): their effect is keyed by Id (StoreService.HasPass).
+Products (Developer Products, buy again any time): Gem packs.
+Passes (Game Passes, owned forever, one per account): their effect is keyed by Id (StoreService.HasPass).
+A pass with Gems / Classes is a bundle: StoreService pays those once per account, then sets the profile
+flag named by Flag (the Starter Pack is a pass so Roblox itself stops a second purchase).
 ```
 
 ## Uses

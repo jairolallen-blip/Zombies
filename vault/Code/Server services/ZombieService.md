@@ -1,6 +1,6 @@
 # ZombieService
 
-> Made by `tools/vault-code-notes.js` from `src/server/Services/ZombieService.luau` (1049 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/Services/ZombieService.luau` (1072 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -23,7 +23,7 @@ Public:
   ZombieService:Spawn(typeId, position, healthMult?, riseTime?) -> Model
   ZombieService:SpawnWarned(typeId, position, healthMult?)   red circle first, then it rises (vault: Spawning.md)
   ZombieService:GetPendingCount()   warned spawns that haven't risen yet
-  ZombieService:Damage(model, amount, attacker?) -> killed: boolean
+  ZombieService:Damage(model, amount, attacker?, hitPosition?) -> killed: boolean
   ZombieService:Kill(model, attacker?)
   ZombieService:Knockback(model, fromPosition, power, stunTime?)
   ZombieService:GetInRadius(position, radius) -> {{Model, State, Distance, Position}}

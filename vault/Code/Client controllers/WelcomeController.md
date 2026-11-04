@@ -1,6 +1,6 @@
 # WelcomeController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WelcomeController.luau` (573 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/WelcomeController.luau` (604 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
@@ -21,6 +21,7 @@ data a match server sends back (MatchService.LastResults via QueueService:Return
 Level header (Config/Levels) under the headline: LEVEL n, its rank title and the XP bar; the run report
 adds the run's +XP, chips breaking it down, and fills the bar from before the run (results.XPBefore) to
 now with LEVEL UP! and a pop at each level gained. The wave tile gets a gold NEW BEST tag.
+ReplicatedFirst.JoinCover hides the world until this is built (releaseCover), so the avatar isn't seen first.
 ```
 
 ## Uses

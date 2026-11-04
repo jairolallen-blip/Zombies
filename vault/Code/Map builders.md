@@ -10,6 +10,7 @@ Back to [[Home]].
 - [[DailyCache]]: the DAILY RATIONS supply cache on the south edge of the plaza, by the flag (vault: Lobby.md).
 - [[FieldStations]]: three lobby stations around the plaza (vault: Lobby.md).
 - [[FlightLine]]: the lobby's take-off deck (vault: Lobby.md). It sits north of the safehouse courtyard,
+- [[ModePad]]: the OUTBREAK pad (the million-zombie mode's take-off spot) on the Flight Line deck.
 - [[NavGrid]]: flow-field navigation for the zombie horde (cheap enough for 70+ zombies, unlike
 - [[OurCity]]: builds our version's arena, an overgrown apocalyptic city at sunset (vault: City Map.md).
 - [[OurLobby]]: builds our version's lobby, a fortified safehouse in a ruined city (vault: Lobby.md).

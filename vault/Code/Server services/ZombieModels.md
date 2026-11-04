@@ -1,6 +1,6 @@
 # ZombieModels
 
-> Made by `tools/vault-code-notes.js` from `src/server/ZombieModels.luau` (651 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/ZombieModels.luau` (661 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
