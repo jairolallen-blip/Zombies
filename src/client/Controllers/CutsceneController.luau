@@ -537,4 +537,13 @@ function CutsceneController:Init(controllers)
 	end)
 end
 
+-- A squad member whose client finished loading after the drop began (live match servers start once every
+-- profile has loaded on the server, not every client) never sees Deploying change: join the ride now. Play
+-- follows DeployStart, so they pick it up at the right moment instead of hanging above the map.
+function CutsceneController:Start()
+	if player:GetAttribute("Deploying") then
+		self:Play()
+	end
+end
+
 return CutsceneController

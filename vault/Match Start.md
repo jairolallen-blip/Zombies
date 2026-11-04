@@ -42,3 +42,5 @@ Players who have finished a run can hold Space (gamepad X, or the on-screen butt
 [[MatchService]] runs the deploy, [[CutsceneController]] plays it, and [[RadioController]] shows [[Radio config]] lines. Sound: [[SoundController]] and [[Sounds config]].
 
 Back to [[Home]].
+
+**Late-loading squad members** (2026-11-04): on a live match server the drop starts once every profile has loaded, which can be before a slow client finishes loading. `CutsceneController:Start` checks for a ride already under way and joins it at the right moment, so nobody hangs above the map waiting for the drop.

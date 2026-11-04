@@ -1,6 +1,6 @@
 # CutsceneController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/CutsceneController.luau` (541 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/CutsceneController.luau` (550 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 
