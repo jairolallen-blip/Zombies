@@ -35,4 +35,4 @@ These come from the current Studio game and can be searched in Graphify.
 - `MAP REFERENCES/`: zombie city shots for phase 2.
 - `MODEL REFERENCES/`: guns (pistol, SMG, shotgun, AR/AK, sniper, Uzi) and zombies for phases 4 and 5.
 
-**Store page art** (2026-11-04): three icon concepts and a 1920x1080 thumbnail, all real in-game shots, are in `thumbnails/` (made with `tools/thumbnail-compose.ps1`). Suggested title: **[🧟] Survive 1,000,000 Zombies**, swapping the emoji for an update tag on each update.
+**Store page art** (2026-11-04): three icon concepts and a 1920x1080 thumbnail, all real in-game shots, are in `thumbnails/` (made with `tools/thumbnail-compose.ps1`). Final pick (owner): **last stand**, `icon-last-stand-final.png` and `thumbnail-last-stand-final.png`. Suggested title: **[🧟] Survive 1,000,000 Zombies**, swapping the emoji for an update tag on each update.
