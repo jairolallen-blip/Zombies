@@ -196,7 +196,7 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
 - **Collision and nav:** decorative parts must be `CanCollide = false`, or they block NavGrid cells and zombies route around nothing. The floor must stay flat. Keep props clear of spawn pads; OurCity enforces a 13-stud clearance.
 - **Test runs are saved:** Studio API access is on, so a test run that reaches Victory or Overrun pays the real profile. The owner is fine with that (2026-11-05): kill bosses and finish runs freely, and don't undo the owner's own stats. Only avoid what reaches other players.
 - **Publishing:** the owner gave standing permission (2026-11-05) to save and publish without asking once everything is tested and confirmed ready. Use `tools/studio-key.ps1 <process id> "%p" <shot.png>`; it sends Alt+P to that Studio window. Wait for the "Published" toast (about 4s). `GetProductInfo().Updated` lags, so it doesn't prove a publish. Running servers keep the old version until they restart.
-- **Damage carries over:** HP doesn't regenerate, so any change to damage or waves should be re-checked with the balance bot.
+- **Damage carries over within a wave:** HP doesn't regenerate mid-wave, and a wave clear heals fully (`HealOnWaveClear`), so any change to damage or waves should be re-checked with the balance bot.
 - **Network ownership:** anchored roots can't change network owner. Rising zombies get `SetNetworkOwner(nil)` *after* they're unanchored.
 
 ## 9. Next ideas (not started)
@@ -215,6 +215,7 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-05: **learned the game from the owner's 7:50 video.** A solo Engineer win (337 kills, +217 Gems) is now in `vault/Playing Million Zombies.md` with a wave table and tactics. It corrected the guide: a wave clear heals fully. Recordings go in `D:CLAUDE WORKVideos`. Small issue seen: the HUD shows WAVE 0/10 after pressing Continue on Victory.
 - 2026-11-05: **playguides for future agents.** New vault notes `Playing Roblox Games` (any game) and `Playing Million Zombies`, plus `tools/roblox-input.ps1` (click, key, shot and sheet for the live client). The store opening after Enter Safehouse was one click hitting both, per the owner.
 - 2026-11-05: **checked the live game** (owner asked). Joined place 110463048909417 in the real client three times, through Enter Safehouse, Quick Play, Pad 1, take-off, cutscene, wave 1 and the Overrun report back to the lobby. The new walk shows live: leaning body, one arm high and one low. No game script errors in the player log; the `Connection` and `LoadingScript` stacks at each teleport are Roblox core scripts. Owner took over the third run. Not checked live: Outbreak, phones, bosses, multiplayer.
 - 2026-11-05: **published both places** (owner: the File menu was missing from the main Studio window). Published with Alt+P through new `tools/studio-key.ps1`; both showed "Published. Eligible players can play now." Outbreak was sent the shortcut three times while finding its toast on the second monitor. Testing rule relaxed: the owner's own progress may change.

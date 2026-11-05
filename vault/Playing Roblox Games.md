@@ -67,7 +67,15 @@ Test in Studio first. It's faster and you can read any value. Go to the live cli
 
 ## Learning a game from video
 
-Sample frames with ffmpeg and read them as contact sheets. Use short clips, because each sheet covers only a few seconds in detail. Use Earshot for the audio. Written notes from the player explain what the pictures can't, such as why they chose something.
+The owner puts recordings in `D:CLAUDE WORKVideos`.
+
+1. Read the length with ffprobe.
+2. Make whole-run sheets: `ffmpeg -i video.mp4 -vf "fps=1/5,scale=640:-1,tile=4x4" -q:v 3 sheet-%02d.jpg`. Each sheet covers 80 seconds.
+3. The HUD tells most of the story, so read wave, HP, Cash and ammo across frames.
+4. Zoom in on a moment with `-ss <seconds> -t 2 -vf "fps=10,scale=640:-1,tile=4x4"`.
+5. Check what you find against the code. A 7:50 video corrected a wrong note about healing this way.
+
+Frames show what happened, but not why. Five seconds between frames hides fast movement. Use Earshot for the audio, and ask the player about their choices.
 
 ## General game controls
 

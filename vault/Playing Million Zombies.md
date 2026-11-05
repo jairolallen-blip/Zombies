@@ -43,15 +43,43 @@ Runs are first person. The lobby is third person. Phone and gamepad controls are
 ## How to survive
 
 - Standing still loses. An idle player went down during wave 1 within about 40 seconds of landing.
+- Intermission between waves is about 10 seconds. Reload then.
 - Zombies come from every direction and rise out of the ground, 22 to 75 studs away. A red circle warns you first.
 - Keep moving and keep your back clear.
 - Headshots count extra. Hits on `Head` parts and `Eye` parts are headshots.
 - Kills pay Cash, and a combo raises the multiplier.
-- Buy Vitality (2) when hurt. HP doesn't regenerate.
+- HP doesn't regenerate during a wave, but clearing a wave heals you fully. So Vitality (2) is an emergency heal as well as more max HP. Buy it when you're low mid-wave, not between waves.
 - Buy gun levels (1) at $500, $2,500 and $10,000.
 - Use E on cooldown and F when it's ready. The bottom-left slots glow when they're ready.
 - Red smoke marks a supply crate. See [[Supply Drops]].
 - Enemy details are in [[Zombies]], and wave details are in [[Waves and Boss]].
+
+## A winning run
+
+The owner's solo Engineer win from 2026-11-05: 10 waves, 337 kills, +217 Gems, 7:40 from the lobby. Times are approximate, read from frames 5 seconds apart.
+
+| Wave | Starts | Zombies | Cash when cleared | What the owner did |
+|---|---|---|---|---|
+| 1 | 0:50 | 14 | $460 | Hand Cannon, no damage |
+| 2 | 1:30 | 19 | $1,145 | Down to 70/100 |
+| 3 | 2:05 | 22 | $2,155 | Down to 72/100 |
+| 4 | 2:45 | 29 | $2,825 | Bought Pump Shotgun mid-fight at 35/100 |
+| 5 | 3:20 | 34 | $1,378 | Vitality twice at about 60 HP, then Auto Shotgun at 56/140 |
+| 6 | 4:00 | 39 | $3,063 | Sentry Nest at 62/140 cleared 4 zombies in half a second |
+| 7 | 4:35 | 43 | $5,293 | Down to 52/140 |
+| 8 | 5:25 | 49 | $7,718 | Took no damage: fought from the raised fountain rim |
+| 9 | 6:10 | 54 | $10,503 | Took no damage from the same spot |
+| 10 | 6:50 | 24 plus the Titan | $4,150 | Laser Rifle at the start, Vitality at 36/140, then mopped up |
+
+What worked:
+
+- Saved Cash through waves 6 to 9, then bought the $10,000 Laser Rifle right before the boss.
+- Spent nothing between waves unless needed, because the wave clear heals you for free.
+- Stood on the fountain rim from wave 7. Zombies had to come up in a line.
+- Used F when in trouble, then E as cover. Both come back quickly.
+- Each wave pays more on clear, $250 for wave 1 up to $1,450 for wave 9.
+- The Titan enrages at about half health and calls more zombies. Red ground marks its slam.
+- Zombie hits are small but constant: about 10 HP a hit, so a crowd takes 100 HP in seconds.
 
 ## Fast testing in Studio
 
