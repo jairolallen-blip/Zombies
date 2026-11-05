@@ -41,3 +41,5 @@ See [[Roadmap]] for status.
 
 ## Working on the game
 - [[Team Create Workflow]]: how to edit the shared Studio place safely
+- [[Playing Million Zombies]]: controls, a normal run, how to survive, how to test this game
+- [[Playing Roblox Games]]: how an AI agent plays and tests any Roblox game
