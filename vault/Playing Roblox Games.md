@@ -77,6 +77,14 @@ The owner puts recordings in `D:CLAUDE WORKVideos`.
 
 Frames show what happened, but not why. Five seconds between frames hides fast movement. Use Earshot for the audio, and ask the player about their choices.
 
+The `watch` plugin (claude-video 0.3.2) helps in three cases:
+
+- Web links, once `yt-dlp` is installed.
+- Narrated clips, once a transcriber is set up. Captions and transcripts need no frame reading.
+- Exact timestamped frames from a short range of a local file.
+
+For long gameplay, contact sheets are cheaper: the plugin returns one image per frame, while 94 frames fit on 6 sheets. Its Gemini engine watches video with audio, but it uploads the video to Google and needs a key. Ask the owner before using it. On this PC, plain `python` isn't on the path, so run the plugin's scripts with `D:\CLAUDE WORK\earshot\.venv\Scripts\python.exe`, ffmpeg on the path, and `--engine local --no-whisper`.
+
 ## General game controls
 
 These hold in most Roblox games unless a game rebinds them.
