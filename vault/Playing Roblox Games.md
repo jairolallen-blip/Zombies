@@ -75,6 +75,18 @@ The owner puts recordings in `D:CLAUDE WORKVideos`.
 4. Zoom in on a moment with `-ss <seconds> -t 2 -vf "fps=10,scale=640:-1,tile=4x4"`.
 5. Check what you find against the code. A 7:50 video corrected a wrong note about healing this way.
 
+For fast actions, use `tools/video-look.js`:
+
+- `events` lists sudden changes across a whole video. A 7:50 video took about 26 seconds.
+- `strip` puts consecutive frames into one image. At 30 fps, frames are 33 ms apart, and a 30 fps recording can't show anything finer. A 16-frame strip at 15 fps made zombie walks, deaths and muzzle flashes readable.
+- Stacking frames into one motion-blur image failed in first person, because the moving camera smears everything.
+
+To see fast action in your own tests:
+
+1. Numbers first: log `Motor6D.Transform` every frame from `RunService`, which gives exact timing and catches one-frame pops.
+2. Frozen moments: rewrite the time attribute each frame and screenshot, for any exact moment of a pose or cutscene.
+3. Recordings: run OBS at 30 fps, then use `strip`. Hold the camera still and side-on for animation checks. Tool calls are too slow to catch fast action with screenshots.
+
 Frames show what happened, but not why. Five seconds between frames hides fast movement. Use Earshot for the audio, and ask the player about their choices.
 
 The `watch` plugin (claude-video 0.3.2) helps in three cases:

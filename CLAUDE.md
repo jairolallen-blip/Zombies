@@ -215,6 +215,7 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-05: **frame-by-frame video.** New `tools/video-look.js`: `events` finds sudden changes in a video, `strip` shows consecutive frames in one image. Methods for catching fast action are in `vault/Playing Roblox Games.md`.
 - 2026-11-05: **learned the game from the owner's 7:50 video.** A solo Engineer win (337 kills, +217 Gems) is now in `vault/Playing Million Zombies.md` with a wave table and tactics. It corrected the guide: a wave clear heals fully. Recordings go in `D:CLAUDE WORKVideos`. Small issue seen: the HUD shows WAVE 0/10 after pressing Continue on Victory.
 - 2026-11-05: **playguides for future agents.** New vault notes `Playing Roblox Games` (any game) and `Playing Million Zombies`, plus `tools/roblox-input.ps1` (click, key, shot and sheet for the live client). The store opening after Enter Safehouse was one click hitting both, per the owner.
 - 2026-11-05: **checked the live game** (owner asked). Joined place 110463048909417 in the real client three times, through Enter Safehouse, Quick Play, Pad 1, take-off, cutscene, wave 1 and the Overrun report back to the lobby. The new walk shows live: leaning body, one arm high and one low. No game script errors in the player log; the `Connection` and `LoadingScript` stacks at each teleport are Roblox core scripts. Owner took over the third run. Not checked live: Outbreak, phones, bosses, multiplayer.
