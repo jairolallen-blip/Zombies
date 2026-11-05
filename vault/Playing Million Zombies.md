@@ -60,7 +60,7 @@ Runs are first person. The lobby is third person. Phone and gamepad controls are
 - The Outbreak place starts a run by itself when you press Play.
 - `ReplicatedStorage.ZombiePreviews` holds one model of each type, ready to clone for pose sheets.
 - A clone placed in `workspace.Zombies` plays the real animation loop. Set `ZombieId`, `Pose` and `PoseAt` on it.
-- Studio saves are memory only there, but Studio API access is on, so a finished run can reach the real profile. The owner allows that.
+- Studio API access is on, so a finished Studio run can reach the real profile. The owner allows that.
 - Zombies stream in, so a client may see a zombie with no `Root` yet. Check before using it.
 
 ## Testing live
