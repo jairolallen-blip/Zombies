@@ -1,6 +1,6 @@
 # EffectsController
 
-> Made by `tools/vault-code-notes.js` from `src/client/Controllers/EffectsController.luau` (581 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/client/Controllers/EffectsController.luau` (594 lines). Don't edit it here: rerun the script.
 
 Part of [[Client controllers]].
 

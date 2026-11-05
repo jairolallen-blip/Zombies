@@ -364,6 +364,7 @@ end
 -- A "ZombieHit" effect makes it flinch back (arms fling up, head snaps, legs stagger) and flash red.
 local ATTACK_TIME = 0.45
 local FLINCH_TIME = 0.2
+local POSE_FADE = 12
 local FLASH_TIME = 0.12
 local FLASH_COLOR = Color3.fromRGB(255, 60, 40)
 local motorCache = setmetatable({}, { __mode = "k" })
@@ -399,6 +400,7 @@ local function getMotors(model)
 			Moving = 0,
 			Scale = root.Size.Y / 5,
 			FlinchUntil = 0,
+			PoseHeld = 0,
 			FlashBase = {},
 		}
 		motors.HeadA, motors.HeadB = carried(motors.Head, torso)
@@ -460,20 +462,31 @@ local function animateZombies(zombieFolder, dt)
 		headPitch += flinch * 0.4
 
 		-- server-stamped poses (ZombieService; model attributes Pose + PoseAt) take over the arms: "Rise" reaches
-		-- up and claws out of the ground, "Burrow" digs down into it, "Scream" (Wailer) flings them up, shaking
+		-- up and claws out of the ground, "Burrow" digs down into it, "Scream" (Wailer) flings them up, shaking.
+		-- They fade in and out (POSE_FADE) so the arms don't whip through a half turn in one frame.
 		local state = model:GetAttribute("Pose")
 		if state then
 			local age = serverNow - (model:GetAttribute("PoseAt") or serverNow)
 			local claw = math.sin(age * 16) * 0.45
+			motors.PoseOut, motors.PoseBody, motors.PoseHead = armOut, bodyPitch, headPitch
 			if state == "Rise" then
-				leftArm, rightArm = 1.9 + claw, 1.9 - claw
+				motors.PoseLeft, motors.PoseRight = 1.9 + claw, 1.9 - claw
 			elseif state == "Burrow" then
-				leftArm, rightArm = -0.9 + claw, -0.9 - claw
+				motors.PoseLeft, motors.PoseRight = -0.9 + claw, -0.9 - claw
 			elseif state == "Scream" then
 				local shake = math.sin(age * 45) * 0.08
-				leftArm, rightArm, armOut = 1.4 + shake, 1.4 - shake, 0.45
-				bodyPitch, headPitch = 0.22, 0.45
+				motors.PoseLeft, motors.PoseRight, motors.PoseOut = 1.4 + shake, 1.4 - shake, 0.45
+				motors.PoseBody, motors.PoseHead = 0.22, 0.45
 			end
+		end
+		local held = motors.PoseHeld + ((if state then 1 else 0) - motors.PoseHeld) * math.min(1, dt * POSE_FADE)
+		motors.PoseHeld = held
+		if held > 0.005 then
+			leftArm += (motors.PoseLeft - leftArm) * held
+			rightArm += (motors.PoseRight - rightArm) * held
+			armOut += (motors.PoseOut - armOut) * held
+			bodyPitch += (motors.PoseBody - bodyPitch) * held
+			headPitch += (motors.PoseHead - headPitch) * held
 		end
 
 		local body = CFrame.new(0, bob, 0) * CFrame.Angles(bodyPitch, bodyYaw, bodyRoll)
