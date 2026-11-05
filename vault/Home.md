@@ -16,6 +16,8 @@ The map of the vault. Start here, then follow links.
 
 Notes, the sidebar and the graph all use these colours. To colour a new note, add it in `tools/vault-style.js`.
 
+Open the vault as a 3D planet with the orbit icon on the left (CosmoGraph 3D). It uses its own colours, not this key.
+
 ## How the vault is laid out
 - **Design notes** (this folder): what each system is meant to do, the decisions behind it and ideas for later. Written by hand and kept current.
 - **Code notes** (`Code/`): one note per source file, made by `node tools/vault-code-notes.js`. Each has the file's header, what it uses, what uses it and the design notes it names. **Never hand-edit them:** rerun the script after code changes.

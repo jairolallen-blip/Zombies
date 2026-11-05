@@ -13,3 +13,8 @@ vault/.trash/
 
 # rendered trailer videos (deliverables, too big for git)
 thumbnails/*.mp4
+
+# community Obsidian plugin code (settings are kept)
+vault/.obsidian/plugins/*/main.js
+vault/.obsidian/plugins/*/styles.css
+vault/.obsidian/plugins/*/manifest.json
