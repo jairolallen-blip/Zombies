@@ -27,7 +27,10 @@ Every zombie is built from parts with **random variation**: shirt and pants colo
 - **Attack swipe:** both arms visibly swing down when it hits you (the client reads `AttackAt`).
 
 ## Animation (client)
-- The walk cycle scales with the zombie's actual speed. Runners pump their legs faster, and shamblers sway.
+- Each build has its own keyframed gait in [[ZombieGaits]]: Normal shambles with a limp, Lean sprints, Bloated waddles, Hulk, Titan and bosses stomp, Gaunt stalks, Crawler crawls. A standing zombie breathes and its head sags.
+- A gait advances with the zombie's real ground speed, so feet don't skate. Limp side, phase, size of motion and stride length vary by ZombieId, so a crowd doesn't march.
+- Torso and Head are Motor6Ds on Root like the limbs, which is what lets a body lean and lurch. The motion is client only, so to the server a zombie is rigid and hit boxes don't move.
+- To change a walk, edit the keys in [[ZombieGaits]]. The file's own self-check catches a cycle that jumps at the loop.
 - Arms stay reaching forward with a lazy bob, the head lolls, and the attack swipe plays on top.
 
 ## Notes

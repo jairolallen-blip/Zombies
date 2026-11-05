@@ -1,6 +1,6 @@
 # ZombieModels
 
-> Made by `tools/vault-code-notes.js` from `src/server/ZombieModels.luau` (661 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/server/ZombieModels.luau` (652 lines). Don't edit it here: rerun the script.
 
 Part of [[Server services]].
 
@@ -12,7 +12,8 @@ MODEL REFERENCES). ZombieModels.Build(typeId, def, cframe) -> model, root, linea
 
 Contract used by ZombieService / CombatService / EffectsController:
   "Root"      invisible collision hitbox (2.4 x 5 x 1.6 * Scale), centre at the given CFrame
-  Motor6Ds named LeftArm / RightArm / LeftLeg / RightLeg on Root (client animates .Transform)
+  Motor6Ds named LeftArm / RightArm / LeftLeg / RightLeg / Torso / Head on Root (client animates .Transform;
+  to the server they are rigid, so hits and collisions don't move)
   "Torso"     the shirt block (Bloater fuse turns it neon)
   "Head", "Head*" detail parts and "Eye" parts count as headshots
 Builds (def.Look.Build): Normal, Lean (hunched), Bloated, Hulk, Titan, and for Nightmare Crawler (on all

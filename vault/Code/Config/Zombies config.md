@@ -64,6 +64,7 @@ Nightmare types (Config/Nightmare; the NIGHTMARE row of the enemy index):
 - [[BossController]]
 - [[DataService]]
 - [[DebugService]]
+- [[EffectsController]]
 - [[MatchService]]
 - [[ShopController]]
 - [[WelcomeController]]

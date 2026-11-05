@@ -3,7 +3,8 @@
 --
 -- Contract used by ZombieService / CombatService / EffectsController:
 --   "Root"      invisible collision hitbox (2.4 x 5 x 1.6 * Scale), centre at the given CFrame
---   Motor6Ds named LeftArm / RightArm / LeftLeg / RightLeg on Root (client animates .Transform)
+--   Motor6Ds named LeftArm / RightArm / LeftLeg / RightLeg / Torso / Head on Root (client animates .Transform;
+--   to the server they are rigid, so hits and collisions don't move)
 --   "Torso"     the shirt block (Bloater fuse turns it neon)
 --   "Head", "Head*" detail parts and "Eye" parts count as headshots
 -- Builds (def.Look.Build): Normal, Lean (hunched), Bloated, Hulk, Titan, and for Nightmare Crawler (on all
@@ -561,16 +562,6 @@ function ZombieModels.Build(typeId, def, cf)
 	root.Parent = model
 	model.PrimaryPart = root
 
-	local function weldToRoot(p, offset)
-		p.CFrame = cf * offset
-		local w = Instance.new("Weld")
-		w.Part0 = root
-		w.Part1 = p
-		w.C0 = offset
-		w.Parent = p
-		p.Parent = model
-		return p
-	end
 	local function motor(p, joint, limbCenter)
 		p.CFrame = cf * limbCenter
 		local m = Instance.new("Motor6D")
@@ -587,9 +578,9 @@ function ZombieModels.Build(typeId, def, cf)
 	local torsoSize = b.Torso * s
 	local hip = -0.5 * s
 	local torsoCF = CFrame.new(0, hip + torsoSize.Y / 2, 0) * CFrame.Angles(-b.Lean, 0, 0)
-	local torso = weldToRoot(newPart("Torso", torsoSize, shirt, Enum.Material.Fabric), torsoCF)
+	local torso = motor(newPart("Torso", torsoSize, shirt, Enum.Material.Fabric), CFrame.new(0, hip, 0), torsoCF)
 	local neck = torsoCF * CFrame.new(0, torsoSize.Y / 2, 0)
-	local head = weldToRoot(newPart("Head", (b.Head or Vector3.new(1.25, 1.25, 1.25)) * s, look.Skin), neck * CFrame.Angles(b.HeadUp or 0, 0, 0) * CFrame.new(0, (if b.Head then b.Head.Y / 2 else 0.62) * s, 0) * CFrame.Angles(rng:NextNumber(-0.15, 0.1), 0, rng:NextNumber(-0.25, 0.25)))
+	local head = motor(newPart("Head", (b.Head or Vector3.new(1.25, 1.25, 1.25)) * s, look.Skin), CFrame.new(neck.Position), neck * CFrame.Angles(b.HeadUp or 0, 0, 0) * CFrame.new(0, (if b.Head then b.Head.Y / 2 else 0.62) * s, 0) * CFrame.Angles(rng:NextNumber(-0.15, 0.1), 0, rng:NextNumber(-0.25, 0.25)))
 	face(head, look, s, rng)
 	torsoDetails(torso, look, buildName, s, rng)
 	if buildName == "Titan" then

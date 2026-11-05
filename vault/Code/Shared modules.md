@@ -12,3 +12,4 @@ Back to [[Home]].
 - [[Health script]]: Intentionally empty. A Script named "Health" in StarterCharacterScripts replaces Roblox's
 - [[Remotes]]: every RemoteEvent in the game, by name. Server creates them; clients wait for them.
 - [[Util]]: shared helpers with no game state (Signal, weapon/upgrade math, formatting).
+- [[ZombieGaits]]: keyframed walk cycles for the zombies (vault: Zombies.md). Pure data + sampling, no instances.
