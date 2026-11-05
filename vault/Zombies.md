@@ -1,3 +1,9 @@
+---
+tags: [zone-gameplay]
+cssclasses: [zone-gameplay]
+samz-zone: gameplay
+---
+
 # Zombies (phase 5): done
 
 Built and playtested on 2026-11-01.

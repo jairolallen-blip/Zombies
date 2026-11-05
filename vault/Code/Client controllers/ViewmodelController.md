@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # ViewmodelController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/ViewmodelController.luau` (647 lines). Don't edit it here: rerun the script.

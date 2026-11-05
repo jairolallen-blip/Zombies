@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # EffectsController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/EffectsController.luau` (616 lines). Don't edit it here: rerun the script.

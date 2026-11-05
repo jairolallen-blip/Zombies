@@ -1,3 +1,9 @@
+---
+tags: [zone-gameplay]
+cssclasses: [zone-gameplay]
+samz-zone: gameplay
+---
+
 # Classes and Abilities
 
 Back to [[Home]]. Data in [[Classes config]]; behaviour in [[AbilityService]]; keys in [[InputController]]; shop in [[ShopController]]; figures from [[ClassFigures]].

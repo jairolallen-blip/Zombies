@@ -1,3 +1,9 @@
+---
+tags: [zone-gameplay]
+cssclasses: [zone-gameplay]
+samz-zone: gameplay
+---
+
 # Outbreak
 
 The million-zombie mode, and what's different about working on it. Back to [[Home]].

@@ -1,3 +1,9 @@
+---
+tags: [zone-world]
+cssclasses: [zone-world]
+samz-zone: world
+---
+
 # City Map (phase 2): done
 
 Part of the [[Roadmap]]. Our arena, centred at **x = 1000** (next to the [[Lobby]]). Built and playtested on 2026-11-01.

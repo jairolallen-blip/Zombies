@@ -1,3 +1,8 @@
+---
+tags: [zone-config]
+cssclasses: [zone-config]
+---
+
 # Conditions config
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Config/Conditions.luau` (127 lines). Don't edit it here: rerun the script.

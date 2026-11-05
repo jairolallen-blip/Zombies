@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # WelcomeController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/WelcomeController.luau` (604 lines). Don't edit it here: rerun the script.

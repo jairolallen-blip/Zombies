@@ -1,3 +1,8 @@
+---
+tags: [zone-config]
+cssclasses: [zone-config]
+---
+
 # Levels config
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Config/Levels.luau` (68 lines). Don't edit it here: rerun the script.

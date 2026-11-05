@@ -216,6 +216,7 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-05: **vault colour-coded.** `tools/vault-style.js` holds 10 colour zones and tags notes, colours the sidebar and sets the graph groups. `snippets/samz-theme.css` is the theme. `vault-code-notes.js` tags code notes. New notes need a zone in `vault-style.js`. `graph.json` stays uncommitted, so rerun the script to restore colours.
 - 2026-11-05: **Outbreak scripts exported.** 74 scripts are in `outbreak/`, read from a downloaded `.rbxl` by new `tools/rbxl-scripts.js`. Sizes and hashes of all 74 matched Studio.
 - 2026-11-05: **Outbreak note.** New `vault/Outbreak.md`: how the place differs, what lives only in the place file, how to change it. `tools/outbreak-ocean.luau` records the ocean rebuild.
 - 2026-11-05: **Outbreak gets the new moves and its ocean back.** Moves copied (it keeps its distance LOD). The ocean was missing because the terrain water was never baked there and an opaque Baseplate sat at sea level: water now fills X -1000..3000, Z -2450..2200, Y -20..0 with main's water settings, and the Baseplate matches main (Y -21, invisible). This edit lives only in the place file. Tested in Play with no errors.

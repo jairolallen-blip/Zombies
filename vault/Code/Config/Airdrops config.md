@@ -1,3 +1,8 @@
+---
+tags: [zone-config]
+cssclasses: [zone-config]
+---
+
 # Airdrops config
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Config/Airdrops.luau` (35 lines). Don't edit it here: rerun the script.

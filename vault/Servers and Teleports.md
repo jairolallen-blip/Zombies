@@ -1,3 +1,9 @@
+---
+tags: [zone-working]
+cssclasses: [zone-working]
+samz-zone: working
+---
+
 # Servers and Teleports
 
 Added 2026-11-02 so a real playerbase doesn't cram into one city. Back to [[Home]].

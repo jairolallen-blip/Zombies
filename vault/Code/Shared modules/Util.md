@@ -1,3 +1,8 @@
+---
+tags: [zone-shared]
+cssclasses: [zone-shared]
+---
+
 # Util
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Util.luau` (84 lines). Don't edit it here: rerun the script.

@@ -1,3 +1,8 @@
+---
+tags: [zone-shared]
+cssclasses: [zone-shared]
+---
+
 # GunModels
 
 > Made by `tools/vault-code-notes.js` from `src/shared/GunModels.luau` (285 lines). Don't edit it here: rerun the script.

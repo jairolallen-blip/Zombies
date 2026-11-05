@@ -1,3 +1,8 @@
+---
+tags: [zone-map]
+cssclasses: [zone-map]
+---
+
 # OurLobby
 
 > Made by `tools/vault-code-notes.js` from `src/server/Map/OurLobby.luau` (836 lines). Don't edit it here: rerun the script.

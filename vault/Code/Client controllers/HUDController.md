@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # HUDController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/HUDController.luau` (529 lines). Don't edit it here: rerun the script.

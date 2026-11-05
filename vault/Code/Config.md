@@ -1,3 +1,8 @@
+---
+tags: [zone-config]
+cssclasses: [zone-config]
+---
+
 # Config
 
 > Made by `tools/vault-code-notes.js`. Don't edit it here: rerun the script.

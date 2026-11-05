@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # EconomyService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/EconomyService.luau` (156 lines). Don't edit it here: rerun the script.

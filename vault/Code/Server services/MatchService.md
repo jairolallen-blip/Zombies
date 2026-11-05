@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # MatchService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/MatchService.luau` (767 lines). Don't edit it here: rerun the script.

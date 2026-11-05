@@ -1,3 +1,8 @@
+---
+tags: [zone-map]
+cssclasses: [zone-map]
+---
+
 # OurCity
 
 > Made by `tools/vault-code-notes.js` from `src/server/Map/OurCity.luau` (699 lines). Don't edit it here: rerun the script.

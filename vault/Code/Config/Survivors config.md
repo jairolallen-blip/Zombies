@@ -1,3 +1,8 @@
+---
+tags: [zone-config]
+cssclasses: [zone-config]
+---
+
 # Survivors config
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Config/Survivors.luau` (100 lines). Don't edit it here: rerun the script.

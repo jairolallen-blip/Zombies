@@ -1,3 +1,9 @@
+---
+tags: [zone-progress]
+cssclasses: [zone-progress]
+samz-zone: progress
+---
+
 # Achievements
 
 Lifetime goals that pay Gems (added 2026-11-02). Back to [[Home]]. List in [[Achievements config]]; progress in [[DataService]]; screen in [[ShopController]].

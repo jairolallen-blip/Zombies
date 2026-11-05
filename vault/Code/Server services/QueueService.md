@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # QueueService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/QueueService.luau` (311 lines). Don't edit it here: rerun the script.

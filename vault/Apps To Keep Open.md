@@ -1,3 +1,9 @@
+---
+tags: [zone-working]
+cssclasses: [zone-working]
+samz-zone: working
+---
+
 # Apps To Keep Open
 
 The apps Claude wants running, and why. Back to [[Home]].

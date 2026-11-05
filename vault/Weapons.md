@@ -1,3 +1,9 @@
+---
+tags: [zone-gameplay]
+cssclasses: [zone-gameplay]
+samz-zone: gameplay
+---
+
 # Weapons (phase 4): done
 
 Built and playtested on 2026-11-01. In a real run, all 4 levels produced the right model, the server accepted their shots, hits and kills registered, and ammo drained correctly. Upgrading at max level shows "Weapon — MAX". The wave-clear bonus is correct (+$250 after wave 1). A self-check builds all 10 gun models.

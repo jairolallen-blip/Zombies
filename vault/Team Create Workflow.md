@@ -1,3 +1,9 @@
+---
+tags: [zone-working]
+cssclasses: [zone-working]
+samz-zone: working
+---
+
 # Team Create Workflow
 
 How to edit the shared Studio place without breaking a friend's work. The full version is in `CLAUDE.md` §2, §5 and §6. Back to [[Home]].

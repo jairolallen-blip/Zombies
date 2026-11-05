@@ -1,0 +1,152 @@
+/* Survive a Million Zombies vault theme. Each note's colour comes from --zone, set per zone in samz-zones.css. */
+body {
+	--zone: #9cff5a;
+	--samz-green: #9cff5a;
+	--samz-red: #ff4a3d;
+	--samz-amber: #ffb43c;
+	--samz-purple: #b98bff;
+	--samz-cyan: #4be3d0;
+	--samz-pink: #ff5fd2;
+	--background-primary: #0f1114;
+	--background-primary-alt: #14171b;
+	--background-secondary: #0b0d10;
+	--background-secondary-alt: #08090b;
+	--interactive-accent: #5fbf2a;
+	--interactive-accent-hover: #9cff5a;
+	--text-accent: #9cff5a;
+	--text-accent-hover: #d6ffb8;
+	--link-color: var(--zone);
+	--link-color-hover: #ffffff;
+	--link-unresolved-color: var(--samz-red);
+	--link-external-color: var(--samz-cyan);
+	--hr-color: var(--zone);
+	--tag-color: #0b0d10;
+	--tag-background: var(--zone);
+}
+
+/* notes */
+.markdown-preview-view,
+.markdown-source-view.mod-cm6 .cm-scroller {
+	background-image:
+		radial-gradient(900px 340px at 12% -6%, color-mix(in srgb, var(--zone) 15%, transparent), transparent 70%),
+		radial-gradient(760px 300px at 100% 0%, color-mix(in srgb, var(--samz-red) 8%, transparent), transparent 70%);
+	background-repeat: no-repeat;
+}
+
+/* the big title shimmers in the note's colour */
+.inline-title,
+.markdown-preview-view h1,
+.markdown-rendered h1,
+.HyperMD-header-1 .cm-header-1 {
+	font-weight: 900;
+	letter-spacing: 0.02em;
+	background-image: linear-gradient(100deg, var(--zone) 0%, #ffffff 45%, var(--zone) 60%, var(--samz-amber) 100%);
+	background-size: 220% 100%;
+	-webkit-background-clip: text;
+	background-clip: text;
+	-webkit-text-fill-color: transparent;
+	filter: drop-shadow(0 0 12px color-mix(in srgb, var(--zone) 45%, transparent));
+	animation: samz-shimmer 7s ease-in-out infinite alternate;
+}
+@keyframes samz-shimmer {
+	from { background-position: 0% 0; }
+	to { background-position: 100% 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+	.inline-title,
+	.markdown-preview-view h1,
+	.markdown-rendered h1,
+	.HyperMD-header-1 .cm-header-1 { animation: none; }
+}
+
+.markdown-rendered h2,
+.HyperMD-header-2 .cm-header-2 {
+	color: var(--zone);
+	text-shadow: 0 0 14px color-mix(in srgb, var(--zone) 40%, transparent);
+}
+.markdown-rendered h2 {
+	border-bottom: 2px solid color-mix(in srgb, var(--zone) 45%, transparent);
+	padding-bottom: 0.2em;
+}
+.markdown-rendered h3,
+.HyperMD-header-3 .cm-header-3 { color: var(--samz-amber); }
+.markdown-rendered h4,
+.HyperMD-header-4 .cm-header-4 { color: var(--samz-cyan); }
+
+.markdown-rendered strong,
+.cm-strong { color: #ffffff; }
+.markdown-rendered em,
+.cm-em { color: var(--samz-amber); }
+.markdown-rendered hr {
+	border: none;
+	height: 2px;
+	background: linear-gradient(90deg, transparent, var(--zone), var(--samz-red), transparent);
+}
+
+/* links */
+.markdown-rendered a.internal-link,
+.cm-hmd-internal-link {
+	text-decoration: none;
+	transition: text-shadow 0.15s ease;
+}
+.markdown-rendered a.internal-link:hover {
+	text-shadow: 0 0 10px var(--zone);
+}
+
+/* code and quotes */
+.markdown-rendered code,
+.cm-inline-code {
+	color: var(--samz-cyan) !important;
+	background: rgba(75, 227, 208, 0.1) !important;
+	border-radius: 4px;
+}
+.markdown-rendered pre {
+	border: 1px solid color-mix(in srgb, var(--zone) 35%, transparent);
+	border-radius: 8px;
+	box-shadow: 0 0 18px color-mix(in srgb, var(--zone) 12%, transparent);
+}
+.markdown-rendered blockquote {
+	border-left: 4px solid var(--zone);
+	background: color-mix(in srgb, var(--zone) 8%, transparent);
+	border-radius: 0 8px 8px 0;
+	padding: 0.5em 1em;
+}
+
+/* tables */
+.markdown-rendered table {
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--zone) 35%, transparent);
+}
+.markdown-rendered th {
+	background: color-mix(in srgb, var(--zone) 22%, #0b0d10);
+	color: #ffffff;
+}
+.markdown-rendered tbody tr:hover {
+	background: color-mix(in srgb, var(--zone) 8%, transparent);
+}
+
+/* the sidebar and tabs */
+.nav-file-title,
+.nav-folder-title {
+	border-radius: 5px;
+	transition: background 0.12s ease;
+}
+.nav-file-title.is-active {
+	background: color-mix(in srgb, var(--samz-green) 22%, transparent);
+	box-shadow: inset 3px 0 0 var(--samz-green);
+}
+.workspace-tab-header.is-active .workspace-tab-header-inner-title { color: var(--samz-green); }
+.workspace-tab-header.is-active { box-shadow: inset 0 -2px 0 var(--samz-green); }
+
+/* colour key on Home */
+.samz-key {
+	display: inline-block;
+	padding: 0.1em 0.6em;
+	margin: 0.15em 0.2em;
+	border-radius: 999px;
+	font-weight: 700;
+	color: #0b0d10;
+	background: var(--zone);
+	box-shadow: 0 0 10px color-mix(in srgb, var(--zone) 55%, transparent);
+}

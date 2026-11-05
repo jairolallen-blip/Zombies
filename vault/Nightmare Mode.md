@@ -1,3 +1,9 @@
+---
+tags: [zone-gameplay]
+cssclasses: [zone-gameplay]
+samz-zone: gameplay
+---
+
 # Nightmare Mode
 
 The hard mode (started 2026-11-02, the owner's design). Back to [[Home]]. Tunables in [[Nightmare config]]; the pad is built by [[FlightLine]]; the run is played by [[MatchService]].

@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # StoreController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/StoreController.luau` (655 lines). Don't edit it here: rerun the script.

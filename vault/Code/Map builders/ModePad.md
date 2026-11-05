@@ -1,3 +1,8 @@
+---
+tags: [zone-map]
+cssclasses: [zone-map]
+---
+
 # ModePad
 
 > Made by `tools/vault-code-notes.js` from `src/server/Map/ModePad.luau` (144 lines). Don't edit it here: rerun the script.

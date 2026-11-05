@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # SoundController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/SoundController.luau` (429 lines). Don't edit it here: rerun the script.

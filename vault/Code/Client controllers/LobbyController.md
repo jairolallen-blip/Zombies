@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # LobbyController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/LobbyController.luau` (182 lines). Don't edit it here: rerun the script.

@@ -1,3 +1,8 @@
+---
+tags: [zone-config]
+cssclasses: [zone-config]
+---
+
 # Store config
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Config/Store.luau` (46 lines). Don't edit it here: rerun the script.

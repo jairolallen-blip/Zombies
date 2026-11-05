@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # Server services
 
 > Made by `tools/vault-code-notes.js`. Don't edit it here: rerun the script.

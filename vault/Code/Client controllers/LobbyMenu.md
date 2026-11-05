@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # LobbyMenu
 
 > Made by `tools/vault-code-notes.js` from `src/client/UI/LobbyMenu.luau` (277 lines). Don't edit it here: rerun the script.

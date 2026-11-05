@@ -1,8 +1,20 @@
+---
+tags: [zone-home]
+cssclasses: [zone-home]
+samz-zone: home
+---
+
 # Home
 
 The map of the vault. Start here, then follow links.
 
 > **New agent or collaborator?** Read `CLAUDE.md` in the repo root first. It's the always-current handoff guide.
+
+## Colour key
+
+<span class="samz-key zone-gameplay">Gameplay</span> <span class="samz-key zone-world">World and story</span> <span class="samz-key zone-progress">Progress and store</span> <span class="samz-key zone-working">How we work</span> <span class="samz-key zone-server">Server code</span> <span class="samz-key zone-client">Client code</span> <span class="samz-key zone-map">Map code</span> <span class="samz-key zone-shared">Shared code</span> <span class="samz-key zone-config">Config</span>
+
+Notes, the sidebar and the graph all use these colours. To colour a new note, add it in `tools/vault-style.js`.
 
 ## How the vault is laid out
 - **Design notes** (this folder): what each system is meant to do, the decisions behind it and ideas for later. Written by hand and kept current.

@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # Server Main
 
 > Made by `tools/vault-code-notes.js` from `src/server/Main.server.luau` (48 lines). Don't edit it here: rerun the script.

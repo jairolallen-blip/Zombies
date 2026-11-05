@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # AirdropService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/AirdropService.luau` (288 lines). Don't edit it here: rerun the script.

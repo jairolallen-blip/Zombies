@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # GroundFxController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/GroundFxController.luau` (121 lines). Don't edit it here: rerun the script.

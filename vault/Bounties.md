@@ -1,3 +1,9 @@
+---
+tags: [zone-progress]
+cssclasses: [zone-progress]
+samz-zone: progress
+---
+
 # Bounties
 
 Daily tasks on the BOUNTY BOARD, north-west of the plaza by the Flight Line gate (added 2026-11-02). Back to [[Home]]. Data in [[Bounties config]]; tracking in [[DataService]]; screen in [[ShopController]]; board built by [[FieldStations]].

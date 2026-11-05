@@ -1,3 +1,8 @@
+---
+tags: [zone-shared]
+cssclasses: [zone-shared]
+---
+
 # Health script
 
 > Made by `tools/vault-code-notes.js` from `src/character/Health.server.luau` (4 lines). Don't edit it here: rerun the script.

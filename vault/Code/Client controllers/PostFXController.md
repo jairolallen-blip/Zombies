@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # PostFXController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/PostFXController.luau` (182 lines). Don't edit it here: rerun the script.

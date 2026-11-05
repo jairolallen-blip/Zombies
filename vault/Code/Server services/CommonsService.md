@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # CommonsService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/CommonsService.luau` (161 lines). Don't edit it here: rerun the script.

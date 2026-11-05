@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # RadioController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/RadioController.luau` (152 lines). Don't edit it here: rerun the script.

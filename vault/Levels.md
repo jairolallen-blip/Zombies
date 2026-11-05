@@ -1,3 +1,9 @@
+---
+tags: [zone-progress]
+cssclasses: [zone-progress]
+samz-zone: progress
+---
+
 # Levels and XP
 
 Account levels (2026-11-03, the owner's idea). Back to [[Home]]. Numbers in [[Levels config]]; XP is paid by [[MatchService]] and stored by [[DataService]]; the bar is drawn by [[WelcomeController]].

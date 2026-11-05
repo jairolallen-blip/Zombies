@@ -1,3 +1,8 @@
+---
+tags: [zone-shared]
+cssclasses: [zone-shared]
+---
+
 # Remotes
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Remotes.luau` (76 lines). Don't edit it here: rerun the script.

@@ -1,3 +1,9 @@
+---
+tags: [zone-world]
+cssclasses: [zone-world]
+samz-zone: world
+---
+
 # Lore
 
 The game's story so far. Keep new lines consistent with it. Back to [[Home]].

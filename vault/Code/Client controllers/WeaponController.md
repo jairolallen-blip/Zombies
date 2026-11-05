@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # WeaponController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/WeaponController.luau` (277 lines). Don't edit it here: rerun the script.

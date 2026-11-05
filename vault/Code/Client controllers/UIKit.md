@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # UIKit
 
 > Made by `tools/vault-code-notes.js` from `src/client/UI/UIKit.luau` (328 lines). Don't edit it here: rerun the script.

@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # ReadyFx
 
 > Made by `tools/vault-code-notes.js` from `src/client/UI/ReadyFx.luau` (99 lines). Don't edit it here: rerun the script.

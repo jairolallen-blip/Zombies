@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # DebugService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/DebugService.luau` (217 lines). Don't edit it here: rerun the script.

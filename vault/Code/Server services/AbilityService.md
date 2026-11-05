@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # AbilityService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/AbilityService.luau` (256 lines). Don't edit it here: rerun the script.

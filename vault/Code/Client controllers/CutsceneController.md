@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # CutsceneController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/CutsceneController.luau` (583 lines). Don't edit it here: rerun the script.

@@ -1,3 +1,9 @@
+---
+tags: [zone-working]
+cssclasses: [zone-working]
+samz-zone: working
+---
+
 # Phones and Gamepads
 
 Most Roblox players are on phones, so the run plays without a keyboard (added 2026-11-02). Back to [[Home]]. Code: [[TouchController]], with the trigger in [[WeaponController]].

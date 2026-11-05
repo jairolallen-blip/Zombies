@@ -1,3 +1,8 @@
+---
+tags: [zone-shared]
+cssclasses: [zone-shared]
+---
+
 # GameState
 
 > Made by `tools/vault-code-notes.js` from `src/shared/GameState.luau` (54 lines). Don't edit it here: rerun the script.

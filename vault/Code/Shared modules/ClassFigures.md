@@ -1,3 +1,8 @@
+---
+tags: [zone-shared]
+cssclasses: [zone-shared]
+---
+
 # ClassFigures
 
 > Made by `tools/vault-code-notes.js` from `src/shared/ClassFigures.luau` (199 lines). Don't edit it here: rerun the script.

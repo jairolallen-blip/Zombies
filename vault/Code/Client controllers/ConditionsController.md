@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # ConditionsController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/ConditionsController.luau` (93 lines). Don't edit it here: rerun the script.

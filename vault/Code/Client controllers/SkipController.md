@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # SkipController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/SkipController.luau` (100 lines). Don't edit it here: rerun the script.

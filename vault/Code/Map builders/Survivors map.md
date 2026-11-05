@@ -1,3 +1,8 @@
+---
+tags: [zone-map]
+cssclasses: [zone-map]
+---
+
 # Survivors map
 
 > Made by `tools/vault-code-notes.js` from `src/server/Map/Survivors.luau` (74 lines). Don't edit it here: rerun the script.

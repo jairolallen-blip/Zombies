@@ -1,3 +1,9 @@
+---
+tags: [zone-working]
+cssclasses: [zone-working]
+samz-zone: working
+---
+
 # Roadmap: our version
 
 > **New agent or collaborator?** Start with `CLAUDE.md` in the repo root (outside this vault). It's the always-current handoff guide: game content, architecture, workflow, playtesting and pitfalls.

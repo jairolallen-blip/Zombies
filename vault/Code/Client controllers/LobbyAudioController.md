@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # LobbyAudioController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/LobbyAudioController.luau` (97 lines). Don't edit it here: rerun the script.

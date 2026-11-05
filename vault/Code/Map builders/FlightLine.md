@@ -1,3 +1,8 @@
+---
+tags: [zone-map]
+cssclasses: [zone-map]
+---
+
 # FlightLine
 
 > Made by `tools/vault-code-notes.js` from `src/server/Map/FlightLine.luau` (319 lines). Don't edit it here: rerun the script.

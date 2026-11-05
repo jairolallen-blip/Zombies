@@ -1,3 +1,9 @@
+---
+tags: [zone-gameplay]
+cssclasses: [zone-gameplay]
+samz-zone: gameplay
+---
+
 # Waves and Boss (phase 7): done
 
 Built and playtested on 2026-11-01.

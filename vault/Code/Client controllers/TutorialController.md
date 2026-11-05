@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # TutorialController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/TutorialController.luau` (50 lines). Don't edit it here: rerun the script.

@@ -1,3 +1,8 @@
+---
+tags: [zone-map]
+cssclasses: [zone-map]
+---
+
 # Map builders
 
 > Made by `tools/vault-code-notes.js`. Don't edit it here: rerun the script.

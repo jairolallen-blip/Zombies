@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # ThrowController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/ThrowController.luau` (187 lines). Don't edit it here: rerun the script.

@@ -1,3 +1,9 @@
+---
+tags: [zone-world]
+cssclasses: [zone-world]
+samz-zone: world
+---
+
 # Match Start (phase 3): done
 
 Part of the [[Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and playtested on 2026-11-01.

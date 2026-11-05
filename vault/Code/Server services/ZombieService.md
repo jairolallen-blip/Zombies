@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # ZombieService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/ZombieService.luau` (1079 lines). Don't edit it here: rerun the script.

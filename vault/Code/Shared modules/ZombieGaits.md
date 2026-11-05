@@ -1,3 +1,8 @@
+---
+tags: [zone-shared]
+cssclasses: [zone-shared]
+---
+
 # ZombieGaits
 
 > Made by `tools/vault-code-notes.js` from `src/shared/ZombieGaits.luau` (436 lines). Don't edit it here: rerun the script.

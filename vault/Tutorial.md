@@ -1,3 +1,9 @@
+---
+tags: [zone-world]
+cssclasses: [zone-world]
+samz-zone: world
+---
+
 # Tutorial
 
 The first-time player's training run (added 2026-11-02). Back to [[Home]]. Part of [[Servers and Teleports]].

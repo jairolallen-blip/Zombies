@@ -1,3 +1,8 @@
+---
+tags: [zone-config]
+cssclasses: [zone-config]
+---
+
 # Classes config
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Config/Classes.luau` (113 lines). Don't edit it here: rerun the script.

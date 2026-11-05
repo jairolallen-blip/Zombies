@@ -91,6 +91,9 @@ function header(text) {
 }
 
 const link = (f) => `[[${f.note}]]`;
+// colour zone per group: the colours themselves are in tools/vault-style.js
+const ZONE = { "Server services": "server", "Client controllers": "client", "Map builders": "map", "Shared modules": "shared", Config: "config" };
+const front = (group) => `---\ntags: [zone-${ZONE[group]}]\ncssclasses: [zone-${ZONE[group]}]\n---\n\n`;
 const list = (set) => ([...set].length ? [...set].map((f) => `- ${link(f)}`).sort().join("\n") : "- (none)");
 const write = (rel, body) => {
 	const p = path.join(OUT, rel);
@@ -106,7 +109,8 @@ for (const f of files) {
 	const seeAlso = new Set([...mentions.get(f)].filter((o) => !uses.get(f).has(o) && !usedBy.has(o)));
 	write(
 		`${f.group}/${f.note}.md`,
-		`# ${f.note}\n\n` +
+		front(f.group) +
+				`# ${f.note}\n\n` +
 			`> Made by \`tools/vault-code-notes.js\` from \`src/${f.rel}\` (${lines} lines). Don't edit it here: rerun the script.\n\n` +
 			`Part of [[${f.group}]].\n\n` +
 			`## What it does\n\n\`\`\`text\n${header(f.text) || "(no header comment)"}\n\`\`\`\n\n` +
@@ -119,7 +123,8 @@ for (const g of GROUPS.filter((x) => x.blurb)) {
 	const members = files.filter((f) => f.group === g.group);
 	write(
 		`${g.group}.md`,
-		`# ${g.group}\n\n> Made by \`tools/vault-code-notes.js\`. Don't edit it here: rerun the script.\n\n` +
+		front(g.group) +
+				`# ${g.group}\n\n> Made by \`tools/vault-code-notes.js\`. Don't edit it here: rerun the script.\n\n` +
 			`${g.blurb}\n\nBack to [[Home]].\n\n` +
 			members.map((f) => `- ${link(f)}: ${(header(f.text).split("\n")[0] || "").replace(/^\w+:\s*/, "")}`).sort().join("\n") +
 			"\n"

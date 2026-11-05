@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # TutorialService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/TutorialService.luau` (144 lines). Don't edit it here: rerun the script.

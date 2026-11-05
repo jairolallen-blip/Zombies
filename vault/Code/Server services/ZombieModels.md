@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # ZombieModels
 
 > Made by `tools/vault-code-notes.js` from `src/server/ZombieModels.luau` (652 lines). Don't edit it here: rerun the script.

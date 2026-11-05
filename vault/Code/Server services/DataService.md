@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # DataService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/DataService.luau` (515 lines). Don't edit it here: rerun the script.

@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # DailyService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/DailyService.luau` (66 lines). Don't edit it here: rerun the script.

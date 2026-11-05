@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # Client Main
 
 > Made by `tools/vault-code-notes.js` from `src/client/Main.client.luau` (24 lines). Don't edit it here: rerun the script.

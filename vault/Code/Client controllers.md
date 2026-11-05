@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # Client controllers
 
 > Made by `tools/vault-code-notes.js`. Don't edit it here: rerun the script.

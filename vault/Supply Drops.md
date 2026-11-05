@@ -1,3 +1,9 @@
+---
+tags: [zone-gameplay]
+cssclasses: [zone-gameplay]
+samz-zone: gameplay
+---
+
 # Supply Drops
 
 Mid-run crates you fight to reach (added 2026-11-02). Back to [[Home]]. Server [[AirdropService]], data [[Airdrops config]], client [[AirdropController]].

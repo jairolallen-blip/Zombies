@@ -1,3 +1,8 @@
+---
+tags: [zone-map]
+cssclasses: [zone-map]
+---
+
 # Commons
 
 > Made by `tools/vault-code-notes.js` from `src/server/Map/Commons.luau` (601 lines). Don't edit it here: rerun the script.

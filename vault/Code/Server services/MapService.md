@@ -1,3 +1,8 @@
+---
+tags: [zone-server]
+cssclasses: [zone-server]
+---
+
 # MapService
 
 > Made by `tools/vault-code-notes.js` from `src/server/Services/MapService.luau` (285 lines). Don't edit it here: rerun the script.

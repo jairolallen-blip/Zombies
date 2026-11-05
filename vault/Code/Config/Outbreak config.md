@@ -1,3 +1,8 @@
+---
+tags: [zone-config]
+cssclasses: [zone-config]
+---
+
 # Outbreak config
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Config/Outbreak.luau` (14 lines). Don't edit it here: rerun the script.

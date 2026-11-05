@@ -1,3 +1,8 @@
+---
+tags: [zone-config]
+cssclasses: [zone-config]
+---
+
 # Achievements config
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Config/Achievements.luau` (62 lines). Don't edit it here: rerun the script.

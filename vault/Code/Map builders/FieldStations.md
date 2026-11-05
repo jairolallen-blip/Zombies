@@ -1,3 +1,8 @@
+---
+tags: [zone-map]
+cssclasses: [zone-map]
+---
+
 # FieldStations
 
 > Made by `tools/vault-code-notes.js` from `src/server/Map/FieldStations.luau` (199 lines). Don't edit it here: rerun the script.

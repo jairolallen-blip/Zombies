@@ -1,3 +1,9 @@
+---
+tags: [zone-world]
+cssclasses: [zone-world]
+samz-zone: world
+---
+
 # Lobby (phase 1): done
 
 Part of the [[Roadmap]]. Built and playtested on 2026-11-01.

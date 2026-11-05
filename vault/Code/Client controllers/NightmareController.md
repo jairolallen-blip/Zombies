@@ -1,3 +1,8 @@
+---
+tags: [zone-client]
+cssclasses: [zone-client]
+---
+
 # NightmareController
 
 > Made by `tools/vault-code-notes.js` from `src/client/Controllers/NightmareController.luau` (261 lines). Don't edit it here: rerun the script.

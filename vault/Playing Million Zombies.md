@@ -1,3 +1,9 @@
+---
+tags: [zone-working]
+cssclasses: [zone-working]
+samz-zone: working
+---
+
 # Playing Million Zombies
 
 How to play and test Survive a Million Zombies. General Roblox methods are in [[Playing Roblox Games]]. Back to [[Home]].

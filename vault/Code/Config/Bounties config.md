@@ -1,3 +1,8 @@
+---
+tags: [zone-config]
+cssclasses: [zone-config]
+---
+
 # Bounties config
 
 > Made by `tools/vault-code-notes.js` from `src/shared/Config/Bounties.luau` (51 lines). Don't edit it here: rerun the script.

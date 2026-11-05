@@ -1,3 +1,9 @@
+---
+tags: [zone-progress]
+cssclasses: [zone-progress]
+samz-zone: progress
+---
+
 # Store
 
 The Robux shop (added 2026-11-02). Back to [[Home]]. Catalogue in [[Store config]]; purchases in [[StoreService]]; window in [[StoreController]]; the stall is built by [[FieldStations]].
