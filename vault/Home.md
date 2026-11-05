@@ -29,6 +29,7 @@ See [[Roadmap]] for status.
 - [[Store]]: the Robux shop and game passes
 - [[Levels]]: account XP and levels, the level bar on the welcome screen
 - [[Nightmare Mode]]: the hard mode (unlock at 3 wins, caged pad, pays only survivors)
+- [[Outbreak]]: the million-zombie mode, its separate place, and how to change it
 - [[Lore]]: Port Harrow, the Bloom, Overwatch and the safehouse people
 - [[Phones and Gamepads]]: touch buttons and controller mapping
 

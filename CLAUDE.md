@@ -12,7 +12,7 @@ A Roblox **horde-survival shooter**. Players queue in a lobby, pick a class and 
 | What | Where |
 |---|---|
 | **Live game** | Roblox Studio place "Survive a Million Zombies", **placeId 110463048909417**, in **Team Create** (edits are live for everyone in the session) |
-| **Outbreak place** | placeId 87622086122699: its own copy of the scripts, published separately. Shared code changes must reach it too: see `vault/Team Create Workflow.md` (packages) |
+| **Outbreak place** | placeId 87622086122699: its own copy of the scripts, published separately. Read `vault/Outbreak.md` before touching it. Shared code changes must reach it too: see `vault/Team Create Workflow.md` (packages) |
 | **Shared guide with the friend's agent** | `ServerStorage.README_AI_GUIDE` in the place. It's the main channel between our work and AnimatedSL's: **update its Status/Content and Changelog in Studio on every task**, same as this file |
 | **Code + notes, versioned** | GitHub `jairolallen-blip/Zombies` (`main`), cloned at `D:\CLAUDE WORK\Zombies` |
 | **Design notes** | `vault/`, an Obsidian vault in the repo. Start at `vault/Home.md` (the hub). Hand-written notes: the 7 phases (Lobby, City Map, Match Start, Weapons, Zombies, Spawning, Waves and Boss) plus Servers and Teleports, Tutorial, Classes and Abilities, Supply Drops, Achievements, Lore and Team Create Workflow |
@@ -216,6 +216,7 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-05: **Outbreak note.** New `vault/Outbreak.md`: how the place differs, what lives only in the place file, how to change it. `tools/outbreak-ocean.luau` records the ocean rebuild.
 - 2026-11-05: **Outbreak gets the new moves and its ocean back.** Moves copied (it keeps its distance LOD). The ocean was missing because the terrain water was never baked there and an opaque Baseplate sat at sea level: water now fills X -1000..3000, Z -2450..2200, Y -20..0 with main's water settings, and the Baseplate matches main (Y -21, invisible). This edit lives only in the place file. Tested in Play with no errors.
 - 2026-11-05: **keyframed hits, attacks and boss moves, published to main.** `ZombieGaits.Moves`: body, head and heavy flinches (the client reads head and side from the hit position), an attack per build, and held `BossRise`, `BossRoar` and `BossSlam`. New `Pose` values Roar (MatchService) and Slam (ZombieService). Checked with frozen sheets, per-frame numbers and an OBS recording of a real boss intro, plus a boss kill with no errors. Outbreak still needs these changes.
 - 2026-11-05: **app checklist.** New `vault/Apps To Keep Open.md` and `tools/app-check.ps1`. The owner welcomes requests to open apps. OBS record-then-read tested end to end.
