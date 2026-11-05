@@ -2,6 +2,8 @@
 
 > **Keep this file current. It's part of every task.** Before you finish any task that changes the game, update the sections it touched: Status, Content, Architecture, Pitfalls and Changelog. Add a dated line to the Changelog. A new agent should be able to start from this file alone.
 
+> **Keep the vault colour-coded too.** New or renamed design notes need a zone in `tools/vault-style.js`. After vault changes, run `node tools/vault-code-notes.js`, then `node tools/vault-style.js`, and fix any "notes with no zone" it prints.
+
 ## 1. What this is
 A Roblox **horde-survival shooter**. Players queue in a lobby, pick a class and a 4-level gun loadout, get dropped by helicopter into an apocalyptic city, and survive **10 waves** that end in a **boss** (the Grave Titan). The genre reference is *Survive a Million Monkeys*. **Inspiration only:** all names, mechanics and art here are our own, so never copy that game.
 
