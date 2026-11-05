@@ -79,7 +79,7 @@ Frames show what happened, but not why. Five seconds between frames hides fast m
 
 The `watch` plugin (claude-video 0.3.2) helps in three cases:
 
-- Web links, once `yt-dlp` is installed.
+- Web links. `yt-dlp` is in `C:fmpegbin`; run `yt-dlp -U` there if a site stops working.
 - Narrated clips, once a transcriber is set up. Captions and transcripts need no frame reading.
 - Exact timestamped frames from a short range of a local file.
 
