@@ -31,6 +31,8 @@ Every zombie is built from parts with **random variation**: shirt and pants colo
 - A gait advances with the zombie's real ground speed, so feet don't skate. Limp side, phase, size of motion and stride length vary by ZombieId, so a crowd doesn't march.
 - Torso and Head are Motor6Ds on Root like the limbs, which is what lets a body lean and lurch. The motion is client only, so to the server a zombie is rigid and hit boxes don't move.
 - Rise, Burrow and Scream fade in and out over about 0.2s, so the arms don't whip round in one frame when a pose ends.
+- A hit leans a zombie away from the bullet, and a headshot snaps its head back. Hulks barely move. Each build has its own attack: claws, lunge, two-arm slam, belly bump, arm lash or bite.
+- Bosses claw out hand over hand, roar with their arms wide, and rear up before a slam.
 - To change a walk, edit the keys in [[ZombieGaits]]. The file's own self-check catches a cycle that jumps at the loop.
 - Arms stay reaching forward with a lazy bob, the head lolls, and the attack swipe plays on top.
 

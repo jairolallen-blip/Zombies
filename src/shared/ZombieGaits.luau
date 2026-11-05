@@ -14,7 +14,11 @@
 -- Stride = studs walked per cycle at Scale 1, so feet don't skate (t advances with real ground speed).
 --   ZombieGaits.For(def)                         the gait for a Config/Zombies type
 --   ZombieGaits.Sample(gait, t, out)             fills out[channel] for t (any number; it wraps)
---   ZombieGaits.Idle, ZombieGaits.Attack(u)      standing pose; the swipe curve for u = 0..1
+--   ZombieGaits.Idle                             standing pose
+--   ZombieGaits.Moves, gait.Attacks              one-shot moves, and the attacks a gait picks from
+--   ZombieGaits.Hit(gait, head)                  the flinch for a body or head hit
+--   ZombieGaits.Add(move, u, pose, flip)         adds a move on top of pose, u = 0..1 over move.Time
+--   ZombieGaits.Set(move, u, out)                writes a held move's absolute values into out
 
 local ZombieGaits = {}
 
@@ -207,26 +211,225 @@ function ZombieGaits.Sample(gait, t, out)
 	return out
 end
 
--- The swipe: arms cock back up (anticipation), slam down fast, then recover slowly. u = 0..1 over the attack.
-local WINDUP, STRIKE = 0.3, 0.55
-function ZombieGaits.Attack(u)
-	if u < WINDUP then
-		local k = u / WINDUP
-		return 0.7 * k * k * (3 - 2 * k)
-	elseif u < STRIKE then
-		local k = (u - WINDUP) / (STRIKE - WINDUP)
-		return 0.7 - 1.9 * k * k
+-- One-shot moves. Time is in seconds and keys run t = 0..1 over it, always from 0 to 1. Added moves (hits, attacks)
+-- sit on top of the walk, so they start and end at 0. Held moves (Boss*) replace the pose and fade in and out.
+-- Attacks land at the stamp, so the windup stays short and the follow-through carries the weight.
+local MOVES = {
+	HitBody = {
+		Time = 0.34,
+		BodyPitch = { { 0, 0 }, { 0.22, 0.36 }, { 0.6, -0.07 }, { 1, 0 } },
+		BodyRoll = { { 0, 0 }, { 0.22, 0.2 }, { 0.6, -0.05 }, { 1, 0 } },
+		BodyYaw = { { 0, 0 }, { 0.22, 0.25 }, { 0.7, -0.05 }, { 1, 0 } },
+		LeftArm = { { 0, 0 }, { 0.25, 0.7 }, { 0.7, 0.05 }, { 1, 0 } },
+		RightArm = { { 0, 0 }, { 0.2, 0.5 }, { 0.65, 0.1 }, { 1, 0 } },
+		LeftLeg = { { 0, 0 }, { 0.25, -0.22 }, { 1, 0 } },
+		RightLeg = { { 0, 0 }, { 0.3, -0.16 }, { 1, 0 } },
+		HeadPitch = { { 0, 0 }, { 0.3, 0.25 }, { 1, 0 } },
+		HeadRoll = { { 0, 0 }, { 0.3, 0.18 }, { 1, 0 } },
+	},
+	HitHead = {
+		Time = 0.42,
+		HeadPitch = { { 0, 0 }, { 0.18, 0.85 }, { 0.55, -0.12 }, { 1, 0 } },
+		HeadRoll = { { 0, 0 }, { 0.18, 0.3 }, { 0.6, -0.06 }, { 1, 0 } },
+		BodyPitch = { { 0, 0 }, { 0.25, 0.22 }, { 0.65, -0.04 }, { 1, 0 } },
+		LeftArm = { { 0, 0 }, { 0.25, 0.45 }, { 1, 0 } },
+		RightArm = { { 0, 0 }, { 0.3, 0.4 }, { 1, 0 } },
+	},
+	HitHeavy = {
+		Time = 0.24,
+		BodyPitch = { { 0, 0 }, { 0.35, 0.1 }, { 1, 0 } },
+		BodyRoll = { { 0, 0 }, { 0.35, 0.06 }, { 1, 0 } },
+		HeadPitch = { { 0, 0 }, { 0.35, 0.14 }, { 1, 0 } },
+	},
+	AttackClawL = {
+		Time = 0.5,
+		LeftArm = { { 0, 0 }, { 0.22, 0.75 }, { 0.5, -1.1 }, { 1, 0 } },
+		RightArm = { { 0, 0 }, { 0.3, 0.2 }, { 0.6, -0.2 }, { 1, 0 } },
+		BodyYaw = { { 0, 0 }, { 0.22, 0.22 }, { 0.5, -0.3 }, { 1, 0 } },
+		BodyPitch = { { 0, 0 }, { 0.22, 0.12 }, { 0.52, -0.28 }, { 1, 0 } },
+		HeadPitch = { { 0, 0 }, { 0.22, 0.1 }, { 0.55, -0.15 }, { 1, 0 } },
+	},
+	AttackLungeL = {
+		Time = 0.45,
+		LeftArm = { { 0, 0 }, { 0.2, 0.3 }, { 0.42, 1.1 }, { 1, 0 } },
+		RightArm = { { 0, 0 }, { 0.2, 0.2 }, { 0.42, 0.7 }, { 1, 0 } },
+		BodyPitch = { { 0, 0 }, { 0.2, 0.12 }, { 0.42, -0.45 }, { 1, 0 } },
+		Bob = { { 0, 0 }, { 0.42, -0.2 }, { 1, 0 } },
+		HeadPitch = { { 0, 0 }, { 0.42, 0.3 }, { 1, 0 } },
+		LeftLeg = { { 0, 0 }, { 0.42, 0.4 }, { 1, 0 } },
+		RightLeg = { { 0, 0 }, { 0.42, -0.4 }, { 1, 0 } },
+	},
+	AttackSlam = {
+		Time = 0.75,
+		LeftArm = { { 0, 0 }, { 0.35, 1.9 }, { 0.55, -1.1 }, { 1, 0 } },
+		RightArm = { { 0, 0 }, { 0.32, 1.9 }, { 0.53, -1.1 }, { 1, 0 } },
+		BodyPitch = { { 0, 0 }, { 0.35, 0.3 }, { 0.55, -0.4 }, { 1, 0 } },
+		Bob = { { 0, 0 }, { 0.35, 0.15 }, { 0.55, -0.3 }, { 1, 0 } },
+		HeadPitch = { { 0, 0 }, { 0.35, 0.2 }, { 0.6, -0.2 }, { 1, 0 } },
+	},
+	AttackBelly = {
+		Time = 0.55,
+		BodyPitch = { { 0, 0 }, { 0.3, 0.25 }, { 0.55, -0.35 }, { 1, 0 } },
+		Bob = { { 0, 0 }, { 0.3, -0.1 }, { 0.55, 0.08 }, { 1, 0 } },
+		ArmOut = { { 0, 0 }, { 0.3, 0.4 }, { 0.55, 0.05 }, { 1, 0 } },
+		HeadPitch = { { 0, 0 }, { 0.3, 0.2 }, { 0.6, -0.2 }, { 1, 0 } },
+	},
+	AttackLashL = {
+		Time = 0.5,
+		LeftArm = { { 0, 0 }, { 0.3, 1.7 }, { 0.55, 0.2 }, { 1, 0 } },
+		RightArm = { { 0, 0 }, { 0.35, 0.3 }, { 1, 0 } },
+		BodyYaw = { { 0, 0 }, { 0.3, 0.25 }, { 0.55, -0.3 }, { 1, 0 } },
+		BodyPitch = { { 0, 0 }, { 0.3, 0.1 }, { 0.55, -0.2 }, { 1, 0 } },
+		HeadPitch = { { 0, 0 }, { 0.3, 0.15 }, { 0.55, -0.1 }, { 1, 0 } },
+	},
+	AttackBite = {
+		Time = 0.4,
+		BodyPitch = { { 0, 0 }, { 0.35, 0.35 }, { 0.6, -0.2 }, { 1, 0 } },
+		HeadPitch = { { 0, 0 }, { 0.35, 0.5 }, { 0.6, -0.6 }, { 1, 0 } },
+		LeftArm = { { 0, 0 }, { 0.35, 0.5 }, { 0.6, -0.2 }, { 1, 0 } },
+		RightArm = { { 0, 0 }, { 0.4, 0.5 }, { 0.65, -0.2 }, { 1, 0 } },
+	},
+	-- the boss claws out hand over hand, plants itself and straightens (over Intro.RiseTime)
+	BossRise = {
+		Held = true,
+		Time = 3.2,
+		LeftArm = { { 0, 2.4 }, { 0.15, 1.5 }, { 0.3, 2.5 }, { 0.45, 0.9 }, { 0.6, 0.3 }, { 0.75, -0.2 }, { 1, -0.5 } },
+		RightArm = { { 0, 1.4 }, { 0.15, 2.5 }, { 0.3, 1.2 }, { 0.45, 2.2 }, { 0.6, 0.2 }, { 0.75, -0.3 }, { 1, -0.6 } },
+		ArmOut = { { 0, 0.15 }, { 0.45, 0.2 }, { 0.7, 0.4 }, { 1, 0.15 } },
+		BodyPitch = { { 0, -0.5 }, { 0.4, -0.45 }, { 0.7, -0.2 }, { 0.85, 0.05 }, { 1, -0.1 } },
+		BodyRoll = { { 0, 0 }, { 0.15, 0.15 }, { 0.3, -0.15 }, { 0.45, 0.12 }, { 0.6, -0.08 }, { 1, 0 } },
+		HeadPitch = { { 0, 0.5 }, { 0.6, 0.3 }, { 0.85, -0.1 }, { 1, 0.15 } },
+		LeftLeg = { { 0, 0.5 }, { 0.6, 0.3 }, { 0.8, 0.1 }, { 1, 0 } },
+		RightLeg = { { 0, -0.3 }, { 0.6, -0.2 }, { 0.8, 0 }, { 1, 0 } },
+	},
+	-- hunches to gather itself, then throws its chest out and its arms wide and holds the scream
+	BossRoar = {
+		Held = true,
+		Time = 2.2,
+		LeftArm = { { 0, -0.5 }, { 0.12, -1.1 }, { 0.25, 0.9 }, { 0.7, 0.75 }, { 1, -0.55 } },
+		RightArm = { { 0, -0.6 }, { 0.12, -1.1 }, { 0.25, 0.9 }, { 0.7, 0.75 }, { 1, -0.55 } },
+		ArmOut = { { 0, 0.2 }, { 0.12, 0.1 }, { 0.25, 1.1 }, { 0.7, 1 }, { 1, 0.2 } },
+		BodyPitch = { { 0, -0.15 }, { 0.12, -0.5 }, { 0.25, 0.38 }, { 0.7, 0.3 }, { 1, -0.1 } },
+		HeadPitch = { { 0, 0.1 }, { 0.12, -0.3 }, { 0.25, 0.7 }, { 0.7, 0.6 }, { 1, 0.1 } },
+		Bob = { { 0, 0 }, { 0.12, -0.35 }, { 0.25, 0.25 }, { 0.7, 0.2 }, { 1, 0 } },
+		LeftLeg = { { 0, 0 }, { 0.25, 0.2 }, { 1, 0 } },
+		RightLeg = { { 0, 0 }, { 0.25, -0.2 }, { 1, 0 } },
+	},
+	-- rears up through the slam's windup (u runs over Slam.Windup) and drops on the shockwave
+	BossSlam = {
+		Held = true,
+		Time = 1.3,
+		LeftArm = { { 0, 0 }, { 0.25, 1.6 }, { 0.8, 2.6 }, { 0.93, 2.7 }, { 1, -1.2 } },
+		RightArm = { { 0, 0 }, { 0.25, 1.6 }, { 0.8, 2.6 }, { 0.93, 2.7 }, { 1, -1.2 } },
+		ArmOut = { { 0, 0.1 }, { 0.8, 0.25 }, { 1, 0.4 } },
+		BodyPitch = { { 0, -0.05 }, { 0.8, 0.35 }, { 0.93, 0.38 }, { 1, -0.55 } },
+		HeadPitch = { { 0, 0.1 }, { 0.8, 0.35 }, { 1, -0.2 } },
+		Bob = { { 0, 0 }, { 0.8, 0.2 }, { 0.93, 0.22 }, { 1, -0.5 } },
+	},
+}
+
+local function bakeOnce(keys)
+	local n = #keys
+	assert(keys[1][1] == 0 and keys[n][1] == 1, "a move's keys run from 0 to 1")
+	local function tangent(i)
+		if i == 1 or i == n then
+			return 0
+		end
+		return (keys[i + 1][2] - keys[i - 1][2]) / (keys[i + 1][1] - keys[i - 1][1])
 	end
-	local k = (u - STRIKE) / (1 - STRIKE)
-	return -1.2 * (1 - k * k * (3 - 2 * k))
+	local out = table.create(SAMPLES + 1)
+	for s = 0, SAMPLES do
+		local t = s / SAMPLES
+		local i = 1
+		while i < n - 1 and keys[i + 1][1] <= t do
+			i += 1
+		end
+		local t0, v0, t1, v1 = keys[i][1], keys[i][2], keys[i + 1][1], keys[i + 1][2]
+		local h = t1 - t0
+		local u = math.clamp((t - t0) / h, 0, 1)
+		local u2, u3 = u * u, u * u * u
+		out[s + 1] = (2 * u3 - 3 * u2 + 1) * v0 + (u3 - 2 * u2 + u) * h * tangent(i) + (-2 * u3 + 3 * u2) * v1 + (u3 - u2) * h * tangent(i + 1)
+	end
+	return out
 end
 
--- self-check: every cycle loops without a jump, and the swipe starts and ends at rest
+local SWAP = { LeftArm = "RightArm", RightArm = "LeftArm", LeftLeg = "RightLeg", RightLeg = "LeftLeg" }
+local SIDEWAYS = { BodyRoll = true, BodyYaw = true, HeadRoll = true }
+
+local function mirrored(def)
+	local out = { Time = def.Time }
+	for channel, keys in def do
+		if channel ~= "Time" then
+			local copy = {}
+			for i, key in keys do
+				copy[i] = { key[1], if SIDEWAYS[channel] then -key[2] else key[2] }
+			end
+			out[SWAP[channel] or channel] = copy
+		end
+	end
+	return out
+end
+MOVES.AttackClawR = mirrored(MOVES.AttackClawL)
+MOVES.AttackLungeR = mirrored(MOVES.AttackLungeL)
+MOVES.AttackLashR = mirrored(MOVES.AttackLashL)
+
+ZombieGaits.Moves = {}
+for name, def in MOVES do
+	local move = { Name = name, Time = def.Time, Held = def.Held, Tables = {} }
+	for channel, keys in def do
+		if channel ~= "Time" and channel ~= "Held" then
+			move.Tables[channel] = bakeOnce(keys)
+		end
+	end
+	ZombieGaits.Moves[name] = move
+end
+
+local M = ZombieGaits.Moves
+BAKED.Shamble.Attacks = { M.AttackClawL, M.AttackClawR }
+BAKED.Sprint.Attacks = { M.AttackLungeL, M.AttackLungeR }
+BAKED.Waddle.Attacks = { M.AttackBelly }
+BAKED.Stomp.Attacks = { M.AttackSlam }
+BAKED.Stalk.Attacks = { M.AttackLashL, M.AttackLashR }
+BAKED.Crawl.Attacks = { M.AttackBite }
+
+function ZombieGaits.Hit(gait, head)
+	if gait == BAKED.Stomp then
+		return M.HitHeavy
+	end
+	return if head then M.HitHead else M.HitBody
+end
+
+local function read(values, u)
+	local f = math.clamp(u, 0, 1) * SAMPLES
+	local i = math.min(math.floor(f), SAMPLES - 1)
+	return values[i + 1] + (values[i + 2] - values[i + 1]) * (f - i)
+end
+
+function ZombieGaits.Add(move, u, pose, flip)
+	for channel, values in move.Tables do
+		local v = read(values, u)
+		pose[channel] += if flip and SIDEWAYS[channel] then -v else v
+	end
+end
+
+function ZombieGaits.Set(move, u, out)
+	for channel, values in move.Tables do
+		out[channel] = read(values, u)
+	end
+end
+
+-- self-check: every cycle loops without a jump, and added moves start and end at rest
 for name, gait in BAKED do
 	for channel, values in gait.Tables do
 		assert(math.abs(values[1] - values[SAMPLES]) < 0.2, name .. " " .. channel .. " jumps at the loop")
 	end
 end
-assert(math.abs(ZombieGaits.Attack(0)) < 1e-6 and math.abs(ZombieGaits.Attack(1)) < 1e-6, "swipe must start and end at rest")
+for name, move in ZombieGaits.Moves do
+	if not move.Held then
+		for channel, values in move.Tables do
+			assert(math.abs(values[1]) < 1e-6 and math.abs(values[SAMPLES + 1]) < 1e-6, name .. " " .. channel .. " must start and end at 0")
+		end
+	end
+end
 
 return ZombieGaits

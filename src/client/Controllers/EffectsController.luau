@@ -360,10 +360,9 @@ end
 -- breathing idle when it stops. The body leans and lurches from the hips and the head follows, through the
 -- Torso and Head motors; arms and head are carried with the body (motors.*A/*B move their joint into hip
 -- space and back). Every zombie differs a little: its own limp side, phase and size of motion, so a crowd
--- doesn't march. It cocks its arms and slams them down when the server stamps "AttackAt" (ZombieService).
--- A "ZombieHit" effect makes it flinch back (arms fling up, head snaps, legs stagger) and flash red.
-local ATTACK_TIME = 0.45
-local FLINCH_TIME = 0.2
+-- doesn't march. One-shot moves from ZombieGaits sit on top: an attack for its build when the server stamps
+-- "AttackAt" (ZombieService), and on a "ZombieHit" effect a flinch that leans away from the hit, a harder
+-- snap on a headshot, plus a red flash.
 local POSE_FADE = 12
 local FLASH_TIME = 0.12
 local FLASH_COLOR = Color3.fromRGB(255, 60, 40)
@@ -391,6 +390,8 @@ local function getMotors(model)
 			RightArm = root:FindFirstChild("RightArm"),
 			Torso = torso,
 			Head = root:FindFirstChild("Head"),
+			HeadPart = model:FindFirstChild("Head"),
+			Def = Zombies.Types[model.Name],
 			Gait = ZombieGaits.For(Zombies.Types[model.Name]),
 			Phase = (id * 0.37) % 1,
 			Mirror = id % 2 == 0, -- which side it limps on
@@ -399,7 +400,7 @@ local function getMotors(model)
 			IdleAt = id * 1.3,
 			Moving = 0,
 			Scale = root.Size.Y / 5,
-			FlinchUntil = 0,
+			Held = {},
 			PoseHeld = 0,
 			FlashBase = {},
 		}
@@ -410,7 +411,7 @@ local function getMotors(model)
 	end
 	return motors
 end
-local walkPose, idlePose = {}, {}
+local walkPose, idlePose, livePose = {}, {}, {}
 local function mix(channel, go, size, idleWeight) -- idle to walk by how fast it's moving
 	local still = idlePose[channel] * idleWeight
 	return (still + (walkPose[channel] - still) * go) * size
@@ -433,80 +434,97 @@ local function animateZombies(zombieFolder, dt)
 		ZombieGaits.Sample(gait, motors.Phase, walkPose)
 		ZombieGaits.Sample(ZombieGaits.Idle, (t + motors.IdleAt) / ZombieGaits.IdleSeconds, idlePose)
 		local swap = if motors.Mirror then -1 else 1
-		local leftLeg, rightLeg = mix("LeftLeg", go, size, 1), mix("RightLeg", go, size, 1)
-		local leftArm, rightArm = mix("LeftArm", go, size, gait.IdleArms), mix("RightArm", go, size, gait.IdleArms)
+		local pose = livePose
+		pose.LeftLeg, pose.RightLeg = mix("LeftLeg", go, size, 1), mix("RightLeg", go, size, 1)
+		pose.LeftArm, pose.RightArm = mix("LeftArm", go, size, gait.IdleArms), mix("RightArm", go, size, gait.IdleArms)
 		if motors.Mirror then
-			leftLeg, rightLeg = rightLeg, leftLeg
-			leftArm, rightArm = rightArm, leftArm
+			pose.LeftLeg, pose.RightLeg = pose.RightLeg, pose.LeftLeg
+			pose.LeftArm, pose.RightArm = pose.RightArm, pose.LeftArm
 		end
-		local armOut = mix("ArmOut", go, size, 1)
-		local bodyPitch, bodyRoll, bodyYaw = mix("BodyPitch", go, size, 1), mix("BodyRoll", go, size, 1) * swap, mix("BodyYaw", go, size, 1) * swap
-		local bob = mix("Bob", go, size, 1) * scale
-		local headPitch, headRoll = mix("HeadPitch", go, size, 1), mix("HeadRoll", go, size, 1) * swap
+		pose.ArmOut = mix("ArmOut", go, size, 1)
+		pose.BodyPitch, pose.BodyRoll, pose.BodyYaw = mix("BodyPitch", go, size, 1), mix("BodyRoll", go, size, 1) * swap, mix("BodyYaw", go, size, 1) * swap
+		pose.Bob = mix("Bob", go, size, 1)
+		pose.HeadPitch, pose.HeadRoll = mix("HeadPitch", go, size, 1), mix("HeadRoll", go, size, 1) * swap
 
-		-- the swipe: arms cock back, slam down, and the body throws its weight behind them a beat later
-		local attackAge = serverNow - (model:GetAttribute("AttackAt") or -1e9)
-		if attackAge >= 0 and attackAge < ATTACK_TIME then
-			local swing = ZombieGaits.Attack(attackAge / ATTACK_TIME)
-			leftArm += swing
-			rightArm += swing
-			bodyPitch += ZombieGaits.Attack(math.max(0, attackAge - 0.04) / ATTACK_TIME) * 0.3
-			headPitch -= swing * 0.15
+		-- a new "AttackAt" stamp picks one of its build's attacks
+		local attackAt = model:GetAttribute("AttackAt")
+		if attackAt and attackAt ~= motors.AttackStamp then
+			motors.AttackStamp = attackAt
+			local list = gait.Attacks
+			motors.AttackMove = list[math.floor(attackAt * 3) % #list + 1]
 		end
-		local flinch = math.clamp((motors.FlinchUntil - t) / FLINCH_TIME, 0, 1)
-		leftLeg -= flinch * 0.35
-		rightLeg -= flinch * 0.35
-		leftArm += flinch
-		rightArm += flinch
-		bodyPitch += flinch * 0.3
-		headPitch += flinch * 0.4
+		local attack = motors.AttackMove
+		if attack then
+			local u = (serverNow - attackAt) / attack.Time
+			if u >= 0 and u < 1 then
+				ZombieGaits.Add(attack, u, pose)
+			end
+		end
+		local hit = motors.HitMove
+		if hit then
+			local u = (t - motors.HitAt) / hit.Time
+			if u < 1 then
+				ZombieGaits.Add(hit, u, pose, motors.HitFlip)
+			else
+				motors.HitMove = nil
+			end
+		end
 
-		-- server-stamped poses (ZombieService; model attributes Pose + PoseAt) take over the arms: "Rise" reaches
-		-- up and claws out of the ground, "Burrow" digs down into it, "Scream" (Wailer) flings them up, shaking.
-		-- They fade in and out (POSE_FADE) so the arms don't whip through a half turn in one frame.
+		-- server-stamped poses (ZombieService, MatchService; model attributes Pose + PoseAt) take over: "Rise" reaches
+		-- up and claws out of the ground, "Burrow" digs down into it, "Scream" (Wailer) flings the arms up, shaking.
+		-- A boss rises, roars and rears up for its slam with held moves from ZombieGaits. They all fade in and out
+		-- (POSE_FADE) so the arms don't whip through a half turn in one frame.
 		local state = model:GetAttribute("Pose")
+		local heldPose = motors.Held
 		if state then
 			local age = serverNow - (model:GetAttribute("PoseAt") or serverNow)
 			local claw = math.sin(age * 16) * 0.45
-			motors.PoseOut, motors.PoseBody, motors.PoseHead = armOut, bodyPitch, headPitch
+			table.clear(heldPose)
 			if state == "Rise" then
-				motors.PoseLeft, motors.PoseRight = 1.9 + claw, 1.9 - claw
+				local intro = motors.Def and motors.Def.Intro
+				if intro then
+					ZombieGaits.Set(ZombieGaits.Moves.BossRise, age / intro.RiseTime, heldPose)
+				else
+					heldPose.LeftArm, heldPose.RightArm = 1.9 + claw, 1.9 - claw
+				end
 			elseif state == "Burrow" then
-				motors.PoseLeft, motors.PoseRight = -0.9 + claw, -0.9 - claw
+				heldPose.LeftArm, heldPose.RightArm = -0.9 + claw, -0.9 - claw
 			elseif state == "Scream" then
 				local shake = math.sin(age * 45) * 0.08
-				motors.PoseLeft, motors.PoseRight, motors.PoseOut = 1.4 + shake, 1.4 - shake, 0.45
-				motors.PoseBody, motors.PoseHead = 0.22, 0.45
+				heldPose.LeftArm, heldPose.RightArm, heldPose.ArmOut = 1.4 + shake, 1.4 - shake, 0.45
+				heldPose.BodyPitch, heldPose.HeadPitch = 0.22, 0.45
+			elseif state == "Roar" then
+				ZombieGaits.Set(ZombieGaits.Moves.BossRoar, age / ZombieGaits.Moves.BossRoar.Time, heldPose)
+			elseif state == "Slam" then
+				ZombieGaits.Set(ZombieGaits.Moves.BossSlam, age / motors.Def.Slam.Windup, heldPose)
 			end
 		end
 		local held = motors.PoseHeld + ((if state then 1 else 0) - motors.PoseHeld) * math.min(1, dt * POSE_FADE)
 		motors.PoseHeld = held
 		if held > 0.005 then
-			leftArm += (motors.PoseLeft - leftArm) * held
-			rightArm += (motors.PoseRight - rightArm) * held
-			armOut += (motors.PoseOut - armOut) * held
-			bodyPitch += (motors.PoseBody - bodyPitch) * held
-			headPitch += (motors.PoseHead - headPitch) * held
+			for channel, value in heldPose do
+				pose[channel] += (value - pose[channel]) * held
+			end
 		end
 
-		local body = CFrame.new(0, bob, 0) * CFrame.Angles(bodyPitch, bodyYaw, bodyRoll)
+		local body = CFrame.new(0, pose.Bob * scale, 0) * CFrame.Angles(pose.BodyPitch, pose.BodyYaw, pose.BodyRoll)
 		if motors.Torso then
 			motors.Torso.Transform = body
 		end
 		if motors.Head then
-			motors.Head.Transform = motors.HeadA * body * motors.HeadB * CFrame.Angles(headPitch, 0, headRoll)
+			motors.Head.Transform = motors.HeadA * body * motors.HeadB * CFrame.Angles(pose.HeadPitch, 0, pose.HeadRoll)
 		end
 		if motors.LeftLeg then
-			motors.LeftLeg.Transform = CFrame.Angles(leftLeg, 0, 0)
+			motors.LeftLeg.Transform = CFrame.Angles(pose.LeftLeg, 0, 0)
 		end
 		if motors.RightLeg then
-			motors.RightLeg.Transform = CFrame.Angles(rightLeg, 0, 0)
+			motors.RightLeg.Transform = CFrame.Angles(pose.RightLeg, 0, 0)
 		end
 		if motors.LeftArm then
-			motors.LeftArm.Transform = motors.LeftArmA * body * motors.LeftArmB * CFrame.Angles(leftArm, 0, -armOut)
+			motors.LeftArm.Transform = motors.LeftArmA * body * motors.LeftArmB * CFrame.Angles(pose.LeftArm, 0, -pose.ArmOut)
 		end
 		if motors.RightArm then
-			motors.RightArm.Transform = motors.RightArmA * body * motors.RightArmB * CFrame.Angles(rightArm, 0, armOut)
+			motors.RightArm.Transform = motors.RightArmA * body * motors.RightArmB * CFrame.Angles(pose.RightArm, 0, pose.ArmOut)
 		end
 		-- damage flash: tint every visible part toward red, restore exactly when it expires
 		if motors.FlashUntil then
@@ -541,8 +559,12 @@ Handlers.ZombieHit = function(data)
 		return
 	end
 	local now = os.clock()
-	if data.Flinch then
-		motors.FlinchUntil = now + FLINCH_TIME
+	if data.Flinch and (not motors.HitMove or now - motors.HitAt > motors.HitMove.Time * 0.5) then -- a stream of bullets doesn't freeze it at the start
+		local at, root = data.Position or motors.Root.Position, motors.Root
+		local head = motors.HeadPart
+		motors.HitMove = ZombieGaits.Hit(motors.Gait, head ~= nil and at.Y > head.Position.Y - head.Size.Y * 0.6)
+		motors.HitAt = now
+		motors.HitFlip = (at - root.Position):Dot(root.CFrame.RightVector) < 0
 	end
 	if not motors.FlashUntil or now >= motors.FlashUntil then
 		table.clear(motors.FlashBase) -- a flash already running: restart the snapshot

@@ -538,6 +538,13 @@ local function doSlam(z, now)
 	z.Slamming = true
 	z.NextSlam = now + slam.Cooldown * (if z.Enraged then z.Def.Enrage.SlamCooldownMult else 1)
 	z.NextSpecial = now + slam.Windup + (z.Def.SpecialGap or 0)
+	z.Model:SetAttribute("Pose", "Slam") -- rears up (the client's "Slam" pose) and brings it down on the shockwave
+	z.Model:SetAttribute("PoseAt", workspace:GetServerTimeNow())
+	task.delay(slam.Windup + 0.35, function()
+		if not z.Dead then
+			z.Model:SetAttribute("Pose", nil)
+		end
+	end)
 	local ground = Vector3.new(z.Root.Position.X, Services.MapService.GroundY + 0.1, z.Root.Position.Z)
 	local ring = Instance.new("Part")
 	ring.Name = "SlamTelegraph"

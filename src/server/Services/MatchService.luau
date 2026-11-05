@@ -471,6 +471,15 @@ function MatchService:_bossIntro(playerMult)
 	local boss = Services.ZombieService:Spawn(typeId, position, playerMult, intro.RiseTime, GameConfig.OurMap.ArenaCenter)
 	Services.ZombieService:Hold(boss, if skipped then intro.RiseTime else intro.Time - intro.RiseAt)
 	skipped = skipped or self:_skippableWait(intro.RoarAt - intro.RiseAt, "BossIntro")
+	if boss and not skipped then -- the client's "Roar" pose (ZombieGaits.Moves.BossRoar)
+		boss:SetAttribute("Pose", "Roar")
+		boss:SetAttribute("PoseAt", workspace:GetServerTimeNow())
+		task.delay(intro.Time - intro.RoarAt, function()
+			if boss.Parent then
+				boss:SetAttribute("Pose", nil)
+			end
+		end)
+	end
 	self:_radio("BossIncoming")
 	Remotes.Effect:FireAllClients("Shockwave", { Position = position, Radius = 45 })
 	if not skipped then

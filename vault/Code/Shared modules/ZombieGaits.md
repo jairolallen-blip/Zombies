@@ -1,6 +1,6 @@
 # ZombieGaits
 
-> Made by `tools/vault-code-notes.js` from `src/shared/ZombieGaits.luau` (233 lines). Don't edit it here: rerun the script.
+> Made by `tools/vault-code-notes.js` from `src/shared/ZombieGaits.luau` (436 lines). Don't edit it here: rerun the script.
 
 Part of [[Shared modules]].
 
@@ -23,7 +23,11 @@ table, so sampling a gait is a table read however many zombies are on screen.
 Stride = studs walked per cycle at Scale 1, so feet don't skate (t advances with real ground speed).
   ZombieGaits.For(def)                         the gait for a Config/Zombies type
   ZombieGaits.Sample(gait, t, out)             fills out[channel] for t (any number; it wraps)
-  ZombieGaits.Idle, ZombieGaits.Attack(u)      standing pose; the swipe curve for u = 0..1
+  ZombieGaits.Idle                             standing pose
+  ZombieGaits.Moves, gait.Attacks              one-shot moves, and the attacks a gait picks from
+  ZombieGaits.Hit(gait, head)                  the flinch for a body or head hit
+  ZombieGaits.Add(move, u, pose, flip)         adds a move on top of pose, u = 0..1 over move.Time
+  ZombieGaits.Set(move, u, out)                writes a held move's absolute values into out
 ```
 
 ## Uses

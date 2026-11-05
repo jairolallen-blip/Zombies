@@ -216,6 +216,7 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-05: **keyframed hits, attacks and boss moves, published to main.** `ZombieGaits.Moves`: body, head and heavy flinches (the client reads head and side from the hit position), an attack per build, and held `BossRise`, `BossRoar` and `BossSlam`. New `Pose` values Roar (MatchService) and Slam (ZombieService). Checked with frozen sheets, per-frame numbers and an OBS recording of a real boss intro, plus a boss kill with no errors. Outbreak still needs these changes.
 - 2026-11-05: **app checklist.** New `vault/Apps To Keep Open.md` and `tools/app-check.ps1`. The owner welcomes requests to open apps. OBS record-then-read tested end to end.
 - 2026-11-05: **frame-by-frame video.** New `tools/video-look.js`: `events` finds sudden changes in a video, `strip` shows consecutive frames in one image. Methods for catching fast action are in `vault/Playing Roblox Games.md`.
 - 2026-11-05: **learned the game from the owner's 7:50 video.** A solo Engineer win (337 kills, +217 Gems) is now in `vault/Playing Million Zombies.md` with a wave table and tactics. It corrected the guide: a wave clear heals fully. Recordings go in `D:CLAUDE WORKVideos`. Small issue seen: the HUD shows WAVE 0/10 after pressing Continue on Victory.
