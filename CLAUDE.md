@@ -216,6 +216,7 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-05: **Outbreak gets the new moves and its ocean back.** Moves copied (it keeps its distance LOD). The ocean was missing because the terrain water was never baked there and an opaque Baseplate sat at sea level: water now fills X -1000..3000, Z -2450..2200, Y -20..0 with main's water settings, and the Baseplate matches main (Y -21, invisible). This edit lives only in the place file. Tested in Play with no errors.
 - 2026-11-05: **keyframed hits, attacks and boss moves, published to main.** `ZombieGaits.Moves`: body, head and heavy flinches (the client reads head and side from the hit position), an attack per build, and held `BossRise`, `BossRoar` and `BossSlam`. New `Pose` values Roar (MatchService) and Slam (ZombieService). Checked with frozen sheets, per-frame numbers and an OBS recording of a real boss intro, plus a boss kill with no errors. Outbreak still needs these changes.
 - 2026-11-05: **app checklist.** New `vault/Apps To Keep Open.md` and `tools/app-check.ps1`. The owner welcomes requests to open apps. OBS record-then-read tested end to end.
 - 2026-11-05: **frame-by-frame video.** New `tools/video-look.js`: `events` finds sudden changes in a video, `strip` shows consecutive frames in one image. Methods for catching fast action are in `vault/Playing Roblox Games.md`.
