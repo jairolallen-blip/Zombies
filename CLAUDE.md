@@ -155,7 +155,7 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
 7. **Export, update and commit** (§6). Update this file and the vault note, run `node tools/vault-code-notes.js`, then commit with a clear message ending in the attribution line, and push.
 
 ## 6. Export and import (tools/)
-- **Blocked since 2026-11-05:** `execute_luau` refuses every HTTP domain, localhost included ("not in the Assistant HTTP allowlist"; GET and POST, Studio 0.746). So both routes below fail from `execute_luau`. Until that changes, push changes inline: put the new text in a long string in `execute_luau`, patch with plain find, then compare the byte size with the repo file. Don't try to get around the allowlist.
+- **Blocked since 2026-11-05:** `execute_luau` refuses every HTTP domain, localhost included ("not in the Assistant HTTP allowlist"; GET and POST, Studio 0.746). So both routes below fail from `execute_luau`. Until that changes, push changes inline: put the new text in a long string in `execute_luau`, patch with plain find, then compare the byte size with the repo file. Don't try to get around the allowlist. To export, use File > Download a Copy, then `node tools/rbxl-scripts.js <file.rbxl> <folder>`, which reads the place file with no web requests.
 - **Studio → repo:**
   1. `Remove-Item src -Recurse`, then start `tools/receiver.ps1` in the background.
   2. Run `tools/studio-export.luau` in `execute_luau` (Edit). Its "problems" output must be empty.
@@ -216,6 +216,7 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-05: **Outbreak scripts exported.** 74 scripts are in `outbreak/`, read from a downloaded `.rbxl` by new `tools/rbxl-scripts.js`. Sizes and hashes of all 74 matched Studio.
 - 2026-11-05: **Outbreak note.** New `vault/Outbreak.md`: how the place differs, what lives only in the place file, how to change it. `tools/outbreak-ocean.luau` records the ocean rebuild.
 - 2026-11-05: **Outbreak gets the new moves and its ocean back.** Moves copied (it keeps its distance LOD). The ocean was missing because the terrain water was never baked there and an opaque Baseplate sat at sea level: water now fills X -1000..3000, Z -2450..2200, Y -20..0 with main's water settings, and the Baseplate matches main (Y -21, invisible). This edit lives only in the place file. Tested in Play with no errors.
 - 2026-11-05: **keyframed hits, attacks and boss moves, published to main.** `ZombieGaits.Moves`: body, head and heavy flinches (the client reads head and side from the hit position), an attack per build, and held `BossRise`, `BossRoar` and `BossSlam`. New `Pose` values Roar (MatchService) and Slam (ZombieService). Checked with frozen sheets, per-frame numbers and an OBS recording of a real boss intro, plus a boss kill with no errors. Outbreak still needs these changes.

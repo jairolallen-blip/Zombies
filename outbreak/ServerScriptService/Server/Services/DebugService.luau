@@ -1,0 +1,216 @@
+-- DebugService: STUDIO-ONLY test commands, exposed as ServerStorage.SAMZ_Debug (BindableFunction).
+-- Lets a developer or an AI agent drive the game from the Command Bar / MCP execute_luau (Server):
+--   game.ServerStorage.SAMZ_Debug:Invoke("Help")
+--   game.ServerStorage.SAMZ_Debug:Invoke("Spawn", "GraveTitan", 1)
+-- Not created in live servers. Add a command by adding a function to Commands.
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Zombies = require(ReplicatedStorage:WaitForChild("Shared").Config.Zombies)
+
+local DebugService = {}
+local Services
+
+local function firstPlayer(name)
+	if name then
+		return Players:FindFirstChild(name)
+	end
+	return Players:GetPlayers()[1]
+end
+
+local Commands = {}
+
+Commands.Help = function()
+	local names = {}
+	for name in Commands do
+		table.insert(names, name)
+	end
+	table.sort(names)
+	return "Commands: " .. table.concat(names, ", ")
+end
+
+-- Spawn(typeId, count?, healthMult?) — spawns at random spawn pads
+Commands.Spawn = function(typeId, count, healthMult)
+	assert(Zombies.Types[typeId], "unknown zombie type " .. tostring(typeId))
+	for _ = 1, count or 1 do
+		Services.ZombieService:Spawn(typeId, Services.MapService:GetZombieSpawnPosition(), healthMult)
+	end
+	return "spawned " .. (count or 1) .. " " .. typeId
+end
+
+Commands.KillAll = function()
+	local n = 0
+	for _, entry in Services.ZombieService:GetInRadius(Vector3.zero, math.huge) do
+		Services.ZombieService:Kill(entry.Model, nil)
+		n += 1
+	end
+	return "killed " .. n
+end
+
+-- SkipToWave(n) — next wave started will be n (use KillAll to end the current one)
+Commands.SkipToWave = function(n)
+	Services.MatchService.DebugNextWave = n
+	return "next wave will be " .. n
+end
+
+Commands.GiveCash = function(amount, playerName)
+	local player = firstPlayer(playerName)
+	Services.EconomyService:AddCash(player, amount or 10000)
+	return player.Name .. " cash = " .. player:GetAttribute("Cash")
+end
+
+Commands.GiveGems = function(amount, playerName)
+	local player = firstPlayer(playerName)
+	Services.DataService:AddGems(player, amount or 5000)
+	return player.Name .. " gems = " .. player:GetAttribute("Gems")
+end
+
+-- Grant("Gems500", "receipt-1") — pay a store product as if a receipt arrived (same id twice = paid once)
+Commands.Grant = function(id, receiptId, playerName)
+	local player = firstPlayer(playerName)
+	local ok = Services.StoreService:Grant(player, id, receiptId or ("debug-" .. os.clock()))
+	return tostring(ok) .. " gems = " .. player:GetAttribute("Gems")
+end
+
+-- Receipt("Gems500", "r-1", buyerName?) — run a fake receipt through the real ProcessReceipt path (gifts too:
+-- the buyer's picked friend gets it). Works before the product has a real id.
+Commands.Receipt = function(id, receiptId, playerName)
+	local player = firstPlayer(playerName)
+	local entry = require(game:GetService("ReplicatedStorage").Shared.Config.Store).ById[id]
+	local real = entry.ProductId
+	if real == 0 then
+		entry.ProductId = -1 -- a stand-in id so the lookup finds it
+	end
+	local decision = Services.StoreService:_processReceipt({ PlayerId = player.UserId, ProductId = entry.ProductId, PurchaseId = receiptId or ("debug-" .. os.clock()) })
+	entry.ProductId = real
+	return tostring(decision) .. " gems = " .. player:GetAttribute("Gems")
+end
+
+-- AddStat("Kills", 100) — achievement progress for the first player
+Commands.AddStat = function(key, amount, playerName)
+	local player = firstPlayer(playerName)
+	Services.DataService:AddStat(player, key, amount or 1)
+	return player:GetAttribute("AchievementsJson")
+end
+
+-- Airdrop() — drop a supply crate now (mid-run)
+Commands.Airdrop = function()
+	Services.AirdropService:Drop(math.max(require(ReplicatedStorage.Shared.GameState):GetAttribute("Wave") or 0, 1))
+	return "crate dropping"
+end
+
+-- Tutorial() — Studio: play the first-time solo training run here (live servers teleport new players into it)
+Commands.Tutorial = function(playerName)
+	local player = firstPlayer(playerName)
+	assert(not Services.MatchService:IsRunning(), "a run is already going")
+	Services.DataService:Get(player).TutorialDone = false
+	task.spawn(Services.MatchService.RunMatch, Services.MatchService, { player }, { Tutorial = true })
+	return "tutorial started for " .. player.Name
+end
+
+Commands.ChargeUlt = function(playerName)
+	local player = firstPlayer(playerName)
+	Services.EconomyService:AddUltCharge(player, math.huge)
+	return "ult charged"
+end
+
+-- God(on?) — huge max health for the first player; carries over to new characters (lobby -> arena,
+-- respawns) until God(false), since spawning resets MaxHealth
+Commands.God = function(on, playerName)
+	local player = firstPlayer(playerName)
+	local wasOn = player:GetAttribute("DebugGod") == true
+	player:SetAttribute("DebugGod", on ~= false)
+	if on ~= false and not wasOn then
+		task.spawn(function()
+			while player.Parent and player:GetAttribute("DebugGod") do
+				local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+				if humanoid and humanoid.MaxHealth < 1e6 then
+					humanoid.MaxHealth = 1e6
+					humanoid.Health = 1e6
+				end
+				task.wait(0.25)
+			end
+		end)
+	elseif on == false then
+		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			humanoid.MaxHealth = 100
+			humanoid.Health = 100
+		end
+	end
+	return "god " .. tostring(on ~= false)
+end
+
+-- NavCheck() — verifies every ZombieSpawn has a flow-field route to the arena centre
+Commands.NavCheck = function()
+	local NavGrid = require(script.Parent.Parent:WaitForChild("Map"):WaitForChild("NavGrid"))
+	local spawnPos = Services.MapService:GetArenaSpawnCFrame(1).Position
+	local centre = Vector3.new(spawnPos.X, Services.MapService.GroundY, spawnPos.Z) -- a player spawn in the active arena
+	local lines = { NavGrid.Stats() }
+	for _, padPos in Services.MapService:GetZombiePads() do
+		do
+			-- walk the field from the pad to the centre (max 200 steps of ~3 studs)
+			local pos = Vector3.new(padPos.X, Services.MapService.GroundY, padPos.Z)
+			local steps, ok = 0, false
+			while steps < 200 do
+				if (pos - centre).Magnitude < 6 then
+					ok = true
+					break
+				end
+				local dir = NavGrid.GetDirection(pos, centre)
+				if not dir then
+					break
+				end
+				pos += dir * 3
+				steps += 1
+			end
+			table.insert(lines, string.format("pad (%d,%d): %s in %d steps", padPos.X, padPos.Z, if ok then "ROUTE OK" else "NO ROUTE", steps))
+		end
+	end
+	return table.concat(lines, "\n")
+end
+
+-- State() — one-line summary of GameState + first player's run stats
+Commands.State = function()
+	local gs = ReplicatedStorage.GameState
+	local player = firstPlayer()
+	local hum = player and player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	return string.format(
+		"phase=%s wave=%d left=%d alive=%d boss=%s | %s inRun=%s hp=%s cash=%s kills=%s tier=%s class=%s",
+		gs:GetAttribute("Phase"),
+		gs:GetAttribute("Wave"),
+		gs:GetAttribute("ZombiesLeft"),
+		Services.ZombieService:GetAliveCount(),
+		gs:GetAttribute("BossName"),
+		player and player.Name or "-",
+		tostring(player and player:GetAttribute("InRun")),
+		tostring(hum and math.floor(hum.Health)),
+		tostring(player and player:GetAttribute("Cash")),
+		tostring(player and player:GetAttribute("Kills")),
+		tostring(player and player:GetAttribute("WeaponTier")),
+		tostring(player and player:GetAttribute("ClassId"))
+	)
+end
+
+function DebugService:Init(services)
+	Services = services
+	if not RunService:IsStudio() then
+		return
+	end
+	local fn = ServerStorage:FindFirstChild("SAMZ_Debug") or Instance.new("BindableFunction")
+	fn.Name = "SAMZ_Debug"
+	fn.OnInvoke = function(command, ...)
+		local handler = Commands[command]
+		if not handler then
+			return "unknown command '" .. tostring(command) .. "'. " .. Commands.Help()
+		end
+		local ok, result = pcall(handler, ...)
+		return if ok then result else "error: " .. tostring(result)
+	end
+	fn.Parent = ServerStorage
+end
+
+return DebugService

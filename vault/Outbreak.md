@@ -12,7 +12,7 @@ The million-zombie mode, and what's different about working on it. Back to [[Hom
 
 ## This place is not a copy of main
 
-**The repo holds the main place's scripts, not Outbreak's.** Outbreak has its own script copies, published separately. On 2026-11-05 it differed from main in these ways, and it may have drifted since:
+`src/` holds the main place's scripts. Outbreak has its own script copies, published separately, with a backup in `outbreak/`. That folder is a snapshot, not what the place runs: changes still go to Studio first, then refresh it. On 2026-11-05 it differed from main in these ways, and it may have drifted since:
 
 - **Scripts that differ:** Config.Outbreak, Config.Sounds, Config.Weapons, Config.Zombies, OurLobby, CommonsService, DailyService, DataService, LobbyService, MapService, MatchService, QueueService, ZombieService, BossController, EffectsController, HUDController, LobbyController, StoreController, WelcomeController.
 - **Scripts it doesn't have:** Config.Levels, ReadyFx, LobbyMenu, JoinCover, TrailerDirector.
@@ -24,7 +24,7 @@ The million-zombie mode, and what's different about working on it. Back to [[Hom
 | What | Record |
 |---|---|
 | Ocean: terrain water and the hidden Baseplate | Rebuilt by `tools/outbreak-ocean.luau` |
-| Its script copies | No export in the repo yet |
+| Its script copies | Snapshot in `outbreak/`, with `hashes.txt` |
 
 ## Changing shared code
 
@@ -34,6 +34,8 @@ The million-zombie mode, and what's different about working on it. Back to [[Hom
 4. Localhost is blocked there, so send changes inline. Check the result against main's hash where the file should match.
 5. Press Play, spawn a horde with `SAMZ_Debug`, and check for errors.
 6. Publish with Alt+P. The window may be on the second monitor, so wait about 4 seconds and look there for the "Published" message.
+
+To refresh the snapshot: File > Download a Copy to a `.rbxl`, then `node tools/rbxl-scripts.js <file> outbreak`. Compare `outbreak/hashes.txt` with Studio's hashes. Keep the `.rbxl` out of the repo.
 
 Packages would end most of this copying. See [[Team Create Workflow]].
 
