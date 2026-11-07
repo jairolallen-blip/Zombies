@@ -37,7 +37,7 @@ From "Ui References", a colourful simulator's shop:
 
 ## Weapon wheel
 
-"Cool Ui animations" builds a radial wheel in Studio, in an ink-brush style with one slice lit red and a big name in the centre. Hovering moves the selection.
+"Cool Ui animations" builds a radial wheel in Studio, in an ink-brush style with one slice lit red and a big name in the centre. Hovering moves the selection. Its creator explains the build: eight separate frames, Q1 to Q8, one per slice, sit on a SurfaceGui, so the wheel can be placed in front of the camera and tilted for real perspective.
 
 **For us:** a wheel suits a gamepad or phone, but we carry one gun at a time. It would fit a later emote or quick-chat menu better.
 

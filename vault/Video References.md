@@ -17,7 +17,7 @@ What was learned from them is in three notes:
 
 | Video | Length | What's in it |
 |---|---|---|
-| [[Claude design modeling tips.mp4\|Claude design modeling tips]] ([[Claude design modeling tips.jpg\|sheet]]) | 8:05 | Webcam talk over a screen recording of Claude Design making creatures. The steps are in [[AI Art Pipeline]]. **Speech not transcribed**, screen only. |
+| [[Claude design modeling tips.mp4\|Claude design modeling tips]] ([[Claude design modeling tips.jpg\|sheet]]) | 8:05 | Webcam talk over a screen recording of Claude Design making creatures. **Read this one's tips first.** The steps are in [[AI Art Pipeline]]. |
 | [[3d Modeling Tips for Claude Design.mp4\|3d Modeling Tips for Claude Design]] ([[3d Modeling Tips for Claude Design.jpg\|sheet]]) | 0:17 | Caption: Gemini + Opus 5.5, one prompt. A four-view ice bear sheet becomes a 3D model, then walks and attacks in Roblox. |
 | [[Claude Design Model Ideas.mp4\|Claude Design Model Ideas]] ([[Claude Design Model Ideas.jpg\|sheet]]) | 0:11 | Blocky pets in the Claude Design viewer, with glowing cosmic trails on one. Style, not a method. |
 | [[Roblox 3d Model References.mp4\|Roblox 3d Model References]] ([[Roblox 3d Model References.jpg\|sheet]]) | 0:18 | Caption: all models and animations made in one Claude Pro session. Spiky ice dragons and a lineup of elemental creatures. The promised guide is not in the clip. |
@@ -74,7 +74,7 @@ What was learned from them is in three notes:
 
 Every clip was read as a timestamped page of frames, with closer looks at the fast parts. The pages are in `VISUAL REFERENCES/Video Sheets`, one per video, so a later session can skim them without reopening the videos.
 
-Spoken words come from captions burned into the video, which covers the talking tips. There is no good speech-to-text on this PC yet: Windows' built-in one returned nonsense, so **the 8-minute Claude Design talk has not been heard**. Only what shows on its screen is written down.
+Speech was transcribed on this PC with WhisperX (small model), and nothing was uploaded. Most clips have only music or no words. Twelve clips have speech or song, and only 5 of those matter: the 8-minute talk, "Cool Ui animations", and the three tip clips. Transcripts aren't kept here, since the words belong to their creators. To get one again, use the command below.
 
 The videos and sheets are not in git, like the other reference images, so they exist only on this PC.
 
@@ -83,4 +83,5 @@ The videos and sheets are not in git, like the other reference images, so they e
 1. Drop the mp4 in `VISUAL REFERENCES/Videos`.
 2. Run `node tools/video-look.js sheet <video> <out.jpg>` and save the page in `Video Sheets` under the same name.
 3. For fast action, run `events` to find the moment, then `strip` to see every frame.
-4. Add a row here and write what you learned in one of the three notes.
+4. For speech, run `whisperx <audio or video> --model small --device cpu --compute_type int8 --batch_size 4 --no_align --output_format json --output_dir <folder>` with the exe at `~/.cache/watch/whisperx-venv/Scripts/whisperx.exe`. It labels sung lyrics as speech, so judge what you get.
+5. Add a row here and write what you learned in one of the three notes.

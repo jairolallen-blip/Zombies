@@ -10,18 +10,22 @@ How other people make Roblox models and game ideas with Claude, taken from the o
 
 ## Making a creature with Claude Design
 
-From "Claude design modeling tips", 8:05 long. This comes from its screen only, because **the speech has not been transcribed**, so tips spoken aloud are missing.
+From "Claude design modeling tips", 8:05 long, read from both its screen and its speech.
 
-1. Open the Design tab and pick the **3D object** template. The clip's project shows the model Opus 5.5.
-2. Describe the creature, and attach a reference image if you have one.
-3. Claude builds it with three.js and exports a `.glb`, shown in an interactive viewer you can orbit.
-4. Once a model looks right, ask for a **handoff doc** describing it, so a new chat can make another in the same style. The clip's request: "can you create a handoff doc describing these models so I can make a new one in a different chat".
-5. Give that doc to a new chat with the next creature's brief.
-6. Correct it with short, concrete notes, and attach a picture of the part you want. One real note from the clip, for a land shark: don't make his gums visible, give him bigger, sharper, overlapping teeth, make his head bigger with more menacing eyes, and get rid of the hammer head look.
+1. In Claude, open Design, then choose the standalone Claude Design and pick **3D object**. The creator isn't sure whether this needs a Pro plan.
+2. Find a reference image, or have an image AI make a mock one. Claude gets a much better idea of what you want.
+3. Write a base prompt in plain parts: body shape, details, colour palette, face and pose, and what each part is inspired by.
+4. Send it and wait. The creator's first model took long enough to play two games of something else.
+5. Rate the model with stars and say what you like and don't like. The creator says this stops you spending usage on re-prompting small details.
+6. Send one long second prompt listing every fix, with lots of strong, specific words. Attach an image, and **say exactly which part to take from it**. If you don't, it copies the whole picture.
 
-The clip's handoff doc is the most useful thing here. Its shape, as read from the screen:
+**Handoff docs are the creator's first rule.** When Claude offers to save tokens by moving to a new chat, always accept. It starts the new chat with a full script of the old one. If it doesn't offer, ask for a handoff doc, then start the new chat with it. This also rescued them when a chat stopped making the model: the same request worked in a fresh chat with the doc.
 
-**Style rules**
+**Don't try to do it in one prompt.** The land shark was rough after one prompt and far better after two: teeth fixed, gums hidden, bigger head. It still had a plain back fin and janky water, and they say you can keep refining for as long as you like.
+
+Their handoff doc is worth copying as a shape. As read from the screen:
+
+**Style rules** (from the doc on screen)
 - Built entirely from three.js primitives: spheres, capsules, cones, tori, lathes and extrudes.
 - Silhouette first, then dense repeated detail: hundreds of small scales, spikes, plates and studs.
 - One themed concept per creature, shown everywhere on it.
@@ -33,7 +37,7 @@ The clip's handoff doc is the most useful thing here. Its shape, as read from th
 - About 400 to 1,300 meshes and about 17k to 66k triangles, 1 to 7 MB.
 - No textures: colour comes from material settings and vertex colours.
 - 5 or 6 shared materials: base skin, armour or metal, main glow, hot accent, dark punctuation, an optional see-through layer.
-- No animation in the file: no clips, skins or morphs.
+- No animation in the file: no clips, skins or morphs. The creator says movement such as portals and idles is added in the game.
 
 The numbers are read from a blurry frame, so treat them as close, not exact.
 
@@ -49,7 +53,7 @@ Worth a test, with limits:
 - **Horde zombies don't fit as made.** 17k to 66k triangles times 70 zombies is far too heavy, and [[Outbreak]] already struggles with hundreds of parts-based zombies. A horde mesh needs a much lower budget.
 - **Our zombies are animated through Motor6Ds** (`ZombieGaits`). A one-piece mesh with no rig can't use them. It would need splitting into limbs that match the rig, or a skinned mesh, which is new work.
 - **Getting it in** needs a route. [[Team Create Workflow]] covers scripts only. Roblox's Open Cloud takes model uploads, and that key isn't set up yet.
-- **Keep it our own.** New creatures come from our [[Lore]], not from the clips' designs.
+- **Keep it our own.** New creatures come from our [[Lore]], not from the clips' designs. The creator's land shark starts from a well-known game character and changes details, which isn't a safe way to work here: start from our own idea.
 
 A fair first test is one boss prop or one Shambler, measured for looks and frame rate.
 
