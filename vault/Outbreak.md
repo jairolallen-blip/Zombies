@@ -1,7 +1,7 @@
 ---
 tags: [zone-gameplay]
 cssclasses: [zone-gameplay]
-samz-zone: gameplay
+game-zone: gameplay
 ---
 
 # Outbreak
@@ -34,14 +34,14 @@ The million-zombie mode, and what's different about working on it. Back to [[Hom
 
 ## Changing shared code
 
-1. Run `tools/app-check.ps1` and ask the owner to open Outbreak if it's missing.
+1. Run `../Game Kit/tools/app-check.ps1` and ask the owner to open Outbreak if it's missing.
 2. Hash every script in both windows and compare.
 3. Patch by exact text with `execute_luau`. Never copy a whole file across unless the hashes matched before the change.
 4. Localhost is blocked there, so send changes inline. Check the result against main's hash where the file should match.
 5. Press Play, spawn a horde with `SAMZ_Debug`, and check for errors.
 6. Publish with Alt+P. The window may be on the second monitor, so wait about 4 seconds and look there for the "Published" message.
 
-To refresh the snapshot: File > Download a Copy to a `.rbxl`, then `node tools/rbxl-scripts.js <file> outbreak`. Compare `outbreak/hashes.txt` with Studio's hashes. Keep the `.rbxl` out of the repo.
+To refresh the snapshot: File > Download a Copy to a `.rbxl`, then `node "../Game Kit/tools/rbxl-scripts.js" <file> outbreak`. Compare `outbreak/hashes.txt` with Studio's hashes. Keep the `.rbxl` out of the repo.
 
 Packages would end most of this copying. See [[Team Create Workflow]].
 

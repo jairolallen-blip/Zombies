@@ -1,7 +1,7 @@
 ---
 tags: [zone-world]
 cssclasses: [zone-world]
-samz-zone: world
+game-zone: world
 ---
 
 # City Map (phase 2): done

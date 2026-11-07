@@ -1,7 +1,7 @@
 ---
 tags: [zone-gameplay]
 cssclasses: [zone-gameplay]
-samz-zone: gameplay
+game-zone: gameplay
 ---
 
 # Classes and Abilities

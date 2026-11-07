@@ -1,7 +1,7 @@
 ---
 tags: [zone-progress]
 cssclasses: [zone-progress]
-samz-zone: progress
+game-zone: progress
 ---
 
 # Store

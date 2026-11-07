@@ -1,7 +1,7 @@
 ---
 tags: [zone-world]
 cssclasses: [zone-world]
-samz-zone: world
+game-zone: world
 ---
 
 # Match Start (phase 3): done

@@ -1,12 +1,12 @@
 ---
 tags: [zone-working]
 cssclasses: [zone-working]
-samz-zone: working
+game-zone: working
 ---
 
 # Playing Million Zombies
 
-How to play and test Survive a Million Zombies. General Roblox methods are in [[Playing Roblox Games]]. Back to [[Home]].
+How to play and test Survive a Million Zombies. General Roblox methods are in the Game Kit's `Playing Roblox Games`. Back to [[Home]].
 
 ## Ids
 
@@ -108,7 +108,7 @@ Timing for a capture, counted from the `! Joining game` line after take-off:
 | 30 to 35 | WAVE 1 banner, 14 zombies solo |
 | 35 and later | Zombies reach you |
 
-Use `tools/roblox-input.ps1 -Action sheet` from about 30 seconds in. Each tool call is slow, so join and capture from one script.
+Use `../Game Kit/tools/roblox-input.ps1 -Action sheet` from about 30 seconds in. Each tool call is slow, so join and capture from one script.
 
 ## Permissions
 

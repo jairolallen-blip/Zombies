@@ -1,8 +1,10 @@
 # Survive a Million Zombies: agent handoff guide
 
+> **Read `D:\CLAUDE WORK\Game Kit\CLAUDE.md` first.** It holds the owner's working rules, general Roblox know-how, shared tools and reference clips. This file holds what's true of this game. Lessons that would help any game go in the kit.
+
 > **Keep this file current. It's part of every task.** Before you finish any task that changes the game, update the sections it touched: Status, Content, Architecture, Pitfalls and Changelog. Add a dated line to the Changelog. A new agent should be able to start from this file alone.
 
-> **Keep the vault colour-coded too.** New or renamed design notes need a zone in `tools/vault-style.js`. After vault changes, run `node tools/vault-code-notes.js`, then `node tools/vault-style.js`, and fix any "notes with no zone" it prints.
+> **Keep the vault colour-coded too.** New or renamed design notes need a zone in `vault/zones.json`. After vault changes, run `node tools/vault-code-notes.js`, then `node "../Game Kit/tools/vault-style.js" vault`, and fix any "notes with no zone" it prints.
 
 ## 1. What this is
 A Roblox **horde-survival shooter**. Players queue in a lobby, pick a class and a 4-level gun loadout, get dropped by helicopter into an apocalyptic city, and survive **10 waves** that end in a **boss** (the Grave Titan). The genre reference is *Survive a Million Monkeys*. **Inspiration only:** all names, mechanics and art here are our own, so never copy that game.
@@ -20,7 +22,7 @@ A Roblox **horde-survival shooter**. Players queue in a lobby, pick a class and 
 | **Design notes** | `vault/`, an Obsidian vault in the repo. Start at `vault/Home.md` (the hub). Hand-written notes: the 7 phases (Lobby, City Map, Match Start, Weapons, Zombies, Spawning, Waves and Boss) plus Servers and Teleports, Tutorial, Classes and Abilities, Supply Drops, Achievements, Lore and Team Create Workflow |
 | **Code notes** | `vault/Code/`, one note per source file with `[[links]]` to what it uses and what uses it. **Generated:** run `node tools/vault-code-notes.js` after code changes (it wipes and rebuilds `vault/Code`, so never hand-edit there) |
 | **Reference images** | `vault/MAP REFERENCES`, `MODEL REFERENCES`, `UI REFERENCES`, `VISUAL REFERENCES`. Look at these before building art. Use them for inspiration, not copying |
-| **Reference clips** | `vault/Video References.md` sorts the owner's saved videos and links `Game Feel Guide`, `AI Art Pipeline` and `UI Ideas`. Read those before polishing combat, UI or making models |
+| **Reference clips** | In the Game Kit (`vault/Video References.md`, with `Game Feel Guide`, `AI Art Pipeline` and `UI Ideas`). What they suggest for this game is in `vault/Polish Ideas.md`. Read both before polishing combat, UI or making models |
 | **Code search** | Graphify repo `jairolallen-blip/Zombies` (id `d1b46534-fb62-460e-968f-3bb73970c238`). It indexes only **pushed** commits; re-indexing after a push takes a few minutes |
 
 **Studio is the live truth, and the repo is a mirror.** Code is written in Studio (through the Studio MCP), then **exported** to the repo and committed. The repo doesn't sync automatically, so export after every task (§6).
@@ -148,17 +150,13 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
 ## 5. Development workflow (with the Roblox Studio MCP)
 1. **Check the markers** (§2), and read the vault note for the system you're touching.
 2. **Find code** with Graphify (`graphify_find`, `query_graph`, callers and impact), or by grepping `src/`. `src/` mirrors Studio once you've exported.
-3. **Edit in Studio:**
-   - **Small edits:** use `multi_edit`. The `old_string` must match Studio's current source exactly. Studio may differ from `src/` if you haven't exported yet.
-   - **Whole-file rewrites:** use `execute_luau` with `ScriptEditorService:UpdateSourceAsync(script, function() return src end)`. ⚠ A `[==[` long string already drops its first newline, so **don't** also call `:sub(2)` on it (that bug once deleted a character).
-   - **New scripts:** use `multi_edit` with `className`, or create them with `Instance.new`.
-4. **Requiring modules from `execute_luau`:** the command-bar context has its own module cache. A service you `require` there has `Services == nil`. To call service logic, use the `ServerStorage.SAMZ_Debug` BindableFunction, or fire real remotes from the Client context. To run a builder, `require` a **clone**: `local c = m:Clone(); c.Parent = m.Parent; require(c).Build(); c:Destroy()`.
-5. **Map changes:** edit `OurCity`'s `LAYOUT` grid or the builder code, then rebuild. The rebuild replaces `Workspace.OurMap.Arena`, so hand edits are lost. After any map change, run `NavCheck` (§7). Every zombie pad must say ROUTE OK.
-6. **Playtest** (§7), and check `get_console_output` for errors.
-7. **Export, update and commit** (§6). Update this file and the vault note, run `node tools/vault-code-notes.js`, then commit with a clear message ending in the attribution line, and push.
+3. **Edit in Studio**, as in the kit's `Studio Workflow`. To call service logic, use the `ServerStorage.SAMZ_Debug` BindableFunction, or fire real remotes from the Client context.
+4. **Map changes:** edit `OurCity`'s `LAYOUT` grid or the builder code, then rebuild. The rebuild replaces `Workspace.OurMap.Arena`, so hand edits are lost. After any map change, run `NavCheck` (§7). Every zombie pad must say ROUTE OK.
+5. **Playtest** (§7), and check `get_console_output` for errors.
+6. **Export, update and commit** (§6). Update this file and the vault note, run `node tools/vault-code-notes.js`, then commit with a clear message ending in the attribution line, and push.
 
 ## 6. Export and import (tools/)
-- **Blocked since 2026-11-05:** `execute_luau` refuses every HTTP domain, localhost included ("not in the Assistant HTTP allowlist"; GET and POST, Studio 0.746). So both routes below fail from `execute_luau`. Until that changes, push changes inline: put the new text in a long string in `execute_luau`, patch with plain find, then compare the byte size with the repo file. Don't try to get around the allowlist. To export, use File > Download a Copy, then `node tools/rbxl-scripts.js <file.rbxl> <folder>`, which reads the place file with no web requests.
+- **Blocked since 2026-11-05:** `execute_luau` refuses every HTTP domain, localhost included ("not in the Assistant HTTP allowlist"; GET and POST, Studio 0.746). So both routes below fail from `execute_luau`. Until that changes, push changes inline: put the new text in a long string in `execute_luau`, patch with plain find, then compare the byte size with the repo file. Don't try to get around the allowlist. To export, use File > Download a Copy, then `node "../Game Kit/tools/rbxl-scripts.js" <file.rbxl> <folder>`, which reads the place file with no web requests.
 - **Studio → repo:**
   1. `Remove-Item src -Recurse`, then start `tools/receiver.ps1` in the background.
   2. Run `tools/studio-export.luau` in `execute_luau` (Edit). Its "problems" output must be empty.
@@ -169,8 +167,8 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
 - **Scope:** only scripts are in the repo. The baked map (`Workspace.OurMap`) lives only in the place file; rebuild it from the builders if it's ever lost.
 
 ## 7. Playtesting
-- **Apps:** run `tools/app-check.ps1` before work that needs them, and ask the owner to open what's missing (`vault/Apps To Keep Open.md`). The owner welcomes these requests.
-- **Start here:** `vault/Playing Million Zombies.md` for this game, `vault/Playing Roblox Games.md` for any Roblox game. `tools/roblox-input.ps1` drives the real live client.
+- **Apps:** run `../Game Kit/tools/app-check.ps1` before work that needs them, and ask the owner to open what's missing (the kit's `Apps To Keep Open`). The owner welcomes these requests.
+- **Start here:** `vault/Playing Million Zombies.md` for this game, the kit's `Playing Roblox Games` for any Roblox game. `../Game Kit/tools/roblox-input.ps1` drives the real live client.
 - `start_stop_play(true)`, then use `execute_luau` with datamodel **Server** or **Client**. In Studio, DataStores run memory-only, and new profiles get 2,500 test Gems.
 - **Start a run quickly:** in Server, move the character onto a pad with `p.Character:PivotTo(CFrame.new(workspace.OurMap.Lobby.Helipad.Pad.Position + Vector3.new(4, 4, 0)))` (any `Helipad` model; `PadId` 1-4), then click `LocalPlayer.PlayerGui.Lobby.Frame.Squad.Size1` so the squad is full and the countdown drops to 4s. In Studio the run plays in this server. Teleports (live squads, the tutorial send-off, the trip back) can only be tested in a published game.
 - **Freeze-frame the deploy cutscene** (after one real deploy, so `DeployPath` exists):
@@ -189,19 +187,17 @@ StarterCharacterScripts/Health   empty on purpose (disables regen)
 - **Clicking UI:** `user_mouse_input` clicks only register by `instance_path` (for example `LocalPlayer.PlayerGui.Shop.Panel.Body.Frame.LevelTab4`), not by screen coordinates, so give testable buttons a Name. Open a shop by pivoting the character next to its prompt and sending `E` with `user_keyboard_input`. The lobby countdown keeps running (overwriting `Timer` doesn't hold it), so test within the 20s window.
 - **You can't verify feel:** mouse-driven recoil, the minigun spin and the animations play on the user's screen. Ask the user to check them.
 
-## 8. Pitfalls we've hit (read these)
+## 8. Pitfalls in this game (read these)
+General Roblox pitfalls moved to the kit's `Roblox Pitfalls`. Read that too.
 - **Team Create overwrite:** see §2. Always check the markers first.
-- **Gun specs:** in `GunModels`, the specs mix list entries with named fields (`Muzzle`, `Hub`). Loop over them with `ipairs`, not plain `for ... in`.
-- **Local functions:** they must be defined *above* any function that uses them. `EconomyService` once called `notify` before it was defined, which stalled every run after wave 1.
-- **Delayed spawns:** anything spawned through `SpawnWarned` appears 1.2s later, so react to the actual appearance (attribute-change signals), not the wave start. That's how the boss banner bug happened.
-- **Cylinder axis:** Roblox cylinders run along X. Builders rotate them (`Tube` and `Drum` in GunModels; a 90° Z-roll in the map builders).
-- **Team Test looks like a reserved server:** it has a PrivateServerId and no owner, and `RunService:IsStudio()` is false on its server. Don't use either to decide "match server" or "can teleport"; use `MatchService.IsMatchServer` / `.LocalRuns` (after `:WaitForKind()` if it's early).
-- **Headshots and the Root hitbox:** a ray stops on the first part it touches, and every zombie's invisible `Root` box sits in front of most of its face. Don't judge a headshot by the first part's name alone (see `hitsHead` in CombatService).
-- **Collision and nav:** decorative parts must be `CanCollide = false`, or they block NavGrid cells and zombies route around nothing. The floor must stay flat. Keep props clear of spawn pads; OurCity enforces a 13-stud clearance.
+- **Gun specs:** in `GunModels`, the specs mix list entries with named fields (`Muzzle`, `Hub`). Loop over them with `ipairs`.
+- **Delayed spawns:** anything spawned through `SpawnWarned` appears 1.2s later, so react to the real appearance. That's how the boss banner bug happened.
+- **Match servers:** use `MatchService.IsMatchServer` / `.LocalRuns` (after `:WaitForKind()` if it's early) to decide "match server" or "can teleport".
+- **Headshots and the Root hitbox:** every zombie's invisible `Root` box sits in front of most of its face. See `hitsHead` in CombatService.
+- **Nav:** decorative parts must be `CanCollide = false`, and the floor must stay flat. Keep props clear of spawn pads; OurCity enforces a 13-stud clearance.
 - **Test runs are saved:** Studio API access is on, so a test run that reaches Victory or Overrun pays the real profile. The owner is fine with that (2026-11-05): kill bosses and finish runs freely, and don't undo the owner's own stats. Only avoid what reaches other players.
-- **Publishing:** the owner gave standing permission (2026-11-05) to save and publish without asking once everything is tested and confirmed ready. Use `tools/studio-key.ps1 <process id> "%p" <shot.png>`; it sends Alt+P to that Studio window. Wait for the "Published" toast (about 4s). `GetProductInfo().Updated` lags, so it doesn't prove a publish. Running servers keep the old version until they restart.
+- **Publishing:** the owner gave standing permission (2026-11-05) to save and publish this game without asking once everything is tested and confirmed ready. How to publish is in the kit's `Studio Workflow`.
 - **Damage carries over within a wave:** HP doesn't regenerate mid-wave, and a wave clear heals fully (`HealOnWaveClear`), so any change to damage or waves should be re-checked with the balance bot.
-- **Network ownership:** anchored roots can't change network owner. Rising zombies get `SetNetworkOwner(nil)` *after* they're unanchored.
 
 ## 9. Next ideas (not started)
 From the vault notes:
@@ -219,6 +215,7 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-07: **Game Kit split out.** Shared rules, Roblox know-how, general tools (`app-check`, `obs`, `obs-record`, `rbxl-scripts`, `roblox-input`, `studio-key`, `video-look`, `vault-style`), the owner's clips and their guides moved to `D:\CLAUDE WORK\Game Kit`, so a new game starts from what was learned here. This game keeps its own facts; game-only ideas from the clips are in `vault/Polish Ideas.md`. Colour zones moved to `vault/zones.json`. Older changelog lines still name the old tool paths.
 - 2026-11-07: **saved video clips studied.** All 32 of the owner's clips in `vault/VISUAL REFERENCES/Videos` were read frame by frame and sorted into new notes `Video References`, `Game Feel Guide`, `AI Art Pipeline` and `UI Ideas` (new `library` colour zone). A one-page frame sheet per clip is in `Video Sheets`, and `tools/video-look.js` gained `sheet`. Speech came from captions, then local WhisperX (installed with the owner's yes, in `~/.cache/watch`), which covered the 8-minute Claude Design talk. Videos and sheets are not in git. No game code changed.
 - 2026-11-05: **CosmoGraph 3D set up.** The owner's Obsidian plugin now clusters by subfolder (`groupDepth` 2), so each code group is its own region. It has its own colours and doesn't read our zones. The plugin's `main.js` stays out of git.
 - 2026-11-05: **vault colour-coded.** `tools/vault-style.js` holds 10 colour zones and tags notes, colours the sidebar and sets the graph groups. `snippets/samz-theme.css` is the theme. `vault-code-notes.js` tags code notes. New notes need a zone in `vault-style.js`. `graph.json` stays uncommitted, so rerun the script to restore colours.

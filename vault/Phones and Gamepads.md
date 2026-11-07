@@ -1,7 +1,7 @@
 ---
 tags: [zone-working]
 cssclasses: [zone-working]
-samz-zone: working
+game-zone: working
 ---
 
 # Phones and Gamepads

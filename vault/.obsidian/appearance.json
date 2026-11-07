@@ -1,7 +1,7 @@
 {
   "theme": "obsidian",
   "enabledCssSnippets": [
-    "samz-theme",
-    "samz-zones"
+    "game-theme",
+    "game-zones"
   ]
 }

@@ -1,7 +1,7 @@
 ---
 tags: [zone-home]
 cssclasses: [zone-home]
-samz-zone: home
+game-zone: home
 ---
 
 # Home
@@ -12,9 +12,9 @@ The map of the vault. Start here, then follow links.
 
 ## Colour key
 
-<span class="samz-key zone-gameplay">Gameplay</span> <span class="samz-key zone-world">World and story</span> <span class="samz-key zone-progress">Progress and store</span> <span class="samz-key zone-working">How we work</span> <span class="samz-key zone-library">Reference library</span> <span class="samz-key zone-server">Server code</span> <span class="samz-key zone-client">Client code</span> <span class="samz-key zone-map">Map code</span> <span class="samz-key zone-shared">Shared code</span> <span class="samz-key zone-config">Config</span>
+<span class="game-key zone-gameplay">Gameplay</span> <span class="game-key zone-world">World and story</span> <span class="game-key zone-progress">Progress and store</span> <span class="game-key zone-working">How we work</span> <span class="game-key zone-server">Server code</span> <span class="game-key zone-client">Client code</span> <span class="game-key zone-map">Map code</span> <span class="game-key zone-shared">Shared code</span> <span class="game-key zone-config">Config</span>
 
-Notes, the sidebar and the graph all use these colours. To colour a new note, add it in `tools/vault-style.js`.
+Notes, the sidebar and the graph all use these colours. To colour a new note, add it to `zones.json`, then run the Game Kit's `vault-style.js`.
 
 Open the vault as a 3D planet with the orbit icon on the left (CosmoGraph 3D). It uses its own colours, not this key.
 
@@ -47,12 +47,6 @@ See [[Roadmap]] for status.
 - [[Lore]]: Port Harrow, the Bloom, Overwatch and the safehouse people
 - [[Phones and Gamepads]]: touch buttons and controller mapping
 
-## Reference library
-- [[Video References]]: the owner's saved clips, sorted by topic
-- [[Game Feel Guide]]: hits, impact frames, VFX recipes and what to try here
-- [[AI Art Pipeline]]: making models with Claude, and the dead game method
-- [[UI Ideas]]: reveals, shops and menus
-
 ## Code
 - [[Server services]]: the server's game systems
 - [[Map builders]]: the baked lobby and city, and the zombie nav grid
@@ -62,6 +56,6 @@ See [[Roadmap]] for status.
 
 ## Working on the game
 - [[Team Create Workflow]]: how to edit the shared Studio place safely
-- [[Apps To Keep Open]]: the apps Claude wants running, and how to ask for them
+- [[Polish Ideas]]: what the saved clips suggest for this game
 - [[Playing Million Zombies]]: controls, a normal run, how to survive, how to test this game
-- [[Playing Roblox Games]]: how an AI agent plays and tests any Roblox game
+- **Game Kit** (`D:\CLAUDE WORK\Game Kit`): shared rules, Roblox know-how, tools and the owner's clips. Open its `vault` as its own Obsidian vault
