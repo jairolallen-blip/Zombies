@@ -20,6 +20,7 @@ A Roblox **horde-survival shooter**. Players queue in a lobby, pick a class and 
 | **Design notes** | `vault/`, an Obsidian vault in the repo. Start at `vault/Home.md` (the hub). Hand-written notes: the 7 phases (Lobby, City Map, Match Start, Weapons, Zombies, Spawning, Waves and Boss) plus Servers and Teleports, Tutorial, Classes and Abilities, Supply Drops, Achievements, Lore and Team Create Workflow |
 | **Code notes** | `vault/Code/`, one note per source file with `[[links]]` to what it uses and what uses it. **Generated:** run `node tools/vault-code-notes.js` after code changes (it wipes and rebuilds `vault/Code`, so never hand-edit there) |
 | **Reference images** | `vault/MAP REFERENCES`, `MODEL REFERENCES`, `UI REFERENCES`, `VISUAL REFERENCES`. Look at these before building art. Use them for inspiration, not copying |
+| **Reference clips** | `vault/Video References.md` sorts the owner's saved videos and links `Game Feel Guide`, `AI Art Pipeline` and `UI Ideas`. Read those before polishing combat, UI or making models |
 | **Code search** | Graphify repo `jairolallen-blip/Zombies` (id `d1b46534-fb62-460e-968f-3bb73970c238`). It indexes only **pushed** commits; re-indexing after a push takes a few minutes |
 
 **Studio is the live truth, and the repo is a mirror.** Code is written in Studio (through the Studio MCP), then **exported** to the repo and committed. The repo doesn't sync automatically, so export after every task (§6).
@@ -218,6 +219,7 @@ From the vault notes:
   6. badges: **done** as the in-game achievements at the Commendations board.
 
 ## 10. Changelog (newest first; one line per task)
+- 2026-11-07: **saved video clips studied.** All 32 of the owner's clips in `vault/VISUAL REFERENCES/Videos` were read frame by frame and sorted into new notes `Video References`, `Game Feel Guide`, `AI Art Pipeline` and `UI Ideas` (new `library` colour zone). A one-page frame sheet per clip is in `Video Sheets`, and `tools/video-look.js` gained `sheet`. Speech came from burned-in captions; the 8-minute Claude Design talk is unheard. Videos and sheets are not in git. No game code changed.
 - 2026-11-05: **CosmoGraph 3D set up.** The owner's Obsidian plugin now clusters by subfolder (`groupDepth` 2), so each code group is its own region. It has its own colours and doesn't read our zones. The plugin's `main.js` stays out of git.
 - 2026-11-05: **vault colour-coded.** `tools/vault-style.js` holds 10 colour zones and tags notes, colours the sidebar and sets the graph groups. `snippets/samz-theme.css` is the theme. `vault-code-notes.js` tags code notes. New notes need a zone in `vault-style.js`. `graph.json` stays uncommitted, so rerun the script to restore colours.
 - 2026-11-05: **Outbreak scripts exported.** 74 scripts are in `outbreak/`, read from a downloaded `.rbxl` by new `tools/rbxl-scripts.js`. Sizes and hashes of all 74 matched Studio.

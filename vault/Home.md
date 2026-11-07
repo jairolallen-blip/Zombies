@@ -12,7 +12,7 @@ The map of the vault. Start here, then follow links.
 
 ## Colour key
 
-<span class="samz-key zone-gameplay">Gameplay</span> <span class="samz-key zone-world">World and story</span> <span class="samz-key zone-progress">Progress and store</span> <span class="samz-key zone-working">How we work</span> <span class="samz-key zone-server">Server code</span> <span class="samz-key zone-client">Client code</span> <span class="samz-key zone-map">Map code</span> <span class="samz-key zone-shared">Shared code</span> <span class="samz-key zone-config">Config</span>
+<span class="samz-key zone-gameplay">Gameplay</span> <span class="samz-key zone-world">World and story</span> <span class="samz-key zone-progress">Progress and store</span> <span class="samz-key zone-working">How we work</span> <span class="samz-key zone-library">Reference library</span> <span class="samz-key zone-server">Server code</span> <span class="samz-key zone-client">Client code</span> <span class="samz-key zone-map">Map code</span> <span class="samz-key zone-shared">Shared code</span> <span class="samz-key zone-config">Config</span>
 
 Notes, the sidebar and the graph all use these colours. To colour a new note, add it in `tools/vault-style.js`.
 
@@ -21,7 +21,7 @@ Open the vault as a 3D planet with the orbit icon on the left (CosmoGraph 3D). I
 ## How the vault is laid out
 - **Design notes** (this folder): what each system is meant to do, the decisions behind it and ideas for later. Written by hand and kept current.
 - **Code notes** (`Code/`): one note per source file, made by `node tools/vault-code-notes.js`. Each has the file's header, what it uses, what uses it and the design notes it names. **Never hand-edit them:** rerun the script after code changes.
-- **References** (`MAP REFERENCES`, `MODEL REFERENCES`, `UI REFERENCES`, `VISUAL REFERENCES`): images for inspiration, not copying.
+- **References** (`MAP REFERENCES`, `MODEL REFERENCES`, `UI REFERENCES`, `VISUAL REFERENCES`): images and clips for inspiration, not copying.
 
 ## The game, phase by phase
 See [[Roadmap]] for status.
@@ -46,6 +46,12 @@ See [[Roadmap]] for status.
 - [[Outbreak]]: the million-zombie mode, its separate place, and how to change it
 - [[Lore]]: Port Harrow, the Bloom, Overwatch and the safehouse people
 - [[Phones and Gamepads]]: touch buttons and controller mapping
+
+## Reference library
+- [[Video References]]: the owner's saved clips, sorted by topic
+- [[Game Feel Guide]]: hits, impact frames, VFX recipes and what to try here
+- [[AI Art Pipeline]]: making models with Claude, and the dead game method
+- [[UI Ideas]]: reveals, shops and menus
 
 ## Code
 - [[Server services]]: the server's game systems

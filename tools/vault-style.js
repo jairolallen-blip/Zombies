@@ -12,6 +12,7 @@ const ZONES = {
 	world: { color: "#ffb43c", label: "World and story", notes: ["Lobby", "City Map", "Match Start", "Lore", "Tutorial"] },
 	progress: { color: "#b98bff", label: "Progress and store", notes: ["Achievements", "Bounties", "Store", "Levels"] },
 	working: { color: "#9cff5a", label: "How we work", notes: ["Roadmap", "Team Create Workflow", "Playing Roblox Games", "Playing Million Zombies", "Apps To Keep Open", "Servers and Teleports", "Phones and Gamepads"] },
+	library: { color: "#e8d5a8", label: "Reference library", notes: ["Video References", "Game Feel Guide", "AI Art Pipeline", "UI Ideas"] },
 	server: { color: "#4f9dff", label: "Server code", folder: "Code/Server services" },
 	client: { color: "#4be3d0", label: "Client code", folder: "Code/Client controllers" },
 	map: { color: "#ff8a3d", label: "Map code", folder: "Code/Map builders" },

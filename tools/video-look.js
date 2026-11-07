@@ -1,6 +1,7 @@
 // video-look: see fast things in a local video, with ffmpeg. Guide: vault/Playing Roblox Games.md
 //   node tools/video-look.js events <video> [threshold=0.12]           lists sudden changes, so you know where to look
 //   node tools/video-look.js strip <video> <start s> <count> <out.jpg> [fps=30] [crop=w:h:x:y]   every frame, as one image
+//   node tools/video-look.js sheet <video> <out.jpg>                   the whole video on one timestamped page
 const { execFileSync } = require("child_process");
 const fs = require("fs");
 
@@ -26,6 +27,13 @@ if (mode === "events") {
 	const width = Math.floor(1920 / cols);
 	run(["-ss", start, "-i", video, "-an", "-vf", `fps=${fps},${crop}scale=${width}:-2,tile=${cols}x${rows}`, "-frames:v", "1", "-q:v", "3", out]);
 	console.log(`${out}: ${count} frames from ${start}s, ${(1000 / fps).toFixed(0)} ms apart`);
+} else if (mode === "sheet") {
+	const probe = execFileSync(ffmpeg.replace("ffmpeg.exe", "ffprobe.exe").replace(/^ffmpeg$/, "ffprobe"), ["-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height:format=duration", "-of", "default=nw=1:nk=1", video]).toString().trim().split(/\s+/).map(Number);
+	const [w, h, seconds] = probe;
+	const [cols, rows, width] = h > w ? [6, 3, 240] : [4, 4, 360];
+	const label = "drawtext=text='%{pts\\:hms}':x=4:y=4:fontsize=16:fontcolor=yellow:box=1:boxcolor=black@0.7:fontfile=/Windows/Fonts/arial.ttf";
+	run(["-i", video, "-an", "-vf", `fps=${((cols * rows) / seconds).toFixed(4)},scale=${width}:-2,${label},tile=${cols}x${rows}`, "-frames:v", "1", "-q:v", "4", args[0]]);
+	console.log(`${args[0]}: ${cols * rows} frames over ${seconds.toFixed(1)}s`);
 } else {
-	throw new Error("mode must be events or strip");
+	throw new Error("mode must be events, strip or sheet");
 }
