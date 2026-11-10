@@ -21,7 +21,7 @@ A Roblox **horde-survival shooter**. Players queue in a lobby, pick a class and 
 | **Code + notes, versioned** | GitHub `jairolallen-blip/Zombies` (`main`), cloned at `D:\CLAUDE WORK\Zombies` |
 | **Design notes** | `vault/`, an Obsidian vault in the repo. Start at `vault/Zombies Home.md` (the hub). Hand-written notes: the 7 phases (Lobby, City Map, Match Start, Weapons, Zombies, Spawning, Waves and Boss) plus Servers and Teleports, Tutorial, Classes and Abilities, Supply Drops, Achievements, Lore and Team Create Workflow |
 | **Code notes** | `vault/Code/`, one note per source file with `[[links]]` to what it uses and what uses it. **Generated:** run `node tools/vault-code-notes.js` after code changes (it wipes and rebuilds `vault/Code`, so never hand-edit there) |
-| **Reference images** | `vault/MAP REFERENCES`, `MODEL REFERENCES`, `UI REFERENCES`, `VISUAL REFERENCES`. Look at these before building art. Use them for inspiration, not copying |
+| **Reference images** | Moved on 2026-11-10 to the Game Kit's shared `Gamekit/References/` (`Maps`, `Models`, `UI`, `Visuals`, index note `References`). Look at these before building art. Use them for inspiration, not copying |
 | **Reference clips** | In the Game Kit (`Gamekit/Video References.md`, with `Game Feel Guide`, `AI Art Pipeline` and `UI Ideas`). What they suggest for this game is in `vault/Polish Ideas.md`. Read both before polishing combat, UI or making models |
 | **Code search** | Graphify repo `jairolallen-blip/Zombies` (id `d1b46534-fb62-460e-968f-3bb73970c238`). It indexes only **pushed** commits; re-indexing after a push takes a few minutes |
 
