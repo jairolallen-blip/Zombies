@@ -6,7 +6,7 @@ game-zone: world
 
 # Match Start (phase 3): done
 
-Part of the [[Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and playtested on 2026-11-01.
+Part of the [[Zombies Roadmap|Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and playtested on 2026-11-01.
 
 ## Status
 - Playtested timeline: Lobby → **Deploy at 3.6s** → **Break at 14.7s** (helicopter plus parachute, about 11s) → **Wave 1 at 27.4s** (12s intermission) → cleared → wave 2 break. No errors.
@@ -42,12 +42,12 @@ Part of the [[Roadmap]]. Connects the [[Lobby]] to the [[City Map]]. Built and p
 - Players who respawn mid-run skip the cutscene and appear normally.
 
 ## Skipping (2026-11-02)
-Players who have finished a run can hold Space (gamepad X, or the on-screen button) to vote to skip the deploy ride and the boss intro ([[SkipController]]). It skips once everyone in the run has voted, so a first-timer in the squad always sees it in full. A skipped ride jumps to the door, then the jump and parachute play as usual.
+Players who have finished a run can hold Space (gamepad X, or the on-screen button) to vote to skip the deploy ride and the boss intro ([[SkipController (Zombies)|SkipController]]). It skips once everyone in the run has voted, so a first-timer in the squad always sees it in full. A skipped ride jumps to the door, then the jump and parachute play as usual.
 
 ## Code
-[[MatchService]] runs the deploy, [[CutsceneController]] plays it, and [[RadioController]] shows [[Radio config]] lines. Sound: [[SoundController]] and [[Sounds config]].
+[[MatchService (Zombies)|MatchService]] runs the deploy, [[CutsceneController (Zombies)|CutsceneController]] plays it, and [[RadioController (Zombies)|RadioController]] shows [[Radio config (Zombies)|Radio config]] lines. Sound: [[SoundController (Zombies)|SoundController]] and [[Sounds config (Zombies)|Sounds config]].
 
-Back to [[Home]].
+Back to [[Zombies Home|Home]].
 
 **Late-loading squad members** (2026-11-04): on a live match server the drop starts once every profile has loaded, which can be before a slow client finishes loading. `CutsceneController:Start` checks for a ride already under way and joins it at the right moment, so nobody hangs above the map waiting for the drop. The ride is timed on each player's own clock, since a client's server clock can be seconds off just after joining a server; the console shows `[Cutscene] ride starts (...)` on every ride.
 

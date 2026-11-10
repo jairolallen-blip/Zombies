@@ -13,7 +13,7 @@ Built and playtested on 2026-11-01.
 - **Bug fixed:** since phase 6 the "APPROACHES" banner never showed, because the boss rises after its warning circle. The banner now fires when the boss actually appears.
 - **Not re-tested this phase:** the overrun (everyone dead) ending. Its code path only gained the victory flag.
 
-Part of the [[Roadmap]]. The spawn ramp per wave is in [[Spawning]].
+Part of the [[Zombies Roadmap|Roadmap]]. The spawn ramp per wave is in [[Spawning]].
 
 ## The run
 - **10 waves** (`GameConfig.Waves.TotalWaves`). The HUD shows **WAVE n / 10**.
@@ -61,6 +61,6 @@ Second run, with god mode from wave 4 so it shows damage instead of deaths: wave
 - Endless mode after wave 10 for high scores.
 
 ## Code
-The run loop is in [[MatchService]] and the boss in [[ZombieService]]. Client: [[BossController]] and [[HUDController]].
+The run loop is in [[MatchService (Zombies)|MatchService]] and the boss in [[ZombieService (Zombies)|ZombieService]]. Client: [[BossController (Zombies)|BossController]] and [[HUDController (Zombies)|HUDController]].
 
-Back to [[Home]].
+Back to [[Zombies Home|Home]].

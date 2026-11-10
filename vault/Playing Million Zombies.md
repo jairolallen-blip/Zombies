@@ -6,7 +6,7 @@ game-zone: working
 
 # Playing Million Zombies
 
-How to play and test Survive a Million Zombies. General Roblox methods are in the Game Kit's `Playing Roblox Games`. Back to [[Home]].
+How to play and test Survive a Million Zombies. General Roblox methods are in the Game Kit's `Playing Roblox Games`. Back to [[Zombies Home|Home]].
 
 ## Ids
 

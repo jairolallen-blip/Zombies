@@ -6,7 +6,7 @@ game-zone: progress
 
 # Levels and XP
 
-Account levels (2026-11-03, the owner's idea). Back to [[Home]]. Numbers in [[Levels config]]; XP is paid by [[MatchService]] and stored by [[DataService]]; the bar is drawn by [[WelcomeController]].
+Account levels (2026-11-03, the owner's idea). Back to [[Zombies Home|Home]]. Numbers in [[Levels config (Zombies)|Levels config]]; XP is paid by [[MatchService (Zombies)|MatchService]] and stored by [[DataService (Zombies)|DataService]]; the bar is drawn by [[WelcomeController (Zombies)|WelcomeController]].
 
 ## How you earn XP
 Every run pays XP for how it went, win or lose:

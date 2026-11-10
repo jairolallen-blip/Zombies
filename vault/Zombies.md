@@ -12,7 +12,7 @@ Built and playtested on 2026-11-01.
 - **Known limit:** in a very dense crowd (40+ around a player who stands still), the odd zombie gets pushed up onto the others (1 of 41 in the test).
 - **Not watched live:** the attack swipe and the runner lunge animations need a real fight on your screen.
 
-Part of the [[Roadmap]]. Style comes from `MODEL REFERENCES/` (the zombie images): classic blocky R6 bodies, arms out in front, red eyes, an open mouth with teeth, wounds and exposed ribs, torn clothes, and lots of variety.
+Part of the [[Zombies Roadmap|Roadmap]]. Style comes from `MODEL REFERENCES/` (the zombie images): classic blocky R6 bodies, arms out in front, red eyes, an open mouth with teeth, wounds and exposed ribs, torn clothes, and lots of variety.
 
 ## Looks
 Every zombie is built from parts with **random variation**: shirt and pants colours from its type's palette, where the wounds go, which sleeve or pant leg is torn, slight differences in height and head tilt.
@@ -33,13 +33,13 @@ Every zombie is built from parts with **random variation**: shirt and pants colo
 - **Attack swipe:** both arms visibly swing down when it hits you (the client reads `AttackAt`).
 
 ## Animation (client)
-- Each build has its own keyframed gait in [[ZombieGaits]]: Normal shambles with a limp, Lean sprints, Bloated waddles, Hulk, Titan and bosses stomp, Gaunt stalks, Crawler crawls. A standing zombie breathes and its head sags.
+- Each build has its own keyframed gait in [[ZombieGaits (Zombies)|ZombieGaits]]: Normal shambles with a limp, Lean sprints, Bloated waddles, Hulk, Titan and bosses stomp, Gaunt stalks, Crawler crawls. A standing zombie breathes and its head sags.
 - A gait advances with the zombie's real ground speed, so feet don't skate. Limp side, phase, size of motion and stride length vary by ZombieId, so a crowd doesn't march.
 - Torso and Head are Motor6Ds on Root like the limbs, which is what lets a body lean and lurch. The motion is client only, so to the server a zombie is rigid and hit boxes don't move.
 - Rise, Burrow and Scream fade in and out over about 0.2s, so the arms don't whip round in one frame when a pose ends.
 - A hit leans a zombie away from the bullet, and a headshot snaps its head back. Hulks barely move. Each build has its own attack: claws, lunge, two-arm slam, belly bump, arm lash or bite.
 - Bosses claw out hand over hand, roar with their arms wide, and rear up before a slam.
-- To change a walk, edit the keys in [[ZombieGaits]]. The file's own self-check catches a cycle that jumps at the loop.
+- To change a walk, edit the keys in [[ZombieGaits (Zombies)|ZombieGaits]]. The file's own self-check catches a cycle that jumps at the loop.
 - Arms stay reaching forward with a lazy bob, the head lolls, and the attack swipe plays on top.
 
 ## Notes
@@ -47,6 +47,6 @@ Every zombie is built from parts with **random variation**: shirt and pants colo
 - Spawn rise-from-the-ground and the red warning circle belong to [[Spawning]] (phase 6). The boss's fight mechanics belong to [[Waves and Boss]] (phase 7).
 
 ## Code
-Data in [[Zombies config]], bodies from [[ZombieModels]], AI in [[ZombieService]] with [[NavGrid]], walk animation in [[EffectsController]].
+Data in [[Zombies config (Zombies)|Zombies config]], bodies from [[ZombieModels (Zombies)|ZombieModels]], AI in [[ZombieService (Zombies)|ZombieService]] with [[NavGrid (Zombies)|NavGrid]], walk animation in [[EffectsController (Zombies)|EffectsController]].
 
-Back to [[Home]].
+Back to [[Zombies Home|Home]].

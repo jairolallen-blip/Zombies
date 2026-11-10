@@ -11,7 +11,7 @@ Built and playtested on 2026-11-01.
 - **Wave 7:** 30 zombies arrived in 8s, in **groups of 3**, at **23–70 studs** from the player, spread around **all 8 directions**, behind the player included. All 43 rose and were handed back to physics. The wave ended correctly once everything was dead.
 - **Code:** `MapService:GetZombieSpawnPosition()` picks the spot, `ZombieService:SpawnWarned()` handles the warning and rise, `MatchService:_playWave()` spawns in groups, and the client draws the `SpawnWarning` effect.
 
-Part of the [[Roadmap]]. Zombies come from the [[Zombies]] phase, and the map is [[City Map]].
+Part of the [[Zombies Roadmap|Roadmap]]. Zombies come from the [[Zombies]] phase, and the map is [[City Map]].
 
 ## Rules (from the ground rules)
 - **Random, scattered spawns** around the area rather than one spot. They can come from **behind you**.
@@ -39,6 +39,6 @@ There are +60% zombies per extra player, at most 70 alive at once, and zombie HP
 Wave 1 now has 14 zombies (was 8) and each wave adds 5 (was 6), so wave 10 has 59 (was 62). The first intermission is 8s (was 12). The $500 gun upgrade now lands around the end of wave 1. Not yet rechecked with the balance bot.
 
 ## Code
-[[MapService]] picks the spot, [[ZombieService]] raises the zombie, and [[EffectsController]] draws the warning circle.
+[[MapService (Zombies)|MapService]] picks the spot, [[ZombieService (Zombies)|ZombieService]] raises the zombie, and [[EffectsController (Zombies)|EffectsController]] draws the warning circle.
 
-Back to [[Home]].
+Back to [[Zombies Home|Home]].

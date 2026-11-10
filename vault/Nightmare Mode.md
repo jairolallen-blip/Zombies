@@ -6,7 +6,7 @@ game-zone: gameplay
 
 # Nightmare Mode
 
-The hard mode (started 2026-11-02, the owner's design). Back to [[Home]]. Tunables in [[Nightmare config]]; the pad is built by [[FlightLine]]; the run is played by [[MatchService]].
+The hard mode (started 2026-11-02, the owner's design). Back to [[Zombies Home|Home]]. Tunables in [[Nightmare config (Zombies)|Nightmare config]]; the pad is built by [[FlightLine (Zombies)|FlightLine]]; the run is played by [[MatchService (Zombies)|MatchService]].
 
 ## The idea
 A second mode for players who've beaten the normal game: tougher, darker, and scary. You only get paid if you survive, so every run feels like it matters. It also grows the enemy index with a new row of zombies.
@@ -50,4 +50,4 @@ Where the Bloom began: a huge swollen spore-mother (scale 3.6, the Bloated build
 - Index: 400 Gems, in the NIGHTMARE row.
 
 ## Code
-Boss: data in [[Zombies config]] (BloomMother), attacks in [[ZombieService]] (_spores, _bloomBurst, Collapse), intro and death scene in [[MatchService]] (_bossIntro, _bossDeath) and [[BossController]], model in [[ZombieModels]] (horror "Bloom"). Data in [[Nightmare config]], pad and gate in [[FlightLine]], gate and sign on the client in [[NightmareController]], boarding in [[QueueService]], the run in [[MatchService]], damage in [[CombatService]], weather in [[Conditions config]], lines in [[Radio config]].
+Boss: data in [[Zombies config (Zombies)|Zombies config]] (BloomMother), attacks in [[ZombieService (Zombies)|ZombieService]] (_spores, _bloomBurst, Collapse), intro and death scene in [[MatchService (Zombies)|MatchService]] (_bossIntro, _bossDeath) and [[BossController (Zombies)|BossController]], model in [[ZombieModels (Zombies)|ZombieModels]] (horror "Bloom"). Data in [[Nightmare config (Zombies)|Nightmare config]], pad and gate in [[FlightLine (Zombies)|FlightLine]], gate and sign on the client in [[NightmareController (Zombies)|NightmareController]], boarding in [[QueueService (Zombies)|QueueService]], the run in [[MatchService (Zombies)|MatchService]], damage in [[CombatService (Zombies)|CombatService]], weather in [[Conditions config (Zombies)|Conditions config]], lines in [[Radio config (Zombies)|Radio config]].

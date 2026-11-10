@@ -8,7 +8,7 @@ game-zone: gameplay
 
 Built and playtested on 2026-11-01. In a real run, all 4 levels produced the right model, the server accepted their shots, hits and kills registered, and ammo drained correctly. Upgrading at max level shows "Weapon — MAX". The wave-clear bonus is correct (+$250 after wave 1). A self-check builds all 10 gun models.
 
-Part of the [[Roadmap]]. The loadout and upgrade flow is in [[Lobby]]. Style comes from `MODEL REFERENCES/` (the multi-gun sheets): **blocky, low-poly, part-built guns with readable silhouettes**.
+Part of the [[Zombies Roadmap|Roadmap]]. The loadout and upgrade flow is in [[Lobby]]. Style comes from `MODEL REFERENCES/` (the multi-gun sheets): **blocky, low-poly, part-built guns with readable silhouettes**.
 
 ## Gun identities
 | Lv | Gun | Feel | Model notes |
@@ -43,6 +43,6 @@ Zombie HP is Shambler 60, Runner 35, Bloater 90, Brute 450 and the Grave Titan b
 - Reload animations (dropping the mag).
 
 ## Code
-Data in [[Weapons config]] and [[GunModels]]. [[WeaponController]] and [[ViewmodelController]] on the client, [[CombatService]] on the server, upgrades in [[EconomyService]], shared math in [[Util]].
+Data in [[Weapons config (Zombies)|Weapons config]] and [[GunModels (Zombies)|GunModels]]. [[WeaponController (Zombies)|WeaponController]] and [[ViewmodelController (Zombies)|ViewmodelController]] on the client, [[CombatService (Zombies)|CombatService]] on the server, upgrades in [[EconomyService (Zombies)|EconomyService]], shared math in [[Util (Zombies)|Util]].
 
-Back to [[Home]].
+Back to [[Zombies Home|Home]].

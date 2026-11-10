@@ -6,7 +6,7 @@ game-zone: gameplay
 
 # Outbreak
 
-The million-zombie mode, and what's different about working on it. Back to [[Home]].
+The million-zombie mode, and what's different about working on it. Back to [[Zombies Home|Home]].
 
 ## What it is
 

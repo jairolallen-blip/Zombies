@@ -6,7 +6,7 @@ game-zone: working
 
 # Polish Ideas
 
-What the owner's saved clips suggest for this game. Nothing here is built yet. The general lessons are in the Game Kit's `Game Feel Guide`, `AI Art Pipeline` and `UI Ideas`. Back to [[Home]].
+What the owner's saved clips suggest for this game. Nothing here is built yet. The general lessons are in the Game Kit's `Game Feel Guide`, `AI Art Pipeline` and `UI Ideas`. Back to [[Zombies Home|Home]].
 
 Our three most common actions are **shooting a zombie, killing a zombie and taking a hit**. Polish those before anything rarer.
 

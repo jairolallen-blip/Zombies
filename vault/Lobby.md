@@ -6,7 +6,7 @@ game-zone: world
 
 # Lobby (phase 1): done
 
-Part of the [[Roadmap]]. Built and playtested on 2026-11-01.
+Part of the [[Zombies Roadmap|Roadmap]]. Built and playtested on 2026-11-01.
 
 ## What players get
 1. **Pick a class** (left panel). There are 5 classes, unlocked with Gems.
@@ -108,7 +108,7 @@ A fortified safehouse inside a ruined city at **x = 1000, z = 1000** (moved from
 - **Sides:** stacked shipping containers, with more ruins behind them. **South:** jersey barriers and a chain-link fence.
 
 ## How it's wired (code)
-- `GameConfig.OurMap` (centres at x = 1000) is **the only map**. On 2026-11-01 the original "Graveside Isle" generator, the friend's city map, `Props` and `Bricks` were deleted, and MapService now only reads our marker parts (see [[Roadmap#Project history]]).
+- `GameConfig.OurMap` (centres at x = 1000) is **the only map**. On 2026-11-01 the original "Graveside Isle" generator, the friend's city map, `Props` and `Bricks` were deleted, and MapService now only reads our marker parts (see [[Zombies Roadmap#Project history|Roadmap]]).
 - `Server/Map/OurLobby` builds `Workspace.OurMap.Lobby`. It's baked in Edit mode (rebuild instructions are in its header), so it can be hand-edited afterwards.
 - `MapService:GetLobbySpawnCFrame()` uses the parts named `LobbySpawn` in our lobby.
 - Profile: `Loadout = { [level] = weaponId }` replaces `EquippedWeapon`. Old saves are migrated automatically, and every free gun is granted.
@@ -120,16 +120,16 @@ A fortified safehouse inside a ruined city at **x = 1000, z = 1000** (moved from
 ## Launch prep (2026-11-02)
 - **Arrival:** you spawn facing the Flight Line gate. Every player in the lobby has a gold "BEST WAVE n" tag ("NEW SURVIVOR" at 0).
 - **QUICK PLAY** puts you on the fullest pad that has room; **INVITE FRIENDS** opens Roblox's invite prompt. See [[Servers and Teleports]].
-- **Daily Rations** ([[DailyCache]], [[DailyService]]): a pallet of crates under a sign on the south edge of the plaza, by the flag (the plaza was bare). Hold "Claim" once per UTC day. A streak pays 40, 60, 80, 100, 125, 150, then 250 Gems on day 7, then starts over; missing a day resets it.
+- **Daily Rations** ([[DailyCache (Zombies)|DailyCache]], [[DailyService (Zombies)|DailyService]]): a pallet of crates under a sign on the south edge of the plaza, by the flag (the plaza was bare). Hold "Claim" once per UTC day. A streak pays 40, 60, 80, 100, 125, 150, then 250 Gems on day 7, then starts over; missing a day resets it.
 
 ## Welcome screen, Field Research, Bounty Board (2026-11-02)
 Ideas from the owner, built our own way.
-- **Welcome screen** ([[WelcomeController]]): every join after the tutorial. Your avatar idles on a ruined Port Harrow street at sunset (broken skyline, burning wrecks, smoke and embers) while a horde runs past behind you. On the right: your stats, your tracked [[Bounties|bounty]], a line from one of the safehouse people, and ENTER SAFEHOUSE. Fire and smoke are animated parts, because 3D UI scenes draw no particles or lights.
-  - **Run report** (2026-11-03, the owner's idea): after every run, win or lose, the same screen comes back once you're at the safehouse, as a report: "RUN REPORT // PORT HARROW" (or NIGHTMARE / TRAINING), "WELCOME BACK, NAME", the outcome in big letters (VICTORY, NIGHTMARE CLEARED, OVERRUN or TRAINING DONE) and that run's tiles: wave reached ("NEW BEST" in the label), zombies killed, Gems earned ("NONE" for a lost Nightmare run), waves cleared, your Gems and enemies studied. The quick VICTORY / OVERRUN panel still shows at the moment the run ends. Live, the results ride back on the teleport to the lobby server ([[MatchService]] keeps them, [[QueueService]] sends them); in Studio the run plays in the lobby server, so the report comes from the RunResults message. Since 2026-11-03 it has a level header with the run's XP filling the bar and LEVEL UP! on each level (see [[Levels]]).
-- **Field Research** ([[FieldStations]], north-east of the plaza): the enemy index. Kill a zombie type to unlock its card (spinning model, stats, special, lore from [[Zombies config]]), then claim its Gems once: 50, 75, 100, 150, and 300 for the Titan. See [[Lore]].
+- **Welcome screen** ([[WelcomeController (Zombies)|WelcomeController]]): every join after the tutorial. Your avatar idles on a ruined Port Harrow street at sunset (broken skyline, burning wrecks, smoke and embers) while a horde runs past behind you. On the right: your stats, your tracked [[Bounties|bounty]], a line from one of the safehouse people, and ENTER SAFEHOUSE. Fire and smoke are animated parts, because 3D UI scenes draw no particles or lights.
+  - **Run report** (2026-11-03, the owner's idea): after every run, win or lose, the same screen comes back once you're at the safehouse, as a report: "RUN REPORT // PORT HARROW" (or NIGHTMARE / TRAINING), "WELCOME BACK, NAME", the outcome in big letters (VICTORY, NIGHTMARE CLEARED, OVERRUN or TRAINING DONE) and that run's tiles: wave reached ("NEW BEST" in the label), zombies killed, Gems earned ("NONE" for a lost Nightmare run), waves cleared, your Gems and enemies studied. The quick VICTORY / OVERRUN panel still shows at the moment the run ends. Live, the results ride back on the teleport to the lobby server ([[MatchService (Zombies)|MatchService]] keeps them, [[QueueService (Zombies)|QueueService]] sends them); in Studio the run plays in the lobby server, so the report comes from the RunResults message. Since 2026-11-03 it has a level header with the run's XP filling the bar and LEVEL UP! on each level (see [[Levels]]).
+- **Field Research** ([[FieldStations (Zombies)|FieldStations]], north-east of the plaza): the enemy index. Kill a zombie type to unlock its card (spinning model, stats, special, lore from [[Zombies config (Zombies)|Zombies config]]), then claim its Gems once: 50, 75, 100, 150, and 300 for the Titan. See [[Lore]].
 - **Bounty Board** (north-west, by the gate): see [[Bounties]].
 
 ## Code
-[[OurLobby]], [[FlightLine]], [[Commons]] and [[Survivors map]] build it. [[LobbyService]], [[QueueService]] and [[CommonsService]] run it. [[ShopController]], [[LobbyController]], [[LobbyAudioController]] and [[SurvivorController]] are the client. See also [[Servers and Teleports]], [[Tutorial]], [[Achievements]] and [[Lore]].
+[[OurLobby (Zombies)|OurLobby]], [[FlightLine (Zombies)|FlightLine]], [[Commons (Zombies)|Commons]] and [[Survivors map (Zombies)|Survivors map]] build it. [[LobbyService (Zombies)|LobbyService]], [[QueueService (Zombies)|QueueService]] and [[CommonsService (Zombies)|CommonsService]] run it. [[ShopController (Zombies)|ShopController]], [[LobbyController (Zombies)|LobbyController]], [[LobbyAudioController (Zombies)|LobbyAudioController]] and [[SurvivorController (Zombies)|SurvivorController]] are the client. See also [[Servers and Teleports]], [[Tutorial]], [[Achievements]] and [[Lore]].
 
-Back to [[Home]].
+Back to [[Zombies Home|Home]].

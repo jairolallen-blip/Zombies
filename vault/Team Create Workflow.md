@@ -6,7 +6,7 @@ game-zone: working
 
 # Team Create Workflow
 
-How to edit the shared Studio place without breaking a friend's work. The full version is in `CLAUDE.md` §2, §5 and §6. Back to [[Home]].
+How to edit the shared Studio place without breaking a friend's work. The full version is in `CLAUDE.md` §2, §5 and §6. Back to [[Zombies Home|Home]].
 
 - **Studio is the live truth; the repo is a mirror.** Code is written in Studio, then exported to `src/` and committed.
 - **Shared with AnimatedSL.** Their live files (OurLobby, GameConfig, Sounds, HUDController and others) get **targeted edits only**. On 2026-11-04 the owner had everything in Studio exported to the repo (`52d955d`), so the repo matched Studio again that day; keep it that way by exporting after every task (`CLAUDE.md` §6).
@@ -16,8 +16,8 @@ How to edit the shared Studio place without breaking a friend's work. The full v
   - `ServerStorage.README_AI_GUIDE` in the place (the shared guide with the friend's agent)
   - `CLAUDE.md`
   - this vault: the design note, plus `node tools/vault-code-notes.js` for the code notes
-- **Map builders** run on a clone from the command bar, because its module cache goes stale (see [[Map builders]]).
-- **Test commands:** [[DebugService]].
+- **Map builders** run on a clone from the command bar, because its module cache goes stale (see [[Map builders (Zombies)|Map builders]]).
+- **Test commands:** [[DebugService (Zombies)|DebugService]].
 
 ## Two places, one codebase (packages)
 

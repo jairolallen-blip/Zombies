@@ -8,6 +8,10 @@ const path = require("path");
 const ROOT = path.join(__dirname, "..");
 const SRC = path.join(ROOT, "src");
 const OUT = path.join(ROOT, "vault", "Code");
+// All games share one vault (Game Kit/Gamekit), so every code note carries the game's name to stay unique.
+const TAG = " (Zombies)";
+const HOME = "Zombies Home";
+const RENAME = { Home: HOME, Roadmap: "Zombies Roadmap" };
 
 // folder under src -> group (folder under vault/Code + its index note)
 const GROUPS = [
@@ -40,7 +44,7 @@ const files = walk(SRC).map((full) => {
 	else if (base === "Health") note = "Health script";
 	else if (dir === "shared/Config" && base !== "GameConfig") note = base + " config";
 	else if (dir === "server/Map" && base === "Survivors") note = "Survivors map";
-	return { full, rel, dir, base, note, group: g.group, text: fs.readFileSync(full, "utf8") };
+	return { full, rel, dir, base, note: note + TAG, group: g.group, text: fs.readFileSync(full, "utf8") };
 });
 
 // a module reference -> the file it means
@@ -105,14 +109,14 @@ fs.rmSync(OUT, { recursive: true, force: true });
 for (const f of files) {
 	const usedBy = new Set(files.filter((o) => uses.get(o).has(f)));
 	const lines = f.text.split("\n").length;
-	const notes = [...design.get(f)].map((d) => `- [[${d}]]`).join("\n");
+	const notes = [...design.get(f)].map((d) => `- [[${RENAME[d] || d}]]`).join("\n");
 	const seeAlso = new Set([...mentions.get(f)].filter((o) => !uses.get(f).has(o) && !usedBy.has(o)));
 	write(
 		`${f.group}/${f.note}.md`,
 		front(f.group) +
 				`# ${f.note}\n\n` +
 			`> Made by \`tools/vault-code-notes.js\` from \`src/${f.rel}\` (${lines} lines). Don't edit it here: rerun the script.\n\n` +
-			`Part of [[${f.group}]].\n\n` +
+			`Part of [[${f.group}${TAG}|${f.group}]].\n\n` +
 			`## What it does\n\n\`\`\`text\n${header(f.text) || "(no header comment)"}\n\`\`\`\n\n` +
 			`## Uses\n\n${list(uses.get(f))}\n\n## Used by\n\n${list(usedBy)}\n` +
 			(seeAlso.size ? `\n## Mentions\n\n${list(seeAlso)}\n` : "") +
@@ -122,10 +126,10 @@ for (const f of files) {
 for (const g of GROUPS.filter((x) => x.blurb)) {
 	const members = files.filter((f) => f.group === g.group);
 	write(
-		`${g.group}.md`,
+		`${g.group}${TAG}.md`,
 		front(g.group) +
-				`# ${g.group}\n\n> Made by \`tools/vault-code-notes.js\`. Don't edit it here: rerun the script.\n\n` +
-			`${g.blurb}\n\nBack to [[Home]].\n\n` +
+				`# ${g.group}${TAG}\n\n> Made by \`tools/vault-code-notes.js\`. Don't edit it here: rerun the script.\n\n` +
+			`${g.blurb}\n\nBack to [[${HOME}]].\n\n` +
 			members.map((f) => `- ${link(f)}: ${(header(f.text).split("\n")[0] || "").replace(/^\w+:\s*/, "")}`).sort().join("\n") +
 			"\n"
 	);

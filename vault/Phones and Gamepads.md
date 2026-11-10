@@ -6,13 +6,13 @@ game-zone: working
 
 # Phones and Gamepads
 
-Most Roblox players are on phones, so the run plays without a keyboard (added 2026-11-02). Back to [[Home]]. Code: [[TouchController]], with the trigger in [[WeaponController]].
+Most Roblox players are on phones, so the run plays without a keyboard (added 2026-11-02). Back to [[Zombies Home|Home]]. Code: [[TouchController (Zombies)|TouchController]], with the trigger in [[WeaponController (Zombies)|WeaponController]].
 
 ## Phones
 - Buttons on the right while the run camera is on: **FIRE** (hold), **AIM** (toggle), **R** reload, **E** ability, **F** ultimate.
 - Drag anywhere else to look; the left stick moves. Aim is the centre of the screen, same as on PC.
-- The HUD's upgrade buttons ([[HUDController]]) and every ProximityPrompt (supply crates, shops, the daily rations) are tappable already.
-- The cutscene skip has its own hold button ([[SkipController]]).
+- The HUD's upgrade buttons ([[HUDController (Zombies)|HUDController]]) and every ProximityPrompt (supply crates, shops, the daily rations) are tappable already.
+- The cutscene skip has its own hold button ([[SkipController (Zombies)|SkipController]]).
 
 ## Gamepads
 R2 fire, L2 aim, X reload, L1 ability, R1 ultimate, D-pad up gun upgrade, D-pad right Vitality, Y opens a supply crate ([[Supply Drops]]).

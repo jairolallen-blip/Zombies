@@ -6,7 +6,7 @@ game-zone: world
 
 # City Map (phase 2): done
 
-Part of the [[Roadmap]]. Our arena, centred at **x = 1000** (next to the [[Lobby]]). Built and playtested on 2026-11-01.
+Part of the [[Zombies Roadmap|Roadmap]]. Our arena, centred at **x = 1000** (next to the [[Lobby]]). Built and playtested on 2026-11-01.
 
 ## Status
 - **Built** by `Server/Map/OurCity`, which reads the tile plan below and bakes it into `Workspace.OurMap.Arena`: about 3,600 parts and 36 lights. To change the layout, edit `LAYOUT` and rebuild (instructions are in the module header).
@@ -71,9 +71,9 @@ The map is a 23 × 23 grid of 12-stud tiles (276 studs across). North is up.
 ## Run conditions (2026-11-02, turned off)
 **Off for now:** the owner prefers the original moody sunset, so every run is Sunset (the others have Weight 0). We may come back to the idea.
 
-Each run rolls its weather ([[Conditions config]], [[ConditionsController]]): Sunset (most often), Heavy Fog, Nightfall (every player gets a flashlight) or Storm (rain). It makes one map feel like several until a second map exists. The tutorial is always Sunset.
+Each run rolls its weather ([[Conditions config (Zombies)|Conditions config]], [[ConditionsController (Zombies)|ConditionsController]]): Sunset (most often), Heavy Fog, Nightfall (every player gets a flashlight) or Storm (rain). It makes one map feel like several until a second map exists. The tutorial is always Sunset.
 
 ## Code
-[[OurCity]] builds it, [[MapService]] reads its markers and sets the atmosphere, and [[NavGrid]] maps it for the zombies.
+[[OurCity (Zombies)|OurCity]] builds it, [[MapService (Zombies)|MapService]] reads its markers and sets the atmosphere, and [[NavGrid (Zombies)|NavGrid]] maps it for the zombies.
 
-Back to [[Home]].
+Back to [[Zombies Home|Home]].
